@@ -18,12 +18,12 @@ import (
 	"github.com/DIYgod/pinky/internal/screen"
 )
 
-// Action is one input: phone_tap, phone_type, phone_swipe, phone_key or
-// phone_launch, or a step of phone_batch.
+// Action is one input: phone_tap, phone_type, phone_swipe, phone_pinch,
+// phone_key or phone_launch, or a step of phone_batch.
 type Action struct {
-	Tool       string // tap, type, swipe, key or launch
+	Tool       string // tap, type, swipe, pinch, key or launch
 	Ref        int
-	Point      *screen.Point // tap at x,y instead of a ref
+	Point      *screen.Point // tap at x,y instead of a ref; a pinch's centre
 	LongPress  bool
 	Text       string
 	Append     bool
@@ -31,8 +31,17 @@ type Action struct {
 	Direction  string // up, down, left or right: where the finger moves
 	From, To   *screen.Point
 	DurationMS int
-	Key        string
-	App        string
+	// Scale and Rotation shape a pinch: Scale 2 spreads the fingers to
+	// twice their distance (zoom in), 0.5 brings them to half (zoom out),
+	// 0 leaves it (as 1); Rotation turns them by that many degrees,
+	// clockwise when positive.
+	Scale, Rotation float64
+	Key             string
+	App             string
+	// Language and Region open the app in another language or region
+	// (phone_launch, switches.go): a BCP 47 language such as "ja" or
+	// "zh-Hans", and a two-letter region such as "JP".
+	Language, Region string
 	// Intent and ApprovalID are per step in phone_batch.
 	Intent     string
 	ApprovalID string
@@ -96,6 +105,10 @@ func (a Action) check() *Result {
 		case hasDir && !validDirection(a.Direction):
 			return bad("direction must be up, down, left or right.")
 		}
+	case "pinch":
+		if res := a.checkPinch(); res != nil {
+			return res
+		}
 	case "key":
 		if _, ok := agentKeys[a.Key]; !ok {
 			return bad("unknown key %q; use one of %s.", a.Key, strings.Join(KeyNames(), ", "))
@@ -104,8 +117,14 @@ func (a Action) check() *Result {
 		if strings.TrimSpace(a.App) == "" {
 			return bad("app is required: a name, package name or bundle id.")
 		}
+		if _, err := parseLocale(a.Language, a.Region); err != nil {
+			return bad("%v", err)
+		}
 	default:
 		return bad("unknown action %q.", a.Tool)
+	}
+	if a.Tool != "launch" && (a.Language != "" || a.Region != "") {
+		return bad("language and region go with phone_launch only.")
 	}
 	if a.Settle != nil && (*a.Settle < 0 || *a.Settle > MaxSettle) {
 		return bad("settle_ms must be between 0 and %d.", MaxSettle.Milliseconds())
@@ -132,8 +151,16 @@ func (a Action) digest() string {
 		}
 		return fmt.Sprintf("%d,%d", pt.X, pt.Y)
 	}
-	return digest(fmt.Sprintf("%s|ref=%d|at=%s|long=%v|text=%q|append=%v|submit=%v|dir=%s|from=%s|to=%s|dur=%d|key=%s|app=%s",
-		a.Tool, a.Ref, p(a.Point), a.LongPress, a.Text, a.Append, a.Submit, a.Direction, p(a.From), p(a.To), a.DurationMS, a.Key, a.App))
+	s := fmt.Sprintf("%s|ref=%d|at=%s|long=%v|text=%q|append=%v|submit=%v|dir=%s|from=%s|to=%s|dur=%d|key=%s|app=%s",
+		a.Tool, a.Ref, p(a.Point), a.LongPress, a.Text, a.Append, a.Submit, a.Direction, p(a.From), p(a.To), a.DurationMS, a.Key, a.App)
+	if a.Scale != 0 || a.Rotation != 0 {
+		s += fmt.Sprintf("|scale=%g|rot=%g", a.Scale, a.Rotation)
+	}
+	if a.localized() {
+		loc := a.locale()
+		s += "|lang=" + loc.Language + "|region=" + loc.Region
+	}
+	return digest(s)
 }
 
 func digest(s string) string {
@@ -174,11 +201,23 @@ func (a Action) args(c Call) string {
 	if a.DurationMS != 0 {
 		m["duration_ms"] = a.DurationMS
 	}
+	if a.Scale != 0 {
+		m["scale"] = a.Scale
+	}
+	if a.Rotation != 0 {
+		m["rotation"] = a.Rotation
+	}
 	if a.Key != "" {
 		m["key"] = a.Key
 	}
 	if a.App != "" {
 		m["app"] = a.App
+	}
+	if a.Language != "" {
+		m["language"] = a.Language
+	}
+	if a.Region != "" {
+		m["region"] = a.Region
 	}
 	if a.Settle != nil {
 		m["settle_ms"] = a.Settle.Milliseconds()
@@ -303,8 +342,14 @@ type prep struct {
 	from   screen.Point
 	to     screen.Point
 	dur    time.Duration
+	// pinch is the gesture of a pinch, whose first finger goes from from
+	// to to, around point.
+	pinch *driver.Pinch
+	// launch is the app phone_launch opens, or for a link (url) the app
+	// that opens link.
 	launch driver.App
 	url    bool
+	link   string
 	input  policy.Input
 	desc   string // plain-language description for history
 	// decider is the element whose verdict decided, which may enclose the
@@ -324,6 +369,9 @@ type prep struct {
 	// unblock is set when the approval for this launch asks the person to
 	// allow a blocked app for the task (unblock.go).
 	unblock bool
+	// localeUndo puts back the language a launch gave its app, which
+	// stays until the task ends (switches.go).
+	localeUndo func(context.Context) error
 	// settleFull ignores the action's settle_ms: the person approved it,
 	// allowed its rule for the task or always allows it in the app. Its
 	// result should show what it did before the agent decides whether to
@@ -389,6 +437,7 @@ func (g *Gateway) act(ctx context.Context, l *lease, c Call, a Action) *Result {
 	g.ocrForVerdict(ctx, d, p, cur)
 	v := g.evaluate(p, cur)
 	v, _ = g.unblockAsk(l, p, v)
+	v = g.settingsVerdict(l, a, p, v)
 	switch v.Decision {
 	case policy.Deny:
 		d.act.Unlock()
@@ -457,6 +506,7 @@ func (g *Gateway) launchUnread(ctx context.Context, l *lease, c Call, a Action) 
 	if ask {
 		return nil // the person may allow the blocked app: ask with the screen read
 	}
+	v = g.settingsVerdict(l, a, p, v)
 	switch {
 	case v.Decision == policy.Deny:
 		res := refusal(v)
@@ -471,21 +521,21 @@ func (g *Gateway) launchUnread(ctx context.Context, l *lease, c Call, a Action) 
 }
 
 // evaluate runs the policy on the action. A tap or swipe is checked
-// against every element under the finger, not only the smallest one, so a
-// price label inside a Pay button still counts as tapping Pay, and against
-// the text only OCR reads there (p.ocr), so "Pay" on a web page without
-// accessibility elements counts too. The strictest verdict wins;
+// against every element under the finger (both fingers of a pinch), not
+// only the smallest one, so a price label inside a Pay button still counts
+// as tapping Pay, and against the text only OCR reads there (p.ocr), so
+// "Pay" on a web page without accessibility elements counts too. The strictest verdict wins;
 // p.decider records which element decided.
 func (g *Gateway) evaluate(p *prep, cur *screen.Screen) policy.Verdict {
 	v := g.policy.Evaluate(p.input)
 	p.decider = p.target
-	pt, ok := p.finger()
-	if !ok {
+	pts := p.fingers()
+	if len(pts) == 0 {
 		return v
 	}
 	under := make([]screen.Element, 0, len(p.ocr)+8)
 	for _, e := range cur.Elements {
-		if e.Source == screen.SourceOCR || e.Bounds.Empty() || !e.Bounds.Contains(pt) {
+		if e.Source == screen.SourceOCR || e.Bounds.Empty() || !containsAny(e.Bounds, pts) {
 			continue
 		}
 		if p.target != nil && e.Ref == p.target.Ref && e.Ref != 0 {
@@ -511,15 +561,29 @@ func (g *Gateway) evaluate(p *prep, cur *screen.Screen) policy.Verdict {
 	return v
 }
 
-// finger returns where a tap or swipe first touches the screen.
-func (p *prep) finger() (screen.Point, bool) {
-	switch p.input.Op {
-	case policy.OpTap:
-		return p.point, p.hasPt
-	case policy.OpSwipe:
-		return p.from, true
+// fingers returns where a tap, swipe or pinch first touches the screen:
+// one point, or both fingers of a pinch.
+func (p *prep) fingers() []screen.Point {
+	switch {
+	case p.pinch != nil:
+		a, b := p.pinch.At(0)
+		return []screen.Point{a, b}
+	case p.input.Op == policy.OpTap && p.hasPt:
+		return []screen.Point{p.point}
+	case p.input.Op == policy.OpSwipe:
+		return []screen.Point{p.from}
 	}
-	return screen.Point{}, false
+	return nil
+}
+
+// containsAny reports whether r contains any of pts.
+func containsAny(r screen.Rect, pts []screen.Point) bool {
+	for _, pt := range pts {
+		if r.Contains(pt) {
+			return true
+		}
+	}
+	return false
 }
 
 // ocrForVerdict collects into p.ocr the text that only OCR reads under or
@@ -531,8 +595,8 @@ func (p *prep) finger() (screen.Point, bool) {
 // unlabelled one, or a large one such as a web view. Without a second read
 // the action is checked as before.
 func (g *Gateway) ocrForVerdict(ctx context.Context, d *device, p *prep, cur *screen.Screen) {
-	pt, ok := p.finger()
-	if !ok || cur == nil {
+	pts := p.fingers()
+	if len(pts) == 0 || cur == nil {
 		return
 	}
 	src := cur
@@ -547,7 +611,7 @@ func (g *Gateway) ocrForVerdict(ctx context.Context, d *device, p *prep, cur *sc
 		src = o
 	}
 	for _, e := range src.Elements {
-		if e.Source == screen.SourceOCR && e.Label != "" && !ocrInStatusBar(src, e) && ocrReach(e.Bounds).Contains(pt) {
+		if e.Source == screen.SourceOCR && e.Label != "" && !ocrInStatusBar(src, e) && containsAny(ocrReach(e.Bounds), pts) {
 			p.ocr = append(p.ocr, e)
 		}
 	}
@@ -727,6 +791,16 @@ func (g *Gateway) prepare(ctx context.Context, l *lease, a Action, cur *screen.S
 			}
 			p.from, p.to = swipeLine(area, a.Direction)
 		}
+	case "pinch":
+		p.input.Op = policy.OpSwipe
+		if dev, _ := g.screenOf(d); dev != nil {
+			if _, ok := dev.(driver.Pincher); !ok {
+				return p, errResult(ErrUnsupported, "This phone cannot pinch. Nothing was done.")
+			}
+		}
+		if res := p.preparePinch(a, cur, byRef); res != nil {
+			return p, res
+		}
 	case "key":
 		p.input.Op = policy.OpKey
 		p.input.Key = a.Key
@@ -735,26 +809,49 @@ func (g *Gateway) prepare(ctx context.Context, l *lease, a Action, cur *screen.S
 		}
 	case "launch":
 		p.input.Op = policy.OpLaunch
-		app, url, res := g.resolveLaunch(ctx, d, a.App)
-		if res != nil {
-			return p, res
+		if a.localized() {
+			if policy.IsLink(a.App) {
+				return p, errResult(ErrInvalidArgument, "A link opens in the browser, which keeps its language; open an app in another language instead. Nothing was done.")
+			}
+			if dev, _ := g.screenOf(d); dev != nil {
+				if _, ok := dev.(driver.LocaleLauncher); !ok {
+					return p, errResult(ErrUnsupported, "%s cannot open an app in another language: Android 13 and later, iOS Simulators and iPhones can. Nothing was done.", d.name())
+				}
+			}
 		}
-		p.launch, p.url = app, url
+		if policy.IsLink(a.App) {
+			p.url, p.link = true, strings.TrimSpace(a.App)
+			p.input.LaunchURL, p.input.Link = true, p.link
+			if _, refused := policy.LinkRefused(p.link); refused {
+				break // the policy refuses it, whatever app would open it
+			}
+			// The rules judge the app that opens the link, as a launch
+			// of it: blocking or scoping that app covers its links too,
+			// and so does the person's allowing it for the task.
+			from := screen.App{}
+			if s := g.leftFrom(d, cur); s != nil {
+				from = s.App
+			}
+			g.mu.Lock()
+			clone := l.clone
+			g.mu.Unlock()
+			app, res := g.resolveLink(ctx, d, p.link, from, clone)
+			if res != nil {
+				return p, res
+			}
+			p.launch = app
+		} else {
+			app, res := g.resolveLaunch(ctx, d, a.App)
+			if res != nil {
+				return p, res
+			}
+			p.launch = app
+		}
 		// An app clone is judged as the app it copies: the two read
 		// alike on the screen.
-		orig := app.Original()
+		orig := p.launch.Original()
 		p.input.Launch = screen.App{ID: orig.ID, Name: orig.Name}
-		opener := false
-		if lo, ok := g.driverOf(d).(linkOpener); ok && url {
-			// The rules judge the app that opens the link: blocking or
-			// scoping it covers its links too, and so does the person's
-			// allowing it for the task.
-			browser := lo.LinkApp()
-			p.input.Launch = screen.App{ID: browser.ID, Name: browser.Name}
-			opener = true
-		}
-		p.input.LaunchURL = url
-		p.input.AllowBlocked = (!url || opener) && g.allows(l, p.input.Launch)
+		p.input.AllowBlocked = g.allows(l, p.input.Launch)
 	}
 	p.input.Target = p.target
 	p.desc = describe(a, p)
@@ -920,37 +1017,63 @@ func hitTest(s *screen.Screen, p screen.Point) *screen.Element {
 	return &cp
 }
 
-// linkOpener is implemented by drivers that open a link in a fixed app.
-type linkOpener interface {
-	LinkApp() driver.App
-}
-
 // resolveLaunch finds the app phone_launch names.
-func (g *Gateway) resolveLaunch(ctx context.Context, d *device, name string) (driver.App, bool, *Result) {
+func (g *Gateway) resolveLaunch(ctx context.Context, d *device, name string) (driver.App, *Result) {
 	name = strings.TrimSpace(name)
-	if strings.Contains(name, "://") {
-		return driver.App{ID: name, Name: name}, true, nil
-	}
 	dev := g.driverOf(d)
 	if dev == nil {
-		return driver.App{}, false, errResult(ErrDeviceOffline, "%s is offline.", d.name())
+		return driver.App{}, errResult(ErrDeviceOffline, "%s is offline.", d.name())
 	}
 	apps, err := dev.Apps(ctx)
 	if errors.Is(err, driver.ErrUnsupported) {
-		return driver.App{ID: name, Name: name}, false, nil
+		return driver.App{ID: name, Name: name}, nil
 	}
 	if err != nil {
-		return driver.App{}, false, errResult(ErrInternal, "Listing apps failed: %v", err)
+		return driver.App{}, errResult(ErrInternal, "Listing apps failed: %v", err)
 	}
 	m := findApp(apps, name)
 	if m.ok {
-		return m.app, false, nil
+		return m.app, nil
 	}
 	if len(m.similar) > 0 {
-		return driver.App{}, false, errResult(ErrNotFound, "No installed app is named %q. Similar: %s. Call phone_launch again with the exact name or id of the one you mean.",
+		return driver.App{}, errResult(ErrNotFound, "No installed app is named %q. Similar: %s. Call phone_launch again with the exact name or id of the one you mean.",
 			name, appList(m.similar))
 	}
-	return driver.App{}, false, errResult(ErrNotFound, "No installed app matches %q; call phone_apps to see what is installed.", name)
+	return driver.App{}, errResult(ErrNotFound, "No installed app matches %q; call phone_apps to see what is installed.", name)
+}
+
+// resolveLink finds the app that opens a link, as the phone would pick it
+// for a tap on the link. A link that no app opens, or that the phone would
+// let the person choose an app for, is refused: Pinky does not guess. On
+// a phone with app clones, the link opens in the clone the agent opened
+// last (clone) while the clone's app is in front (from), and in the app
+// itself otherwise.
+func (g *Gateway) resolveLink(ctx context.Context, d *device, link string, from screen.App, clone driver.App) (driver.App, *Result) {
+	dev := g.driverOf(d)
+	if dev == nil {
+		return driver.App{}, errResult(ErrDeviceOffline, "%s is offline.", d.name())
+	}
+	lo, ok := dev.(driver.LinkOpener)
+	if !ok {
+		return driver.App{}, errResult(ErrUnsupported, "%s cannot open links. Nothing was done.", d.name())
+	}
+	app, err := lo.LinkApp(ctx, link)
+	var choice *driver.LinkChoiceError
+	switch {
+	case errors.As(err, &choice):
+		return driver.App{}, errResult(ErrUnsupported, "Several apps open %s (%s), and the phone would ask which; Pinky does not choose. Nothing was done. Launch the app you mean and open the link from inside it.",
+			link, appList(choice.Apps))
+	case errors.Is(err, driver.ErrNotFound):
+		return driver.App{}, errResult(ErrNotFound, "No app on %s opens %s. Nothing was done.", d.name(), link)
+	case errors.Is(err, driver.ErrUnsupported):
+		return driver.App{}, errResult(ErrUnsupported, "%s cannot open this link: %v. Nothing was done.", d.name(), err)
+	case err != nil:
+		return driver.App{}, errResult(ErrInternal, "Finding the app that opens %s failed: %v. Nothing was done.", link, err)
+	}
+	if clone.CloneOf != nil && clone.CloneOf.ID == app.ID && from.ID == app.ID {
+		return clone, nil
+	}
+	return app, nil
 }
 
 // ask opens an approval for an action and records the waiting step.
@@ -965,8 +1088,11 @@ func (g *Gateway) ask(ctx context.Context, l *lease, c Call, a Action, p *prep, 
 	case p.hasPt:
 		target = screen.Rect{X: p.point.X - 24, Y: p.point.Y - 24, W: 48, H: 48}
 	}
-	var point, to screen.Point
+	var point, to, point2, to2 screen.Point
 	switch {
+	case p.pinch != nil:
+		point, point2 = p.pinch.At(0)
+		to, to2 = p.pinch.At(1)
 	case a.Tool == "swipe":
 		point, to = p.from, p.to
 	case p.hasPt:
@@ -985,7 +1111,7 @@ func (g *Gateway) ask(ctx context.Context, l *lease, c Call, a Action, p *prep, 
 	info := g.approvals.Open(approval.Request{
 		Kind: approval.KindAction, Binding: g.binding(l, a), Rule: v.Rule, Title: approvalTitle(a, p, v),
 		Detail: detail, App: app, Agent: l.session.agent.Name, TaskID: l.task.id,
-		DeviceName: l.dev.name(), Screenshot: shot, Target: target, Point: point, To: to, Data: takeSnapshot(cur, p, v),
+		DeviceName: l.dev.name(), Screenshot: shot, Target: target, Point: point, To: to, Point2: point2, To2: to2, Data: takeSnapshot(cur, p, v),
 	})
 	if res := g.afterOpen(l, info); res != nil {
 		return info, res
@@ -1041,16 +1167,18 @@ func approvalTitle(a Action, p *prep, v policy.Verdict) string {
 	switch {
 	case v.Has(policy.Payment) && label != "":
 		return fmt.Sprintf("Pay: “%s”?", label)
+	case a.Tool == "launch" && p.url:
+		return fmt.Sprintf("Open “%s” in %s?", clip(p.link, maxLinkText), appLabel(screen.App{ID: p.launch.ID, Name: p.launch.Name}))
 	case v.Has(policy.SendMessage):
 		if a.Text != "" {
 			return fmt.Sprintf("Send “%s”?", clip(a.Text, 80))
 		}
 		return "Send the message?"
 	case a.Tool == "launch":
-		return fmt.Sprintf("Open %s?", p.launch.Name)
+		return fmt.Sprintf("Open %s%s?", p.launch.Name, localeWords(a))
 	case v.Has(policy.ChangeSetting) && label != "":
 		return fmt.Sprintf("Change “%s”?", label)
-	case label != "":
+	case label != "" && a.Tool != "pinch":
 		return fmt.Sprintf("%s “%s”?", capitalize(verbFor(a)), label)
 	}
 	return capitalize(p.desc) + "?"
@@ -1080,6 +1208,9 @@ func capitalize(s string) string {
 	r := []rune(s)
 	return strings.ToUpper(string(r[0])) + string(r[1:])
 }
+
+// maxLinkText is how much of a link steps and approvals show.
+const maxLinkText = 120
 
 func clip(s string, n int) string {
 	r := []rune(s)
@@ -1311,7 +1442,7 @@ func (g *Gateway) runApproved(ctx context.Context, l *lease, c Call, a Action, i
 		return g.attachScreen(l, statusResult(StatusStale,
 			"The screen changed while the approval waited, so nothing was done. Observe and decide again."), cur)
 	}
-	v := g.evaluate(p, cur)
+	v := g.settingsVerdict(l, a, p, g.evaluate(p, cur))
 	if v.Decision == policy.Deny {
 		res := refusal(v)
 		g.closeStep(info.ID, notRunStatus(res), out.Waited)
@@ -1425,10 +1556,24 @@ func (g *Gateway) execute(ctx context.Context, l *lease, c Call, a Action, p *pr
 	d.inflight = nil
 	g.mu.Unlock()
 	cancel()
+	if p.localeUndo != nil {
+		// The app keeps its language until the task ends.
+		g.mu.Lock()
+		g.noteLanguageLocked(l, p.launch, p.localeUndo)
+		g.mu.Unlock()
+	}
 	if err != nil {
 		res := g.actionError(l, err)
 		g.recordStep(l, step, a, c, p, res, start, before, "", "")
 		return res
+	}
+	if a.Tool == "launch" && !p.url {
+		g.mu.Lock()
+		l.clone = driver.App{}
+		if p.launch.CloneOf != nil {
+			l.clone = p.launch
+		}
+		g.mu.Unlock()
 	}
 	// What the driver could not make sure of, such as typed text it could
 	// not read back.
@@ -1519,7 +1664,7 @@ func (g *Gateway) leaves(a Action, p *prep, cur *screen.Screen) bool {
 	switch {
 	case a.Tool == "key" && a.Key == "home":
 		return !g.policy.IsSystem(cur.App)
-	case a.Tool == "launch" && p != nil && !p.url:
+	case a.Tool == "launch" && p != nil && (p.launch.ID != "" || p.launch.Name != ""):
 		orig := p.launch.Original() // a clone reads as its original
 		to := screen.App{ID: orig.ID, Name: orig.Name}
 		if to.ID == to.Name {
@@ -1645,12 +1790,34 @@ func (g *Gateway) perform(ctx context.Context, dev driver.Device, a Action, p *p
 		return dev.Type(ctx, a.Text, driver.TypeOptions{Append: a.Append, Submit: a.Submit})
 	case "swipe":
 		return dev.Swipe(ctx, p.from, p.to, p.dur)
+	case "pinch":
+		pc, ok := dev.(driver.Pincher)
+		if !ok || p.pinch == nil {
+			return fmt.Errorf("pinching: %w", driver.ErrUnsupported)
+		}
+		return pc.Pinch(ctx, *p.pinch)
 	case "key":
 		return dev.Key(ctx, agentKeys[a.Key])
 	case "launch":
+		if p.url {
+			lo, ok := dev.(driver.LinkOpener)
+			if !ok {
+				return fmt.Errorf("opening links: %w", driver.ErrUnsupported)
+			}
+			return lo.OpenLink(ctx, p.link, p.launch)
+		}
 		id := p.launch.ID
 		if id == "" {
 			id = p.launch.Name
+		}
+		if a.localized() {
+			ll, ok := dev.(driver.LocaleLauncher)
+			if !ok {
+				return fmt.Errorf("this phone opens apps in its own language only: %w", driver.ErrUnsupported)
+			}
+			undo, err := ll.LaunchLocale(ctx, id, a.locale())
+			p.localeUndo = undo
+			return err
 		}
 		return dev.Launch(ctx, id)
 	}
@@ -2131,12 +2298,18 @@ type snapshot struct {
 	// unblock is set when the launch asks to allow a blocked app for the
 	// task: any Allow does (unblock.go).
 	unblock bool
+	// opener is the app that opens a link the person was asked about: the
+	// approval is stale when another would open it now.
+	opener string
 }
 
 func takeSnapshot(s *screen.Screen, p *prep, v policy.Verdict) *snapshot {
 	snap := &snapshot{app: s.App.ID + "\x00" + s.App.Name, point: p.point, text: screenText(s),
 		asks: append([]string(nil), v.Asks...), grantApp: grantApp(p), launch: p.input.Op == policy.OpLaunch,
 		unblock: p.unblock}
+	if p.url {
+		snap.opener = p.launch.ID
+	}
 	if p.target != nil {
 		t := *p.target
 		snap.target = &t
@@ -2148,6 +2321,9 @@ func takeSnapshot(s *screen.Screen, p *prep, v policy.Verdict) *snapshot {
 // that makes the approval stale.
 func (snap *snapshot) changed(cur *screen.Screen, p *prep) bool {
 	if snap.app != cur.App.ID+"\x00"+cur.App.Name {
+		return true
+	}
+	if p.url && snap.opener != p.launch.ID {
 		return true
 	}
 	if (snap.target == nil) != (p.target == nil) {
@@ -2313,6 +2489,8 @@ func describe(a Action, p *prep) string {
 			return "Swiped " + a.Direction
 		}
 		return fmt.Sprintf("Swiped from %d,%d to %d,%d", a.From.X, a.From.Y, a.To.X, a.To.Y)
+	case "pinch":
+		return describePinch(a, label)
 	case "key":
 		return "Pressed " + strings.ReplaceAll(a.Key, "_", " ")
 	case "launch":
@@ -2320,7 +2498,13 @@ func describe(a Action, p *prep) string {
 		if p != nil && p.launch.Name != "" {
 			name = p.launch.Name
 		}
-		return "Opened " + name
+		if p != nil && p.url {
+			if p.launch.Name == "" && p.launch.ID == "" {
+				return fmt.Sprintf("Opened “%s”", clip(p.link, maxLinkText))
+			}
+			return fmt.Sprintf("Opened “%s” in %s", clip(p.link, maxLinkText), appLabel(screen.App{ID: p.launch.ID, Name: p.launch.Name}))
+		}
+		return "Opened " + name + localeWords(a)
 	}
 	return a.Tool
 }
