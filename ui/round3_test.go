@@ -147,6 +147,7 @@ func TestUnlockErrors(t *testing.T) {
 		{errors.Join(errors.New("entered"), driver.ErrLocked), "The saved PIN didn't unlock Mi 10 Pro."},
 		{errors.Join(errors.New("no pad"), driver.ErrPINNotEntered), "Pinky couldn't get to Mi 10 Pro's passcode screen, so it entered nothing."},
 		{secret.ErrNotFound, "No PIN is saved for Mi 10 Pro."},
+		{fmt.Errorf("wrapped: %w", secret.ErrMicrosoftAccount), "To unlock Mi 10 Pro, type your Microsoft account password"},
 		{secret.ErrUnsupported, notAvailableHere},
 		{gateway.ErrNoUnlock, "Unlocking from this computer isn't available."},
 		{driver.ErrOffline, "Mi 10 Pro is offline."},
@@ -618,21 +619,21 @@ func TestRemoteAgents(t *testing.T) {
 	if tt.Clipboard() != "http://127.0.0.1:7465/mcp" {
 		t.Errorf("copied %q", tt.Clipboard())
 	}
-	if err := tt.Click("Copy the command"); err != nil {
+	if err := clickInView(tt, "Copy the command"); err != nil {
 		t.Fatal(err)
 	}
 	want := `claude mcp add --transport http pinky http://127.0.0.1:7465/mcp --header "Authorization: Bearer tok-5ecret"`
 	if tt.Clipboard() != want {
 		t.Errorf("copied %q, want %q", tt.Clipboard(), want)
 	}
-	if err := tt.Click("Show the agent token"); err != nil {
+	if err := clickInView(tt, "Show the agent token"); err != nil {
 		t.Fatal(err)
 	}
 	if !hasText(tt, "tok-5ecret") {
 		t.Errorf("Show does not show the token: %q", tt.Texts())
 	}
 	// A new address, checked, with a warning when others can reach it.
-	if err := tt.Click("Change the address"); err != nil {
+	if err := clickInView(tt, "Change the address"); err != nil {
 		t.Fatal(err)
 	}
 	ta.remote.addr = "not an address"
