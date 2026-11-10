@@ -140,6 +140,11 @@ func (s *Server) session(req *sdk.CallToolRequest, remote bool) *gateway.Session
 		// the last one open: a newer session continues the older ones'.
 		info.Name += RemoteSuffix
 		info.Resume = true
+	} else {
+		// A client on this computer may drop its session and start a new
+		// one, as Claude Desktop does after a call times out: the new one
+		// continues the task the old one left.
+		info.Reconnect = true
 	}
 	gs := s.g.OpenSession(info)
 	s.sessions[req.Session] = gs
@@ -162,10 +167,18 @@ var knownClients = map[string]string{
 	"opencode": "opencode", "continue": "Continue", "mcp-inspector": "MCP Inspector",
 }
 
+// coworkPrefix starts the client names of Claude Desktop's Cowork, which
+// names its MCP client after the server: "local-agent-mode-pinky".
+const coworkPrefix = "local-agent-mode-"
+
 // DisplayName turns an MCP client name into the name shown to the person.
 func DisplayName(name, title string) string {
-	if n, ok := knownClients[strings.ToLower(strings.TrimSpace(name))]; ok {
+	key := strings.ToLower(strings.TrimSpace(name))
+	if n, ok := knownClients[key]; ok {
 		return n
+	}
+	if strings.HasPrefix(key, coworkPrefix) {
+		return "Claude Cowork"
 	}
 	if t := strings.TrimSpace(title); t != "" {
 		return t

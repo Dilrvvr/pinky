@@ -264,7 +264,7 @@ Approvals are decided in the client and enforced in the gateway; the agent only 
 
 ### Policy terms
 
-- **Read-only:** the agent may observe, launch apps, tap, scroll and type into search fields; anything that would be Ask becomes Deny.
+- **Read-only:** the agent may observe, launch apps, tap, scroll and type into search fields (including an app's own search box that reads only as its placeholder at the top of the screen, with the keyboard up and no other field); anything that would be Ask becomes Deny.
 - **Watch-only:** observe only.
 - **Kind:** the rule an approval matched, such as "Payments"; "Always allow payments in Dinely" keeps an exemption for that kind in that app (see [Always allow](#always-allow)).
 - An app outside the agent's scope or the task's allow-list returns `scope_denied`; a blocked app or a Deny rule returns `blocked_by_policy`.
@@ -343,9 +343,10 @@ always_allow:
 - It also allows the rest of the task, as Allow for this task does; that is what covers a task's app list, for that task only.
 - It matches the app by package name or bundle id, and by name when the phone reports no id.
 - While "Ask before every action" is on, exemptions do not apply and the panel does not offer Always allow; they apply again with another preset.
-- The panel offers it only for actions the policy asked about in an app: not for the agent's own questions (`phone_request_approval`), copying files, installing or uninstalling apps, or opening apps and links. Where it cannot be kept it counts as Allow for this task, and on the agent's own questions as Allow once.
+- The panel offers it only for actions the policy asked about in an app: not for the agent's own questions (`phone_request_approval`), copying files, uninstalling apps, or opening apps and links (installing has its own, below). Where it cannot be kept it counts as Allow for this task, and on the agent's own questions as Allow once.
 - The answer is kept when the person gives it, even when the agent's call is no longer waiting for it.
 - Settings › Safety › Always allowed lists the exemptions; removing one makes its rules ask again.
+- Changing a phone's settings (rule "Phone settings"), reading an app's logs (rule "App logs") and installing an app from the computer (rule "Installing from the computer") are asked by the gateway, not by a rule, so their Always allow is kept per agent and phone (per app for logs, per app id and signer for installs) instead: another agent, or the same agent on another phone, still asks, and so does a build of the same id signed by someone else. An install offers it only when no rule of the person's own asks about the app too. It is listed and taken back in Settings › Safety like the others, dropped when the phone is removed, and suspended while every action asks; settings changed under it are still put back when the task ends. Recordings and copying files keep asking.
 - The agent learns of it: the approved call says the rule no longer asks in that app, and a later action that runs because of it says `No approval needed: the person always allows "Payments" in Dinely.`
 - So does whoever reviews the task: the step of an action that ran, or may have, because of it says `Always allowed: “Payments” in Dinely` on its second line, in Activity, on the task card and in the history export, so a payment on a standing answer does not read like one the person allowed just then. The step the person answered with Always allow has no such line.
 
@@ -357,7 +358,7 @@ always_allow:
 - Credentials never reach the model. The gateway refuses `phone_type` into password and one-time-code fields (`blocked_by_policy`, rule: credentials) and tells the agent to call `phone_handoff` (M1). From M2 the client can fill the value from the OS keychain, and the agent only learns that it was filled.
 - Notifications from blocked apps are never listed, matched by the app's id or name. Where another screen shows a blocked app (its notification in the shade, on the lock screen or as a heads-up banner, its card in recent apps), the agent gets one hidden element in its place, covered in screenshots. One-time codes are masked by default, on the screen (elements and OCR lines) and in notifications, and covered in the screenshots agents get and history keeps; recordings are not covered, so an agent gets one only when the person allows it on a card each time it exports a task's report.
 - `phone_files` reaches only the phone's `Pinky/` folder. Writing to the phone is Ask, and read-only mode turns it off.
-- `phone_app` installs only from the phone's folder on the computer, and installing and uninstalling always ask, whatever the preset; Allow for this task covers the same app from the same signer, and there is no Always allow. It never touches Pinky's own apps, system apps, finance apps, password managers or blocked apps ([notes/apps.md](notes/apps.md)).
+- `phone_app` installs only from the phone's folder on the computer, and installing and uninstalling ask, whatever the preset; Allow for this task covers the same app from the same signer, and for installs Always allow does too, for one agent on one phone (above). Uninstalling has no Always allow. It never touches Pinky's own apps, system apps, finance apps, password managers or blocked apps ([notes/apps.md](notes/apps.md)).
 - `phone_logs` reads one app's own lines and crash reports, never another process's, and only of apps in the agent's scope and the task's list; never of blocked, finance, password-manager, system or Pinky's own apps. The first read of an app in a task is Ask (rule `App logs`) unless the app is a development build; history keeps the count, not the text.
 - An agent's first connection needs approval and a scope.
 
@@ -382,7 +383,7 @@ Pinky is one Go program that runs in three modes, with exactly one gateway per u
 
 | Mode | Command | Runs |
 | --- | --- | --- |
-| Desktop app | `pinky` | Gateway and MyGo client in one process, with a menu bar icon; attaches to a running daemon instead of starting a second gateway |
+| Desktop app | `pinky` | Gateway and MyGo client in one process, with a menu bar icon; takes over from a running daemon (which quits; agents reconnect) instead of starting a second gateway, and opened again, brings the running app's window to the front |
 | Headless gateway | `pinky daemon` | Gateway only, for a Mac mini, a NAS, a Linux box or CI |
 | MCP shim | `pinky mcp` | The stdio server agents launch; it forwards to the running gateway, or starts the desktop app in tray mode (the daemon when no desktop session exists) |
 

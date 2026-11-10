@@ -34,13 +34,22 @@ type device struct {
 	// moving is set while the phone moves between its cable and Wi-Fi
 	// (wifi.go): until then calls wait for it to be back.
 	moving time.Time
+	// taskWay is the connection a task moved the phone to without saving
+	// it (taskconn.go), "" while it runs the person's choice; switching is
+	// the way it is moving to now, and switchBack puts it back after the
+	// task.
+	taskWay, switching string
+	switchBack         *time.Timer
 	// closing is closed once the last session's Close returned, so the
 	// next one does not start while it stops.
 	closing      chan struct{}
 	removed      bool // the person removed it (remove.go); a new device takes its place if it comes back
 	offlineSince time.Time
 	offlineWhy   string
-	lease        *lease
+	// openErr is why the last Open failed, nil once it opened: a task
+	// that moved the phone tells the agent the real reason (taskconn.go).
+	openErr error
+	lease   *lease
 	// person is true while the person is in control (took over). It belongs
 	// to the device, not the lease: only HandBack clears it, so an agent
 	// cannot get control back by starting another task.
@@ -63,6 +72,10 @@ type device struct {
 	// result, already filtered by the policy.
 	events []screen.Event
 	last   *screen.Screen // the last raw observation
+	// treeless is the app whose screen OCR read while its tree stayed
+	// sparse for all of treeWait (awaitTree): its reads are not waited
+	// for again until another app shows a sparse tree.
+	treeless screen.App
 	// ocr is set once a read with OCR returned OCR lines: the phone's
 	// driver reads text from the pixels (iPhone), so a tap on text that
 	// only OCR sees is checked against it (ocrForVerdict).

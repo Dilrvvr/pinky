@@ -7,6 +7,7 @@ import (
 	"math"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/DIYgod/pinky/internal/approval"
@@ -28,6 +29,10 @@ var (
 
 // unlockNeedPrefix starts the ids of unlock cards: "unlock:<device id>".
 const unlockNeedPrefix = "unlock:"
+
+// setupNeedPrefix starts the ids of the cards of a step the person does
+// on the phone for a task: "setup:<device id>".
+const setupNeedPrefix = "setup:"
 
 // Devices implements API.
 func (g *Gateway) Devices() []DeviceView {
@@ -78,6 +83,10 @@ func featuresOf(dev driver.Device) Features {
 func (g *Gateway) statusLocked(d *device, open []approval.Info) (DeviceStatus, string) {
 	l := d.lease
 	if !d.online {
+		if d.switching != "" && !waitsForStep(d.info.State) {
+			// Moving to another connection for a task (taskconn.go).
+			return DeviceConnecting, switchingLine(d)
+		}
 		if d.opening && d.info.State == driver.StateOnline {
 			return DeviceConnecting, connectingLine(d)
 		}
@@ -210,8 +219,28 @@ func (g *Gateway) Needs() []NeedView {
 				Detail:  fmt.Sprintf("%s is waiting for the phone to unlock · %s", l.session.agent.Name, l.task.title),
 				Created: time.Now()})
 		}
+		if n, ok := setupNeedLocked(d); ok {
+			out = append(out, n)
+		}
 	}
 	return out
+}
+
+// setupNeedLocked is the Needs you card of a task whose phone waits for
+// the person to do a step on the phone itself: for now the passcode iOS
+// asks before the WebDriverAgent helper may control the phone, a prompt
+// that goes away by itself unless someone sees it in time. The caller
+// holds g.mu.
+func setupNeedLocked(d *device) (NeedView, bool) {
+	l := d.lease
+	if l == nil || l.ended || !waitingLocked(d) || d.info.Setup != driver.SetupPasscode {
+		return NeedView{}, false
+	}
+	return NeedView{ID: setupNeedPrefix + d.id, Kind: NeedSetup, DeviceID: d.id, DeviceName: d.name(),
+		Agent: l.session.agent.Name, TaskID: l.task.id, Title: "Enter the passcode on " + d.name(),
+		Detail: fmt.Sprintf("iOS asks for it on the phone before the WebDriverAgent helper can control it, and stops asking after a while. %s is waiting · %s",
+			l.session.agent.Name, l.task.title),
+		Created: time.Now()}, true
 }
 
 // History implements API.
@@ -277,6 +306,9 @@ func (g *Gateway) Decide(needID string, d Decision, note string) error {
 			return nil
 		}
 		return g.Unlock(dev)
+	}
+	if strings.HasPrefix(needID, setupNeedPrefix) {
+		return nil // it goes once the phone is ready
 	}
 	info, err := g.approvals.Get(needID)
 	if err != nil {
@@ -645,12 +677,23 @@ func (g *Gateway) BlockedApps(ctx context.Context) []policy.BlockedApp {
 		}
 	}
 	g.mu.Unlock()
+	// Each phone at once: an iPhone over Wi-Fi takes seconds to list its
+	// apps, and one after another the phones listed last ran out of ctx's
+	// time and their blocked apps were missing.
+	lists := make([][]driver.App, len(devs))
+	var wg sync.WaitGroup
+	for i, dev := range devs {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			if apps, err := dev.Apps(ctx); err == nil {
+				lists[i] = apps
+			}
+		}()
+	}
+	wg.Wait()
 	var installed []screen.App
-	for _, dev := range devs {
-		apps, err := dev.Apps(ctx)
-		if err != nil {
-			continue
-		}
+	for _, apps := range lists {
 		for _, a := range apps {
 			if a.CloneOf != nil {
 				continue // blocked or not with the app it copies

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"image"
 	"math"
+	"runtime"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -59,6 +60,9 @@ type mirror struct {
 	scrollAt  screen.Point // where its finger started
 	scrollPos [2]float64   // where its finger is
 	scrollSeq int
+	wheel     *wheelGlide  // a mouse wheel's notches gliding the finger (mirrorwheel.go)
+	wheelSent [2]float64   // how far the finger has moved along wheel
+	wheelTick bool         // wheel's finger is gliding, a tick to come
 	pinch     *mirrorPinch // two fingers are down (mirrorpinch.go)
 	compose   string       // an input method's composition
 }
@@ -344,6 +348,10 @@ func (a *app) mirrorView(c *mg.Context, m *mirror, d gateway.DeviceView, t *gate
 	// person uses the phone's screen.
 	locked := a.isLocked(d) && !m.agent
 	step, kind, outline := overlayStep(t)
+	var way shotMarks
+	if outline && kind == stepWait {
+		way = a.waitingWay(t, step)
+	}
 	scr := mg.Box(c).Fill().Radius(radius).Clip().Background(hex("#000000"))
 	switch {
 	case m.agent:
@@ -392,7 +400,7 @@ func (a *app) mirrorView(c *mg.Context, m *mirror, d gateway.DeviceView, t *gate
 			// an iPhone differ from the picture's by about 1%, so an
 			// outline at the edge may reach a little past it.
 			pt.Clip(r, radius, func() {
-				drawOverlay(pt, r, p, step, kind, float32(m.picW), float32(m.picH), tile)
+				drawOverlay(pt, r, p, step, kind, way, float32(m.picW), float32(m.picH), tile)
 			})
 		}
 		if !tile {
@@ -470,9 +478,27 @@ func mirrorError(err error) string {
 	return locales.MirrorNoPicture(msg)
 }
 
+// waitingWay is how the finger of the step that waits for the person
+// would move (a swipe's, a drag's or a pinch's way), from the step's
+// approval: the step itself keeps only its target and first point. It is
+// empty for other steps.
+func (a *app) waitingWay(t *gateway.TaskView, s gateway.StepView) shotMarks {
+	for _, n := range a.needs {
+		if n.Kind != gateway.NeedApproval || n.TaskID != t.ID || !(n.Created.Equal(s.At) || n.Target == s.Target) {
+			continue
+		}
+		if m := marksOf(n); m.swipe() {
+			return m
+		}
+	}
+	return shotMarks{}
+}
+
 // drawOverlay outlines the step's target and, while the agent touches,
-// draws the touch with two ripples, as the prototype does.
-func drawOverlay(pt *mg.Painter, r mg.Rect, p *palette, s gateway.StepView, kind stepKind, pw, ph float32, tile bool) {
+// draws the touch with two ripples, as the prototype does. A step that
+// waits for the person to allow a swipe, a drag or a pinch also shows the
+// finger's way (way), as its approval card does.
+func drawOverlay(pt *mg.Painter, r mg.Rect, p *palette, s gateway.StepView, kind stepKind, way shotMarks, pw, ph float32, tile bool) {
 	sx, sy := r.W/pw, r.H/ph
 	if !s.Target.Empty() {
 		box := mg.Rect{
@@ -484,6 +510,18 @@ func drawOverlay(pt *mg.Painter, r mg.Rect, p *palette, s gateway.StepView, kind
 			width = 1.5
 		}
 		pt.Stroke(box, p.ovl, min(16, box.H/2), width)
+	}
+	if way.swipe() {
+		at := func(q screen.Point) mg.Point { return mg.Point{X: r.X + float32(q.X)*sx, Y: r.Y + float32(q.Y)*sy} }
+		var route []mg.Point
+		for _, q := range way.route() {
+			route = append(route, at(q))
+		}
+		halo := mg.RGBA(255, 255, 255, 0.92)
+		drawArrow(pt, route, tile, p.ovl, halo)
+		if way.pinch() {
+			drawArrow(pt, []mg.Point{at(way.point2), at(way.to2)}, tile, p.ovl, halo)
+		}
 	}
 	if kind != stepNow || s.Point == (screen.Point{}) {
 		return
@@ -536,7 +574,8 @@ func (a *app) mirrorInput(m *mirror, d gateway.DeviceView, ev mg.InputEvent) boo
 	liftScroll := func() {
 		if m.scrolling {
 			m.scrolling = false
-			touch(driver.TouchUp, screen.Point{X: clampInt(int(m.scrollPos[0]), 0, m.picW-1), Y: clampInt(int(m.scrollPos[1]), 0, m.picH-1)})
+			m.wheel, m.wheelTick = nil, false
+			touch(driver.TouchUp, m.scrollPoint())
 		}
 	}
 	switch ev.Kind {
@@ -645,32 +684,25 @@ func (m *mirror) toDevice(x, y float32) screen.Point {
 
 // mirrorScroll turns a wheel or touchpad scroll into a finger dragging the
 // content: down where the pointer is, moving against the scroll, and up
-// once the scrolling stops.
+// once the scrolling stops. A touchpad's scroll moves the finger as it
+// comes, and its momentum keeps it moving; a mouse wheel's notches glide
+// it (mirrorWheel).
 func (a *app) mirrorScroll(m *mirror, id string, ev mg.InputEvent, toDevice func(x, y float32) screen.Point, touch func(driver.TouchAction, screen.Point)) {
+	if !ev.Precise {
+		a.mirrorWheel(m, ev, toDevice, touch)
+		return
+	}
 	sx := float64(m.picW) / float64(m.boxW)
 	sy := float64(m.picH) / float64(m.boxH)
-	dx, dy := -float64(ev.DX)*sx, -float64(ev.DY)*sy
-	if !ev.Precise {
-		dx, dy = dx*2.5, dy*2.5 // a wheel's notch moves the content further than a touchpad's pixels
+	if m.wheel != nil {
+		// A touchpad after a wheel: the finger goes on from where the
+		// wheel's notches put it.
+		off, _ := m.wheel.at(time.Now().Add(time.Hour))
+		m.wheelMove(off, touch)
+		m.wheel, m.wheelTick = nil, false
 	}
-	if !m.scrolling {
-		m.scrolling = true
-		m.scrollAt = toDevice(ev.X, ev.Y)
-		m.scrollPos = [2]float64{float64(m.scrollAt.X), float64(m.scrollAt.Y)}
-		touch(driver.TouchDown, m.scrollAt)
-	}
-	nx, ny := m.scrollPos[0]+dx, m.scrollPos[1]+dy
-	out := nx < 0 || ny < 0 || nx >= float64(m.picW) || ny >= float64(m.picH)
-	if out {
-		// The finger reached the edge: lift it and start again.
-		last := screen.Point{X: clampInt(int(m.scrollPos[0]), 0, m.picW-1), Y: clampInt(int(m.scrollPos[1]), 0, m.picH-1)}
-		touch(driver.TouchUp, last)
-		touch(driver.TouchDown, m.scrollAt)
-		nx, ny = float64(m.scrollAt.X)+dx, float64(m.scrollAt.Y)+dy
-	}
-	m.scrollPos = [2]float64{nx, ny}
-	pos := screen.Point{X: clampInt(int(nx), 0, m.picW-1), Y: clampInt(int(ny), 0, m.picH-1)}
-	touch(driver.TouchMove, pos)
+	m.scrollStart(toDevice(ev.X, ev.Y), touch)
+	pos := m.scrollBy(-float64(ev.DX)*sx, -float64(ev.DY)*sy, touch)
 	m.scrollSeq++
 	seq := m.scrollSeq
 	time.AfterFunc(140*time.Millisecond, func() {
@@ -681,6 +713,105 @@ func (a *app) mirrorScroll(m *mirror, id string, ev mg.InputEvent, toDevice func
 			}
 		})
 	})
+}
+
+// mirrorWheel glides the scrolling finger by a mouse wheel's notches
+// (mirrorwheel.go): a move every wheelTick while they move it, then up, at
+// once when the wheel was spinning so that the phone flings, or after
+// wheelHold at rest.
+func (a *app) mirrorWheel(m *mirror, ev mg.InputEvent, toDevice func(x, y float32) screen.Point, touch func(driver.TouchAction, screen.Point)) {
+	d := float64(m.boxH) * wheelNotch
+	dx := -wheelNotches(ev.DX, runtime.GOOS) * d * float64(m.picW) / float64(m.boxW)
+	dy := -wheelNotches(ev.DY, runtime.GOOS) * d * float64(m.picH) / float64(m.boxH)
+	if dx == 0 && dy == 0 {
+		return
+	}
+	m.scrollStart(toDevice(ev.X, ev.Y), touch)
+	if m.wheel == nil {
+		m.wheel = &wheelGlide{}
+		m.wheelSent = [2]float64{}
+	}
+	m.wheel.add(time.Now(), dx, dy)
+	m.scrollSeq++ // no lift at rest: the finger moves on
+	if m.wheelTick {
+		return // the running tick takes the notch along
+	}
+	m.wheelTick = true
+	g := m.wheel
+	lift := func(pos screen.Point) {
+		m.scrolling = false
+		m.wheel, m.wheelTick = nil, false
+		touch(driver.TouchUp, pos)
+	}
+	var tick func()
+	tick = func() {
+		if m.wheel != g || !m.scrolling {
+			return // lifted meanwhile
+		}
+		off, moving := g.at(time.Now())
+		pos := m.wheelMove(off, touch)
+		if moving {
+			time.AfterFunc(wheelTick, func() { a.post(tick) })
+			return
+		}
+		m.wheelTick = false
+		if g.spinning() {
+			lift(pos) // moving still: the phone flings
+			return
+		}
+		seq := m.scrollSeq
+		time.AfterFunc(wheelHold, func() {
+			a.post(func() {
+				if m.scrollSeq == seq && m.scrolling && m.wheel == g {
+					lift(pos)
+				}
+			})
+		})
+	}
+	tick()
+}
+
+// wheelMove moves the wheel's finger to off from where its notches began
+// and returns where it is.
+func (m *mirror) wheelMove(off [2]float64, touch func(driver.TouchAction, screen.Point)) screen.Point {
+	dx, dy := off[0]-m.wheelSent[0], off[1]-m.wheelSent[1]
+	m.wheelSent = off
+	if dx == 0 && dy == 0 {
+		return m.scrollPoint()
+	}
+	return m.scrollBy(dx, dy, touch)
+}
+
+// scrollStart puts the scrolling finger down at p unless it is down.
+func (m *mirror) scrollStart(p screen.Point, touch func(driver.TouchAction, screen.Point)) {
+	if m.scrolling {
+		return
+	}
+	m.scrolling = true
+	m.scrollAt = p
+	m.scrollPos = [2]float64{float64(p.X), float64(p.Y)}
+	touch(driver.TouchDown, p)
+}
+
+// scrollBy moves the scrolling finger by dx, dy device pixels and returns
+// where it is.
+func (m *mirror) scrollBy(dx, dy float64, touch func(driver.TouchAction, screen.Point)) screen.Point {
+	nx, ny := m.scrollPos[0]+dx, m.scrollPos[1]+dy
+	if nx < 0 || ny < 0 || nx >= float64(m.picW) || ny >= float64(m.picH) {
+		// The finger reached the edge: lift it and start again.
+		touch(driver.TouchUp, m.scrollPoint())
+		touch(driver.TouchDown, m.scrollAt)
+		nx, ny = float64(m.scrollAt.X)+dx, float64(m.scrollAt.Y)+dy
+	}
+	m.scrollPos = [2]float64{nx, ny}
+	pos := m.scrollPoint()
+	touch(driver.TouchMove, pos)
+	return pos
+}
+
+// scrollPoint is where the scrolling finger is, on the screen.
+func (m *mirror) scrollPoint() screen.Point {
+	return screen.Point{X: clampInt(int(m.scrollPos[0]), 0, m.picW-1), Y: clampInt(int(m.scrollPos[1]), 0, m.picH-1)}
 }
 
 // driverKey maps the keys that type no text.

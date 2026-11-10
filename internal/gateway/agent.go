@@ -30,6 +30,11 @@ type AgentInfo struct {
 	// approvals, and a Stop (resume.go). Agents over HTTP, whose clients
 	// may open a session for every call.
 	Resume bool
+	// Reconnect lets a newer session of this agent continue a lease its
+	// older session left when it closed, or that phone_connect names by
+	// its task (resume.go). Agents on this computer, whose client may drop
+	// a session and start a new one.
+	Reconnect bool
 }
 
 // Status is the outcome of a call, from DESIGN.md's Results table.
@@ -142,6 +147,15 @@ type ConnectRequest struct {
 	// ReadOnly runs the task read-only, whatever the agent's scope: the
 	// agent can ask for less than the person gave it, never more.
 	ReadOnly bool
+	// OwnScreen runs the task on the phone's own screen even when the
+	// person has agents work on a background display, which has no home
+	// screen: for work on the home screen itself (useOwnScreen).
+	OwnScreen bool
+	// Connection asks for a way to connect the phone for this task, as
+	// TaskConnection reads it: "helper" (the iPhone's WebDriverAgent
+	// helper, which shares no screen), "coredevice", or "auto"/"" for
+	// Pinky's choice (taskconn.go).
+	Connection string
 }
 
 // ReleaseRequest is phone_release.
@@ -268,7 +282,7 @@ func (s *Session) Agent() AgentInfo { return s.agent }
 // withdrawn without acting.
 // For an agent whose sessions resume, its leases wait a while for its
 // next session instead (resume.go).
-func (s *Session) Close() { s.end(OutcomeDisconnected, s.agent.Resume) }
+func (s *Session) Close() { s.end(OutcomeDisconnected, s.agent.Resume || s.agent.Reconnect) }
 
 // CloseNow ends the session like Close, and its leases at once.
 func (s *Session) CloseNow() { s.end(OutcomeDisconnected, false) }
@@ -315,10 +329,10 @@ func (s *Session) acquire(ref string) (*lease, *Result) {
 			return nil, statusResult(StatusStopped, "The person stopped the task on %s and its lease is gone. End the task.", d.name())
 		}
 		if l = s.leases[d.id]; l == nil {
-			if res := g.busyElsewhereLocked(s, d); res != nil {
+			if res := g.busyElsewhereLocked(s, d, ""); res != nil {
 				return nil, res
 			}
-			if l = g.adoptLocked(s, d); l == nil {
+			if l = g.adoptLocked(s, d, ""); l == nil {
 				return nil, errResult(ErrInvalidArgument, "This session is not connected to %s; call phone_connect with device %q first.", d.name(), d.id)
 			}
 		}
@@ -327,7 +341,7 @@ func (s *Session) acquire(ref string) (*lease, *Result) {
 			// A newer session of an agent that resumes: the one phone its
 			// older sessions left.
 			if ds := g.adoptableLocked(s); len(ds) == 1 {
-				g.adoptLocked(s, ds[0])
+				g.adoptLocked(s, ds[0], "")
 			}
 		}
 		switch len(s.leases) {
@@ -435,12 +449,17 @@ func (g *Gateway) deviceListLocked() string {
 // returns the first screen.
 func (s *Session) Connect(ctx context.Context, req ConnectRequest) *Result {
 	g := s.g
+	ctx = g.withBudget(ctx) // the agent's approval and the first read share it
 	title := strings.TrimSpace(req.Task)
 	if title == "" {
 		return errResult(ErrInvalidArgument, "task is required: one line naming the task, shown to the person.")
 	}
 	if r := []rune(title); len(r) > 200 {
 		title = string(r[:200])
+	}
+	way, ok := TaskConnection(req.Connection)
+	if !ok {
+		return errResult(ErrInvalidArgument, "connection must be auto, helper or coredevice, not %q.", req.Connection)
 	}
 	if res := s.approveAgent(ctx, req.Call, title, req.ReadOnly); res != nil {
 		return res
@@ -507,11 +526,16 @@ func (s *Session) Connect(ctx context.Context, req ConnectRequest) *Result {
 		g.mu.Unlock()
 		return errResult(ErrDeviceOffline, "%s is offline.", d.name())
 	}
-	if res := g.busyElsewhereLocked(s, d); res != nil {
+	if res := g.busyElsewhereLocked(s, d, title); res != nil {
 		g.mu.Unlock()
 		return res
 	}
-	g.adoptLocked(s, d)
+	g.adoptLocked(s, d, title)
+	if l := d.lease; l != nil && l.session != s && l.session.closed && !l.session.agent.Resume && l.inflight == 0 {
+		// Kept for a local agent's next session (resume.go), which has
+		// not come: it does not keep the phone from anyone else.
+		g.endLeaseLocked(l, OutcomeDisconnected, "")
+	}
 	if l := d.lease; l != nil && l.session != s {
 		holder := fmt.Sprintf("%s · %s", l.session.agent.Name, l.task.title)
 		g.mu.Unlock()
@@ -536,7 +560,16 @@ func (s *Session) Connect(ctx context.Context, req ConnectRequest) *Result {
 		if len(req.Apps) > 0 {
 			unknown = g.resolveTaskApps(ctx, l)
 		}
-		return readOnlyNote(withUnknownApps(g.firstScreen(ctx, l), unknown), ro)
+		if req.OwnScreen && g.useOwnScreen(l) {
+			// The person sees the task change screens, and why.
+			g.addStep(l, connectStep(d.name(), title, req, true))
+			g.emit(Event{Kind: EventTasks, DeviceID: d.id, TaskID: l.task.id})
+		}
+		if res, note := g.taskConnection(ctx, l, way); res != nil {
+			return res
+		} else {
+			return withNote(readOnlyNote(withUnknownApps(g.firstScreen(ctx, l), unknown), ro), note)
+		}
 	} else if l != nil {
 		g.endLeaseLocked(l, OutcomeReplaced, "")
 	}
@@ -548,19 +581,15 @@ func (s *Session) Connect(ctx context.Context, req ConnectRequest) *Result {
 
 	unknown := g.resolveTaskApps(ctx, l)
 	g.recordSession(s)
-	args := map[string]any{"task": title}
-	if len(req.Apps) > 0 {
-		args["apps"] = req.Apps
-	}
-	text := fmt.Sprintf("Connected to %s for “%s”", d.name(), title)
-	if req.ReadOnly {
-		args["read_only"] = true
-		text += ", read only"
-	}
-	g.addStep(l, StepView{Tool: "phone_connect", Args: argsJSON(args), Text: text, Status: string(StatusSettled), At: time.Now()})
+	own := req.OwnScreen && g.useOwnScreen(l)
+	g.addStep(l, connectStep(d.name(), title, req, own))
 	g.emit(Event{Kind: EventTasks, DeviceID: d.id, TaskID: l.task.id})
 	g.emit(Event{Kind: EventDevices, DeviceID: d.id})
-	return readOnlyNote(withUnknownApps(g.firstScreen(ctx, l), unknown), req.ReadOnly)
+	res, note := g.taskConnection(ctx, l, way)
+	if res != nil {
+		return res
+	}
+	return withNote(readOnlyNote(withUnknownApps(g.firstScreen(ctx, l), unknown), req.ReadOnly), note)
 }
 
 // waitingLocked reports whether a phone is connected but not open because
@@ -587,6 +616,8 @@ func setupResultLocked(d *device, first string) *Result {
 		msg += " Pinky cannot use the phone until the person updates it: tell them, and end the task."
 	case driver.SetupUSBDriver:
 		msg += " Ask the person to install the driver with phone_handoff. Afterwards the phone shows up under another device id: call phone_connect again."
+	case driver.SetupPasscode:
+		msg += " Pinky shows the person a card in Needs you asking for it, but iOS stops asking after a while: call phone_handoff now to wait until they entered it (say so in reason); the handoff ends by itself once the phone is ready."
 	case driver.SetupPhoneChanged:
 		msg += " Pinky will not use it until the person trusts it on its page in Pinky or plugs the phone in: tell them, and end the task."
 	default:
@@ -598,6 +629,29 @@ func setupResultLocked(d *device, first string) *Result {
 		res.Setup = driver.FixAuthorize // as the checkup names it (ConnectionChecks)
 	}
 	return res
+}
+
+// connectStep is the history step of phone_connect. own says the task
+// left the background display the person chose for the phone's own
+// screen, as the agent asked.
+func connectStep(device, title string, req ConnectRequest, own bool) StepView {
+	args := map[string]any{"task": title}
+	if len(req.Apps) > 0 {
+		args["apps"] = req.Apps
+	}
+	text := fmt.Sprintf("Connected to %s for “%s”", device, title)
+	if req.ReadOnly {
+		args["read_only"] = true
+		text += ", read only"
+	}
+	if own {
+		args["own_screen"] = true
+		text += ", on the phone's own screen"
+	}
+	if c := strings.TrimSpace(req.Connection); c != "" {
+		args["connection"] = c
+	}
+	return StepView{Tool: "phone_connect", Args: argsJSON(args), Text: text, Status: string(StatusSettled), At: time.Now()}
 }
 
 // readOnlyNote tells an agent that asked for read-only what that means.
@@ -730,7 +784,7 @@ func (g *Gateway) firstScreen(ctx context.Context, l *lease) *Result {
 		return g.finish(l, res)
 	}
 	g.mu.Unlock()
-	ctx, cancel := mergeCtx(ctx, l.ctx)
+	ctx, cancel := g.callCtx(ctx, l)
 	defer cancel()
 	g.readyScreen(ctx, l)
 	g.mu.Lock()
@@ -751,7 +805,7 @@ func (g *Gateway) firstScreen(ctx context.Context, l *lease) *Result {
 	g.mu.Unlock()
 	if onBG {
 		// A background display starts empty, without a home screen.
-		res.Message += " This task runs on a background display of the phone, which starts empty and has no home screen: open apps with phone_launch."
+		res.Message += " This task runs on a background display of the phone, which starts empty and has no home screen: open apps with phone_launch. " + ownScreenHint
 	}
 	switch {
 	case person:
@@ -959,7 +1013,7 @@ func (s *Session) Release(ctx context.Context, req ReleaseRequest) *Result {
 	if req.Device != "" {
 		d := g.findDeviceLocked(req.Device)
 		if d != nil && s.leases[d.id] == nil {
-			g.adoptLocked(s, d)
+			g.adoptLocked(s, d, "")
 		}
 		if d == nil || s.leases[d.id] == nil {
 			g.mu.Unlock()
@@ -969,7 +1023,7 @@ func (s *Session) Release(ctx context.Context, req ReleaseRequest) *Result {
 	} else {
 		if len(s.leases) == 0 {
 			for _, d := range g.adoptableLocked(s) {
-				g.adoptLocked(s, d)
+				g.adoptLocked(s, d, "")
 			}
 		}
 		for _, l := range s.leases {
@@ -1073,7 +1127,7 @@ func (s *Session) Observe(ctx context.Context, req ObserveRequest) *Result {
 	}
 	defer s.done(l)
 	g := s.g
-	ctx, cancel := mergeCtx(ctx, l.ctx)
+	ctx, cancel := g.callCtx(ctx, l)
 	defer cancel()
 	if res := g.gate(l, req.ApprovalID, false); res != nil {
 		return g.finish(l, res)
@@ -1217,14 +1271,16 @@ func (s *Session) WaitFor(ctx context.Context, req WaitForRequest) *Result {
 	}
 	defer s.done(l)
 	g := s.g
-	ctx, cancel := mergeCtx(ctx, l.ctx)
+	ctx, cancel := g.callCtx(ctx, l)
 	defer cancel()
 	if res := g.gate(l, req.ApprovalID, false); res != nil {
 		return g.finish(l, res)
 	}
 	g.readyScreen(ctx, l)
 	start := time.Now()
-	deadline := start.Add(timeout)
+	// A wait ends with the call's budget too (budget.go), with what the
+	// last read showed.
+	deadline := budgetBefore(ctx, start.Add(timeout), 0)
 	lastProgress := start
 	var cur *screen.Screen
 	matched := false
@@ -1237,11 +1293,14 @@ func (s *Session) WaitFor(ctx context.Context, req WaitForRequest) *Result {
 	// the one that appeared, or the one that keeps a Gone wait waiting.
 	shown := ""
 	for first := true; ; first = false {
-		var err error
-		cur, err = g.observe(ctx, l.dev, false)
+		read, err := g.observe(ctx, l.dev, false)
+		if err != nil && cur != nil && errors.Is(err, errOutOfTime) {
+			break
+		}
 		if err != nil {
 			return g.finish(l, g.readError(l, err))
 		}
+		cur = read
 		if first && area != nil && cur.Width > 0 && cur.Height > 0 && (area.X >= cur.Width || area.Y >= cur.Height) {
 			return g.finish(l, errResult(ErrInvalidArgument, "area starts outside the screen, which is %dx%d.", cur.Width, cur.Height))
 		}
@@ -1288,7 +1347,7 @@ func (s *Session) WaitFor(ctx context.Context, req WaitForRequest) *Result {
 	res.Status = StatusSettled
 	res.Matched = &matched
 	took := timeout
-	if matched {
+	if matched || time.Since(start) < timeout {
 		took = time.Since(start)
 	}
 	res.Message = waitMessage(texts, shown, req.Gone, matched, area != nil, took)
@@ -1440,7 +1499,7 @@ func (s *Session) Apps(ctx context.Context, req AppsRequest) *Result {
 	}
 	defer s.done(l)
 	g := s.g
-	ctx, cancel := mergeCtx(ctx, l.ctx)
+	ctx, cancel := g.callCtx(ctx, l)
 	defer cancel()
 	if res := g.gate(l, req.ApprovalID, false); res != nil {
 		return g.finish(l, res)
@@ -1507,7 +1566,7 @@ func (s *Session) RequestApproval(ctx context.Context, req ApprovalRequest) *Res
 	}
 	defer s.done(l)
 	g := s.g
-	ctx, cancel := mergeCtx(ctx, l.ctx)
+	ctx, cancel := g.callCtx(ctx, l)
 	defer cancel()
 	if res := g.gate(l, req.ApprovalID, true); res != nil {
 		return g.finish(l, res)
@@ -1585,7 +1644,7 @@ func (s *Session) Handoff(ctx context.Context, req HandoffRequest) *Result {
 	}
 	defer s.done(l)
 	g := s.g
-	ctx, cancel := mergeCtx(ctx, l.ctx)
+	ctx, cancel := g.callCtx(ctx, l)
 	defer cancel()
 	// A phone that waits for a step is what a handoff is for: it passes
 	// the gate that holds other calls (device_needs_setup).
@@ -1733,15 +1792,25 @@ func (s *Session) Batch(ctx context.Context, req BatchRequest) *Result {
 	}
 	defer s.done(l)
 	g := s.g
-	ctx, cancel := mergeCtx(ctx, l.ctx)
+	ctx, cancel := g.callCtx(ctx, l)
 	defer cancel()
 	out := &Result{Status: StatusSettled}
+	// The longest step so far: the next step starts only while the call's
+	// budget has room for one like it (budget.go).
+	var longest time.Duration
+	outOfTime := false
 	for i, a := range req.Steps {
+		if left, ok := budgetLeft(ctx); i > 0 && ok && left < max(longest, minBatchStep) {
+			outOfTime = true
+			break
+		}
 		c := Call{Device: req.Device, Intent: req.Intent, ApprovalID: a.ApprovalID, Progress: req.Progress, reuse: i > 0}
 		if a.Intent != "" {
 			c.Intent = a.Intent
 		}
+		start := time.Now()
 		r := g.finish(l, g.act(ctx, l, c, a))
+		longest = max(longest, time.Since(start))
 		out.Steps = append(out.Steps, r)
 		if r.IsError() || r.Status != StatusSettled {
 			break
@@ -1750,11 +1819,28 @@ func (s *Session) Batch(ctx context.Context, req BatchRequest) *Result {
 	last := out.Steps[len(out.Steps)-1]
 	out.Status, out.Error, out.ApprovalID, out.Rule, out.Note = last.Status, last.Error, last.ApprovalID, last.Rule, last.Note
 	out.Screen = last.Screen
-	if n, total := len(out.Steps), len(req.Steps); n < total {
+	n, total := len(out.Steps), len(req.Steps)
+	switch {
+	case outOfTime:
+		out.Message = fmt.Sprintf("Ran %s of %d, then stopped: the phone is answering slowly and the call's %s were running out. Not done: %s; continue with it in a new call.",
+			stepSpan(1, n), total, human(g.opt.CallBudget), stepSpan(n+1, total))
+	case n < total:
 		out.Message = fmt.Sprintf("Stopped at step %d of %d.", n, total)
 	}
 	return g.finish(l, out)
 }
+
+// stepSpan names steps from to to: "step 3" or "steps 1-2".
+func stepSpan(from, to int) string {
+	if from == to {
+		return fmt.Sprintf("step %d", from)
+	}
+	return fmt.Sprintf("steps %d-%d", from, to)
+}
+
+// minBatchStep is the least of the call's budget a phone_batch step starts
+// with.
+const minBatchStep = 5 * time.Second
 
 func sleepCtx(ctx context.Context, d time.Duration, wake <-chan struct{}) bool {
 	t := time.NewTimer(d)

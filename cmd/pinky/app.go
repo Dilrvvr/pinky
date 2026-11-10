@@ -6,10 +6,12 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"hash/fnv"
 	"io"
 	"log/slog"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -18,10 +20,12 @@ import (
 
 	"github.com/DIYgod/pinky"
 	"github.com/DIYgod/pinky/internal/api"
+	"github.com/DIYgod/pinky/internal/driver"
 	"github.com/DIYgod/pinky/internal/gateway"
 	"github.com/DIYgod/pinky/internal/policy"
 	"github.com/DIYgod/pinky/internal/screen"
 	"github.com/DIYgod/pinky/internal/secret"
+	"github.com/DIYgod/pinky/internal/update"
 	"github.com/DIYgod/pinky/ui"
 )
 
@@ -37,16 +41,27 @@ func runApp(args []string) error {
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
+	// Opened from its icon, Pinky has no terminal for its errors: say in a
+	// dialog why it could not start. Started in the background, an agent's
+	// `pinky mcp` reads them from the log.
+	var logPath string
+	failed := func(err error) error {
+		if !*background {
+			showStartError(err, logPath)
+		}
+		return err
+	}
 	dirs, err := api.DefaultDirs()
 	if err != nil {
-		return err
+		return failed(err)
 	}
 	if err := dirs.Ensure(); err != nil {
-		return err
+		return failed(err)
 	}
-	logFile, err := openLog(filepath.Join(dirs.Data, "pinky.log"))
+	logPath = filepath.Join(dirs.Data, "pinky.log")
+	logFile, err := openLog(logPath)
 	if err != nil {
-		return err
+		return failed(err)
 	}
 	defer logFile.Close()
 	level := slog.LevelInfo
@@ -56,7 +71,9 @@ func runApp(args []string) error {
 	c.Log = slog.New(slog.NewTextHandler(io.MultiWriter(os.Stderr, logFile), &slog.HandlerOptions{Level: level}))
 	secret.SetLogger(c.Log)
 	crashes := captureCrashes(dirs, "app", c.Log)
-	defer crashes.Stop()
+	// Not a plain Stop: a panic runs deferred calls, and a Stop removed the
+	// crash file before the runtime wrote the panic to it.
+	defer func() { crashes.Exit(recover()) }()
 	c.Crashes = crashes
 
 	settingsPath := filepath.Join(dirs.Config, "settings.json")
@@ -64,15 +81,41 @@ func runApp(args []string) error {
 	var unlock pinSource
 	unlock.on.Store(settings.UnlockFromComputer)
 	c.PIN = unlock.pin
-	rg, err := startGateway(c)
-	if err != nil {
-		var running *api.RunningError
-		if errors.As(err, &running) {
-			return fmt.Errorf("%w; quit the other Pinky (or `pinky daemon`) first", err)
+	// Set when `pinky daemon` takes this app's place (below); it starts
+	// once the gateway here has let go of the socket.
+	var daemon func()
+	defer func() {
+		if daemon != nil {
+			daemon()
 		}
-		return err
+	}()
+	rg, err := startGateway(c)
+	if running := (*api.RunningError)(nil); errors.As(err, &running) {
+		// An agent's `pinky daemon`, or another Pinky window.
+		rg, err = takeOver(c, dirs, *background, startGateway)
+		if errors.Is(err, errShownOther) {
+			c.Log.Info("Pinky is already open: showed its window")
+			return nil
+		}
 	}
+	if err != nil {
+		return failed(err)
+	}
+	// Once the gateway has closed (deferred calls run last to first).
+	var stopADB atomic.Bool
+	stopADB.Store(settings.StopADBOnQuit)
+	var restarting bool
+	defer func() { stopADBAtQuit(stopADB.Load(), c.Fake, restarting, c.Log) }()
 	defer rg.Close()
+	rg.srv.Kind = api.KindApp
+	// Opening Pinky again shows this window (takeOver), once the client
+	// is there to show it.
+	var show atomic.Pointer[func()]
+	rg.srv.Show = func() {
+		if f := show.Load(); f != nil {
+			(*f)()
+		}
+	}
 	unlock.names = rg.G
 	startSettings(rg, settings, c.Log)
 	upd := newUpdater(dirs, c.Log)
@@ -91,8 +134,12 @@ func runApp(args []string) error {
 		}
 	}()
 
+	// Agents' copies of Pinky's skill follow this version.
+	go refreshSkills(c.Log)
 	gatewaySettings(&settings, rg)
-	return ui.Run(clientAPI(rg, tel, c.Fake), ui.Options{
+	ready := false
+	err = ui.Run(clientAPI(rg, tel, c.Fake), ui.Options{
+		BindShow: func(f func()) { show.Store(&f) },
 		Version:  version,
 		Theme:    *theme,
 		Hidden:   *background,
@@ -101,6 +148,7 @@ func runApp(args []string) error {
 			applySettings(rg, old, s, c.Log)
 			applyTelemetry(tel, s)
 			unlock.on.Store(s.UnlockFromComputer)
+			stopADB.Store(s.StopADBOnQuit)
 			if err := saveSettings(settingsPath, s); err != nil {
 				c.Log.Warn("save settings", "err", err)
 			}
@@ -112,16 +160,43 @@ func runApp(args []string) error {
 		Updates:         upd,
 		Changelog:       pinky.Changelog,
 		AgentSetup:      agentSetup(dirs),
+		// For phones that refuse installs over USB.
+		CompanionAPK:  bundledCompanion,
+		RemoteTailnet: remoteTailnet,
 		// What's new in the app's language.
 		ChangelogTranslations: pinky.ChangelogTranslations,
 		// The window is up: an update that just swapped this version in
 		// can drop the old one.
 		OnReady: func(*mygo.Window) {
+			ready = true
 			if err := swapped.Confirm(); err != nil {
 				c.Log.Warn("update: confirm", "err", err)
 			}
 		},
 	})
+	if err != nil && *background && !ready {
+		// No display after all, or the app's libraries are missing. The
+		// gateway was up for a moment, though, and answered the agent whose
+		// `pinky mcp` started this app: too late for the shim to start the
+		// daemon instead (launchGateway). So the app leaves the daemon
+		// behind, and the restart marker keeps the agent's session, as it
+		// does when the app takes over from a daemon (takeOver).
+		c.Log.Warn("Pinky cannot show itself here; pinky daemon takes its place", "err", err)
+		upd.MarkRestart()
+		daemon = func() {
+			mode := daemonMode
+			if c.Fake {
+				mode = fakeMode
+			}
+			if _, err := startDaemon(dirs, mode); err != nil {
+				c.Log.Error("start pinky daemon", "err", err)
+				update.RestartDone(filepath.Dir(upd.StatePath))
+			}
+		}
+	}
+	// Read after MarkRestart above, so a handover keeps adb for the daemon.
+	restarting = update.Restarting(dirs.Config)
+	return err
 }
 
 // openLog opens the app's log for appending, starting over once it passes
@@ -183,17 +258,34 @@ func gatewaySettings(s *ui.Settings, rg *runningGateway) {
 }
 
 // policySettings is gatewaySettings for Settings to read again after hand
-// edits of the rules files: it reads the gateway only when the policy's
-// version is no longer since, which saves listing the phones' apps every
-// few seconds.
+// edits of the rules files, and when phones come online or go: it reads the
+// gateway only when the policy's version or the phones online are no longer
+// since's, which saves listing the phones' apps every few seconds. The
+// list at start is read before Wi-Fi iPhones are online, and missed their
+// banking apps until the policy changed.
 func policySettings(rg *runningGateway, since int) (ui.Settings, int, bool) {
-	v := rg.Policy.Version()
+	v := settingsVersion(rg.Policy.Version(), rg.G.Devices())
 	if v == since {
 		return ui.Settings{}, v, false
 	}
 	var s ui.Settings
 	gatewaySettings(&s, rg)
 	return s, v, true
+}
+
+// settingsVersion combines the policy's version with the phones online
+// into the version policySettings reports: never -1, Settings' "not read".
+func settingsVersion(policyVersion int, devices []gateway.DeviceView) int {
+	var ids []string
+	for _, d := range devices {
+		if d.Info.State == driver.StateOnline {
+			ids = append(ids, d.Info.ID)
+		}
+	}
+	sort.Strings(ids)
+	h := fnv.New32a()
+	fmt.Fprintf(h, "%d\x00%s", policyVersion, strings.Join(ids, "\x00"))
+	return int(h.Sum32() >> 1) // never negative, even where int has 32 bits
 }
 
 // startSettings applies what the gateway takes from Settings at start:
@@ -278,20 +370,24 @@ func applySettings(rg *runningGateway, old, s ui.Settings, log *slog.Logger) {
 	if s.ReadOnly != old.ReadOnly {
 		warn("read-only", rg.G.SetReadOnly("", s.ReadOnly))
 	}
+	// Rows by id and name: two apps may share a name (Trust Bank's iPhone
+	// app and Trust Wallet's Android app), and unblocking one is not
+	// unblocking the other.
+	key := func(b ui.BlockedApp) string { return b.ID + "\x00" + b.Name }
 	was := map[string]ui.BlockedApp{}
 	for _, b := range old.BlockedApps {
-		was[b.Name] = b
+		was[key(b)] = b
 	}
 	now := map[string]bool{}
 	for _, b := range s.BlockedApps {
-		now[b.Name] = true
-		if _, ok := was[b.Name]; !ok {
+		now[key(b)] = true
+		if _, ok := was[key(b)]; !ok {
 			warn("block "+b.Name, rg.G.SetAppBlocked(blockedApp(b), true))
 		}
 	}
-	for name, b := range was {
-		if !now[name] {
-			warn("unblock "+name, rg.G.SetAppBlocked(blockedApp(b), false))
+	for k, b := range was {
+		if !now[k] {
+			warn("unblock "+b.Name, rg.G.SetAppBlocked(blockedApp(b), false))
 		}
 	}
 }

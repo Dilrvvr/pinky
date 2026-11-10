@@ -537,6 +537,8 @@ func hostWords(missing string) string {
 		return locales.CheckHostADBOld()
 	case "adb_restarts":
 		return locales.CheckHostADBRestarts()
+	case "adb_no_network":
+		return locales.CheckHostADBNoNetwork()
 	}
 	return ""
 }
@@ -617,6 +619,9 @@ func (a *app) checkAction(c *mg.Context, d gateway.DeviceView, ck driver.Check) 
 				a.installCompanion(d)
 			}
 		})
+		if !busy {
+			a.companionByHand(c, d)
+		}
 	case driver.FixLocalNetwork:
 		if runtime.GOOS == "darwin" {
 			mg.Row(c).Margin(4, 0, 0, 0).Children(func() {

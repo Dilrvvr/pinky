@@ -1,6 +1,6 @@
 # Pinky MCP reference
 
-Pinky's gateway serves one MCP server, `pinky`, with 19 tools. Agents launch `pinkyctl mcp` (Pinky's executable with the argument `mcp`), a stdio shim that forwards to the running gateway over its user-only Unix socket (and starts the gateway first when none runs: the Pinky app on macOS, `pinky daemon` elsewhere). Agents that cannot start a command can use Streamable HTTP instead (below). The agent-facing guide is [SKILL.md](SKILL.md); the design is in [DESIGN.md](DESIGN.md), section "Agent interface".
+Pinky's gateway serves one MCP server, `pinky`, with 19 tools. Agents launch `pinkyctl mcp` (Pinky's executable with the argument `mcp`), a stdio shim that forwards to the running gateway over its user-only Unix socket, a named pipe on Windows (and starts the gateway first when none runs: the Pinky app on macOS, `pinky daemon` elsewhere). Agents that cannot start a command can use Streamable HTTP instead (below). The agent-facing guide is [SKILL.md](SKILL.md); the design is in [DESIGN.md](DESIGN.md), section "Agent interface".
 
 ## Connecting an agent
 
@@ -13,8 +13,8 @@ Connect adds an MCP server named `pinky` to the agent's own settings, which star
 - Pinky changes nothing until the person clicks Connect (or Update, Fix or Remove) for that agent.
 - Where the agent has a command for its MCP servers, Pinky runs it, found on the `PATH` of the person's login shell and where installers put it: `claude mcp add --scope user pinky -- <path> mcp`, `codex mcp add pinky -- <path> mcp`, `copilot mcp add pinky -- <path> mcp`, `gemini mcp add --scope user pinky <path> mcp`, and `… mcp remove` for Remove. Otherwise Pinky changes the settings file itself, in Pinky's entry only: the rest of the file stays as it was, comments, order and formatting included. Pinky reads the file again after the change and refuses one that would alter anything else, and it leaves a file with a mistake in it alone: Settings says what is wrong where, with Show the file.
 - Before any change Pinky keeps a copy of the file as it was in its data folder, `agents/backups/<agent>/<time>-<file>` (the newest ten for each agent), and Settings offers to show it.
-- It installs Pinky's skill, [SKILL.md](SKILL.md), as `pinky/SKILL.md` in the folder of skills the agent reads: `~/.claude/skills` for Claude Code, `~/.agents/skills` for the agents that share it ([agentskills.io](https://agentskills.io)). Remove takes it out, from `~/.agents/skills` once no agent that reads it has Pinky. A `pinky` skill that is not Pinky's (its front matter names another) stays as it is.
-- An agent is Connected when its entry starts this Pinky (or `pinkyctl`, when that is on the `PATH`) and its skill is this Pinky's. Settings marks an entry that starts a Pinky that is no longer there (the app moved), `pinky` (coreutils' command on many computers, below), another copy of Pinky or something else under the name `pinky`, and an old skill; Update sets it right. The sidebar's card offers Fix for the first two, which leave the agent without Pinky.
+- It installs Pinky's skill, [SKILL.md](SKILL.md), as `pinky/SKILL.md` in the folder of skills the agent reads: `~/.claude/skills` for Claude Code, `~/.agents/skills` for the agents that share it ([agentskills.io](https://agentskills.io)). Remove takes it out, from `~/.agents/skills` once no agent that reads it has Pinky. A `pinky` skill that is not Pinky's (its front matter names another) stays as it is. Each time the app or `pinky daemon` starts, it rewrites every copy of Pinky's skill that an older Pinky installed with its own text, in the background, so the guide follows updates without another Connect; it creates none where there is none, and builds from source (version `…-dev`) and a Pinky under `PINKY_HOME` leave them alone.
+- An agent is Connected when its entry starts this Pinky (or `pinkyctl`, when that is on the `PATH`) and its skill is this Pinky's. Settings marks an entry that starts a Pinky that is no longer there (the app moved), `pinky` (coreutils' command on many computers, below), another copy of Pinky or something else under the name `pinky`, and an old skill (one the start could not rewrite); Update sets it right. The sidebar's card offers Fix for the first two, which leave the agent without Pinky.
 - Settings reads the agents again every 10 s while it shows them, and the card every 30 s, so an agent installed meanwhile shows up.
 
 | Agent | Found by | Settings | Changed with | Skills |
@@ -53,6 +53,8 @@ mkdir -p ~/.claude/skills/pinky && cp docs/SKILL.md ~/.claude/skills/pinky/SKILL
 
 `--scope user` makes Pinky available in every folder; without it, Claude Code adds it to the folder it runs in only.
 
+When Pinky updates, `pinkyctl mcp` keeps the agent's session and reconnects to the new version by itself. It then reads the new version's tools, and when they differ from those the agent listed it sends `notifications/tools/list_changed`. A client that ignores it keeps the old definitions, and may drop arguments they lack before they reach Pinky: until the agent lists the tools again, the result of a call of a tool that changed (once per tool), or that passes arguments its definitions lack, ends with a note that the tools come from an older Pinky and that the MCP server must be restarted to use the current ones.
+
 `pinkyctl` is the command that Homebrew's cask (`brew install --cask diygod/tap/pinky`) and the Linux packages put on the `PATH`. Without them, or for agents started from the Dock or the Start menu, which may not see the terminal's `PATH`, give the app's own executable instead: `/Applications/Pinky.app/Contents/MacOS/Pinky` on a Mac, `Pinky.exe` in `%LOCALAPPDATA%\Programs\Pinky` on Windows, `/opt/pinky/pinky` (the .deb) or `~/.local/pinky.app/pinky` (the .tar.gz's `install.sh`) on Linux.
 
 The command used to be named `pinky`, which is also a coreutils command (on many Macs through Homebrew's coreutils, and on every Linux): an agent set up with `pinky mcp` that reports "Connection closed" runs coreutils' `pinky` (`pinky --version` says GNU coreutils). Set it up again with `pinkyctl mcp` or the app's path; Settings › Agents marks such an agent and sets it right with Update.
@@ -81,10 +83,23 @@ A JSON config:
 { "mcpServers": { "pinky": { "type": "http", "url": "http://127.0.0.1:7465/mcp", "headers": { "Authorization": "Bearer <token>" } } } }
 ```
 
-- Without the token, or with another one, requests get `401`; only upload and download links (below) need none. Browser pages from other origins get `403`, and so do requests to `127.0.0.1` that name another host (DNS rebinding).
+- Without the token, or with another one, requests get `401`; only upload and download links (below) need none. Browser pages from other origins get `403`, and so do requests to `127.0.0.1` that name another host (DNS rebinding), but for this computer's own tailnet name, which `tailscale serve` sends ([below](#grok-bot-over-tailscale)).
 - A remote agent's files are on its own machine, out of reach of the folder `phone_files` copies to the phone from and `phone_app` installs from. It uploads them into that folder instead (`phone_files { action: "upload" }`, [below](#uploading-a-file)): in the call, or to a one-time link at `http://<address>/upload/<token>`, which takes the file without the agent token.
 - Screenshots, task reports and the recordings the person allows that Pinky saves for a remote agent (`phone_observe { save }`, `phone_release { export }`) stay on this computer too: the agent gets a one-time link for each, `http://<address>/download/<token>`, which it fetches without the agent token ([below](#saving-screenshots-and-reports)).
 - Each MCP session over HTTP is one Pinky session, with the same first-connection approval and scopes as over stdio. The agent's name gets " (remote)" after it ("Claude Code (remote)"), so a remote agent is asked about on its own first connection and never gets the scope the person gave the agent of that name on this computer. A newer session of the same remote agent continues the phone its older sessions left ([below](#what-http-clients-may-do)). Turning Remote agents off ends every session at once, with its leases and open approvals.
+
+#### Grok Bot over Tailscale
+
+Agents on your tailnet reach Pinky through Tailscale on this computer, while Pinky itself listens on this computer only. [Grok Bot](https://docs.x.ai/grok-bot/overview) is one: its Tailscale plugin joins your tailnet as a device of yours and reaches the MCP servers there ([Tailscale's announcement](https://tailscale.com/blog/oauth-apps-ga)).
+
+1. Turn on **Settings › Agents › Remote agents**, with Tailscale connected on this computer.
+2. Run the command Remote agents then shows, once, on this computer: `tailscale serve --bg 7465`. Tailscale serves Pinky to your tailnet over HTTPS from then on, also after a restart, and Remote agents shows the **Tailnet URL**, `https://<computer>.<tailnet>.ts.net/mcp`. On a tailnet without HTTPS certificates the command prints a link to turn them on. `tailscale serve --https=443 off` stops it. Pinky only reads Tailscale's state and never runs `tailscale serve` itself.
+3. In the Grok Bot desktop app, connect your tailnet: **Connect apps › Your plugins › Tailscale**, **Authenticate** on its slot (Grok Bot 0.49 or newer, on a tailnet you own or administer). Grok Bot has no field for an MCP server's headers, so add Pinky in a chat: "Add an MCP server named pinky at https://<computer>.<tailnet>.ts.net/mcp with the header Authorization: Bearer <agent token>" (**Copy the agent token** in Remote agents). The token stays in that chat. Don't authenticate the server itself: that looks for OAuth, which Pinky doesn't offer.
+4. Ask Grok Bot to do something on the phone. Its first connection waits for you in Pinky, as "Grok (remote)".
+
+- Pinky takes requests under this computer's own tailnet name, the `Host` that `tailscale serve` passes on; any other name still gets `403`, and every request still needs the agent token.
+- Your tailnet's access rules decide who reaches port 443 of this computer: Grok Bot's device must, and every other device that does reaches the endpoint too, with the same need for the agent token. A personal tailnet's default rules let all your devices in, Grok Bot's among them, as it joins untagged with your own access; don't tag it.
+- Without `tailscale serve`, Pinky can listen on this computer's Tailscale address (Remote agents › Address, `100.x.y.z:7465`), and Grok Bot connects to `http://<computer>.<tailnet>.ts.net:7465/mcp`. Pinky can't listen there while Tailscale is off, so after a restart Remote agents stays off until you save the address again.
 
 #### What HTTP clients may do
 
@@ -98,12 +113,12 @@ Pinky is a stateful Streamable HTTP server: `initialize` returns an `Mcp-Session
 - **A `GET` without a session id** gets `405`: Pinky offers no stream outside a session, so carry on with `POST`.
 - **A `GET` stream.** A client may keep its session's `GET` stream open as long as it likes; calls (`POST`) are served alongside it. Pinky sends little on it, and a proxy that cuts idle streams only makes the client open it again.
 - **Protocol versions** 2024-11-05 to 2025-11-25. The sessionless 2026-07-28 protocol (per-request `_meta`) is not served yet.
-- **Tunnels and reverse proxies** on this computer (Cloudflare Tunnel, `tailscale serve`, nginx) must send a `Host` of `127.0.0.1:<port>` or `localhost:<port>` (cloudflared: `originRequest.httpHostHeader`), as requests to `127.0.0.1` that name another host get `403`. Upload and download links use the `Host` the request had, or the proxy's `X-Forwarded-Host` and `X-Forwarded-Proto`; the tool's answer says to swap in the public address if the link shows Pinky's own.
+- **Tunnels and reverse proxies** on this computer (Cloudflare Tunnel, nginx) must send a `Host` of `127.0.0.1:<port>` or `localhost:<port>` (cloudflared: `originRequest.httpHostHeader`), as requests to `127.0.0.1` that name another host get `403`. `tailscale serve` needs nothing: it sends this computer's tailnet name, which Pinky takes ([above](#grok-bot-over-tailscale)). Upload and download links use the `Host` the request had, or the proxy's `X-Forwarded-Host` and `X-Forwarded-Proto`; the tool's answer says to swap in the public address if the link shows Pinky's own.
 
 - Protocol: the official Go SDK (`github.com/modelcontextprotocol/go-sdk` v1.8.0), newline-delimited JSON-RPC over stdio; the SDK negotiates the protocol version.
 - Server info: name `pinky`, title `Pinky`; the server sends short usage instructions at initialization.
 - Identity: the agent's name in Pinky comes from the client's `clientInfo` (`claude-code` shows as "Claude Code"). The shim presents the agent token from `agent-token` in the config directory (mode 0600).
-- Sessions: one MCP session is one Pinky session. Closing it (the agent exits, or closes stdin) ends its leases and withdraws its open approval panels without acting.
+- Sessions: one MCP session is one Pinky session. Closing it (the agent exits, or closes stdin) withdraws its open approval panels without acting. Its phone waits 60 s for the same agent's next session before the task ends as disconnected: some clients (Claude Desktop) start the server again after a call they gave up on, and a new session continues the task when its `phone_connect` names the same task, or when the old session closed before it connected. A call that names the phone continues it too, and so does one without `device` when the agent's old session held exactly one phone. Another agent connecting to the phone in the meantime ends the waiting task at once; `phone_release` from the new session releases it.
 
 ## Results
 
@@ -129,7 +144,7 @@ note: "<the person's note>"
 | Status | Meaning |
 | --- | --- |
 | `settled` | The call ran and the screen stopped changing, or settling hit its limit, 3 s or the action's `settle_ms` (`settle: timeout`) |
-| `uncertain` | The action may have happened (the driver failed mid-action, the phone dropped). Observe before anything else |
+| `uncertain` | The action may have happened (the driver failed mid-action, the phone dropped, or the phone answered too slowly to read the screen after it within the call's 45 s). Observe before anything else |
 | `blocked_by_policy` | A rule denied the action; `rule` names it (`credentials` for password and code fields, `Read-only`, `Finance apps`, …) |
 | `approval_denied` | The person said no, or nobody answered in time; `note` may say why |
 | `approval_pending` | The call blocked for 45 s; repeat it with `approval_id` |
@@ -138,7 +153,7 @@ note: "<the person's note>"
 | `paused` | The person is in control. Wait with `phone_handoff` |
 | `stopped` | The person pressed Stop; the lease is gone, and this session may not use that phone again |
 | `device_locked` | The phone is locked. Call `phone_handoff` |
-| `device_needs_setup` | The phone is connected, but Pinky cannot use it until the person does a step on it or on the computer, and nothing was done. `setup` names the step and the message says what to do: on an iPhone `trust`, `developer_mode`, `unlock`, `passcode` (iOS asks for it before the WebDriverAgent helper may control the phone), `no_disk_image`, `disk_image`, `install_helper`, `connection` (the connection chosen in Settings › Phones does not work with the phone: the person chooses another), `unlock` (also an iPhone or iPad locked on Wi-Fi, which Pinky opens only once it is unlocked), `device_service` (the Mac's device service lost the phone on Wi-Fi: the person clicks Restart device service on the phone's page in Pinky); on Android `authorize` (allow USB debugging), `usb_permission`, `usb_driver`; `preparing` (Pinky prepares the phone: wait a few seconds, then observe) and `update` (the phone's iOS is too old: end the task) are no steps to hand off. Otherwise call `phone_handoff` asking for the step: it ends by itself once the phone is ready, with the whole screen. After `usb_driver` the phone comes back under another id: call `phone_connect` again. The lease waits with the phone instead of ending after 60 s |
+| `device_needs_setup` | The phone is connected, but Pinky cannot use it until the person does a step on it or on the computer, and nothing was done. `setup` names the step and the message says what to do: on an iPhone `trust`, `trust_record` (the iPhone trusts this computer, but Apple's device service could not replace the pairing record it holds on Windows: the message has the command an administrator runs; see [docs/notes/ios.md](notes/ios.md)), `developer_mode`, `unlock`, `passcode` (iOS asks for it before the WebDriverAgent helper may control the phone), `no_disk_image`, `disk_image`, `install_helper`, `connection` (the connection chosen in Settings › Phones does not work with the phone: the person chooses another), `unlock` (also an iPhone or iPad locked on Wi-Fi, which Pinky opens only once it is unlocked), `device_service` (the Mac's device service lost the phone on Wi-Fi: the person clicks Restart device service on the phone's page in Pinky); on Android `authorize` (allow USB debugging), `usb_permission`, `usb_driver`; `preparing` (Pinky prepares the phone: wait a few seconds, then observe) and `update` (the phone's iOS is too old: end the task) are no steps to hand off. Otherwise call `phone_handoff` asking for the step: it ends by itself once the phone is ready, with the whole screen. After `usb_driver` the phone comes back under another id: call `phone_connect` again. The lease waits with the phone instead of ending after 60 s |
 
 ### Errors
 
@@ -150,7 +165,7 @@ note: "<the person's note>"
 | `not_found` | The ref is gone, no installed app matches, or no app opens the link |
 | `unsupported` | The phone or backend cannot do this, such as `recents` on iPhone, or `phone_files` `push` on iPhone; or a link several apps open, with none set as the default |
 | `invalid_argument` | Bad or missing arguments, a misused `approval_id`, or no phone connected in this session |
-| `internal` | The call was cancelled, or the gateway failed |
+| `internal` | The call was cancelled, the phone did not answer in time, or the gateway failed |
 
 ## Common arguments
 
@@ -185,9 +200,23 @@ Leases a phone for a task and returns its first screen.
 | `task` | string, required | One line naming the task, shown to the person |
 | `device` | string | Optional when exactly one phone is online, or the session already holds one, or none is online and exactly one is connected but needs setup |
 | `apps` | string[] | Optional app allow-list for the task (names or ids). Launching another app returns `scope_denied`; typing into one asks the person. Launchers and system UI are always allowed |
-| `read_only` | boolean | Run the task read-only, whatever the agent's scope: anything the person's rules would ask about is refused (`blocked_by_policy`, rule `Read-only`), and typing works only in search fields. Connecting again for the same task never widens it. A new agent's approval card then offers read-only access first |
+| `read_only` | boolean | Run the task read-only, whatever the agent's scope: anything the person's rules would ask about is refused (`blocked_by_policy`, rule `Read-only`), and typing works only in search fields (a field that reads as one, or, with no field shown as focused, the keyboard up and a search box's placeholder at the top of the screen with no other field on it). Connecting again for the same task never widens it. A new agent's approval card then offers read-only access first |
+| `connection` | string | iPhones with the WebDriverAgent helper only: `auto` (the default), `helper` or `coredevice`. `helper` moves the task to the helper, which shares no screen, so apps that refuse to run while the screen is shared work; `coredevice` moves it back. Pinky moves a task to the helper by itself when `phone_launch` opens an app known to refuse screen sharing (DBS digibank, China Merchants Bank). See [Task connection](#task-connection) |
+| `own_screen` | boolean | Work on the phone's own screen even when the person has Pinky work on a background display (Settings › Phones › Work in the background), which starts empty and has no home screen. Only for work on the home screen itself: moving app icons, folders, widgets. The task stays on the phone's own screen to its end; connecting again for the same task with it moves a task off its background display. If the person used the phone's own screen in the last minute, the task starts `paused` (they are in control until they hand it over); if that screen is locked, `device_locked`. Without background work it changes nothing |
 
 The first connection of an agent the person has not approved yet returns `approval_pending` (rule `New agent`); repeat with `approval_id`. Another session's phone returns `lease_held`. Calling again with the same task keeps the lease; another task name ends the previous task (outcome `replaced`) and starts a new one. After the person pressed Stop, the session cannot connect to that phone again. While the person is in control of the phone (they took over and have not handed back, whichever task was running), the lease starts paused and the result is `paused`: call `phone_handoff`. A phone that is connected but waits for a step (Trust, Allow USB debugging, Developer Mode, …) is leased all the same and returns `device_needs_setup`, without a screen, so `phone_handoff` can ask the person for the step; other calls return `device_needs_setup` until the phone is ready.
+
+#### Task connection
+
+An iPhone on iOS 27 that the person left on Automatic in Settings › Phones runs over CoreDevice, which streams its screen, and some apps refuse to run while the screen is shared. When the phone has the WebDriverAgent helper too, a task can use the helper instead, without the person changing the setting:
+
+- `connection: "helper"` moves the task to the helper; `connection: "coredevice"` moves it back, and so does connecting again for the same task with it.
+- Pinky moves the task by itself when `phone_launch` opens an app known to refuse screen sharing: DBS digibank and China Merchants Bank (招商银行). Pinky judges the app the launch opens, so its name, its iOS bundle id (`com.cmbchina.MPBBank`) and its Android package (`cmb.pb`) all count. It moves only once the launch may run: after the person allowed the app (the banks are finance apps, which ask) and the rules let it through. A launch that is refused, or still waits for the person, leaves the connection as it was. Naming such an app in `apps` moves nothing by itself.
+- Nothing moves while the person is in control of the phone, the phone is locked, an approval is open on it, or the agent may only watch: a move would cut the person's session. `connection` then changes nothing, and the message says why; connect again with it once that is over.
+- The move is a reconnect: CoreDevice's session closes, which stops its screen stream, and the phone comes back through the helper, whose picture Pinky's window then shows. Calls wait for it, up to 60 s, and the task's lease does not run out meanwhile. If iOS asks for the passcode before the helper starts, the call returns `device_needs_setup` with `setup: passcode`, and nothing was done (a `phone_launch` did not open the app). Pinky shows the person a Needs you card (and a notification) asking them to enter the passcode on the phone, but iOS stops asking after a while: call `phone_handoff` at once to wait for it; it ends by itself once the phone is up on the helper, and then call `phone_launch` again. If the helper does not start for another reason, the task stays on CoreDevice and the message says why.
+- The result's message says what happened. Reading the screen is slower through the helper (several seconds on a home screen).
+- Nothing is saved. The phone goes back to CoreDevice 30 s after the task ends, unless another task uses it by then, so a round of tasks stays on the helper.
+- A connection the person chose by hand in Settings › Phones is kept for every task: the message says so. A phone without the helper, an iPhone below iOS 27 and an Android phone connect one way only; the message says so too. Any other word returns `invalid_argument`.
 
 ### phone_release
 
@@ -224,16 +253,20 @@ Works while the person is in control and while an approval is open.
 
 The policy checks every element under the finger, not only the smallest: tapping a price label inside a Pay button counts as tapping Pay.
 
+A passcode keypad that the app draws where screenshots do not reach (iOS marks its keys `not_in_screenshot`; nine or more of them carry a digit) takes no taps, by `ref` or by `x`,`y`, in `phone_batch` too: every key of it, Face ID and delete included, may enter or spend a passcode attempt while the person sees blank space. Such taps are refused like typing a password (`blocked_by_policy`, rule `credentials`); call `phone_handoff`.
+
 ### phone_type
 
 | Argument | Type | Meaning |
 | --- | --- | --- |
 | `text` | string, ≤ 16384 chars | The text; may be empty with `submit` |
-| `ref` | integer | The field (tapped first to focus it); default the focused field. Must be a text field |
+| `ref` | integer | The field (tapped first to focus it); default the focused field. Must be a text field, or the placeholder text of a search box that the app draws itself and that reads only as text (Xianyu's "搜索宝贝/帖子/用户") |
 | `append` | boolean | Keep the field's text |
 | `submit` | boolean | Press Enter afterwards |
 
 Typing into password and one-time-code fields is always refused (`blocked_by_policy`, rule `credentials`). So is typing without `ref` when no field reports focus and the screen has such a field.
+
+Pinky reads the field back after typing. Text that reads otherwise, or that went nowhere (no field has focus, or the field reads as before or empty), returns `uncertain` with the reason, and Return is not pressed for `submit`. When the field cannot be read back (an app that draws its own field), Pinky compares what the app shows before and after: the text showing up counts as typed, and an app that shows exactly what it did before returns `uncertain` without pressing Return. On an iPhone that usually means iOS asked the person to Allow Paste, a prompt Pinky cannot see, because the app reads pasted text itself; the message says to call `phone_handoff` so the person can answer Don't Allow and set Settings › the app › Paste from Other Apps to Allow, then to type again. Otherwise, and for a field that hides its text, the result is `settled` with a note saying so.
 
 ### phone_swipe
 
@@ -272,7 +305,22 @@ Presses with one finger, moves through points while it stays down, and lets go: 
 
 The whole drag (rests and moves) may take up to 30 s, and every point must be on the screen. Moves ease in and out, so the finger stops at each point before it rests or lets go.
 
-To move an app to another home screen page: press its icon with `hold_ms` about 800, rest about 700 ms at a `via` point near the left or right edge (a few pixels in, halfway down), and let go on the new page. Each rest at the edge turns one page; a longer rest turns more (1.2 s turned two pages on an iPhone). To drop into a folder, or onto another app to make one, let go over the middle of its icon, not its label, with the default rest: on an Android launcher a long rest there moves the other icon aside instead. Observe the page you want to drop on first: the screen the drag ends on is not known before it starts.
+To move an app to another home screen page: press its icon with `hold_ms` about 800, rest about 700 ms at a `via` point near the left or right edge (a few pixels in, halfway down), and let go on the new page. Each rest at the edge turns one page; a longer rest turns more (1.2 s turned two pages on an iPhone). Observe the page you want to drop on first: the screen the drag ends on is not known before it starts.
+
+To drop into a folder, or onto another app to make one, let go over its icon where it is during the drag. The picked-up icon keeps where the finger holds it, so press the app at its `ref` and aim from the target's ref point (a home screen ref's point is the middle of the icon and its label together).
+
+Pixel Launcher moves the icons once the drag starts: as soon as it picks an icon up, it shrinks the home screen page toward a point near the middle of the screen, and the dock stays as it was. On a 1080×2400 Pixel emulator (Android 16) the page shrank by about 0.78 toward about 540,990 (the middle across, 41% down), so Photos, listed at 663,1619, sat at about 634,1500 during the drag, and only a drop there made a folder. The launcher also takes the page out of the element tree while it holds an icon, so the screen cannot be read then.
+
+Pinky follows the page for you. Give `to` where the target is on the screen you read. When a drag on an Android home screen starts with `hold_ms` 300 or more, Pinky:
+
+1. takes a picture as the finger touches down,
+2. after the hold, moves the finger a tenth of the screen's width toward the first point (120 ms) and rests 250 ms, so the launcher picks the icon up and shrinks the page,
+3. takes another picture and looks for the apps around `to` in it, shrunk by 0.6 to 1 toward the middle of the screen,
+4. lets go where `to` went. The `via` points stay where they are, so a rest at the edge still turns the page.
+
+A drop on the dock, or on a page that did not shrink, stays at `to`. When Pinky cannot see where `to` went (nothing labelled near it, no clear match), it lets go at `to` and the result says so; observe to check where the app landed. The result also says when it moved the drop, and history shows where the finger let go. It adds about 0.6 to 0.8 s over USB (the short move and rest, a screenshot, and about 30 ms to compare), and over Wi-Fi a frame of the mirror when it is open, else a screenshot, which can take seconds. Other launchers were not measured: one that shrinks its page evenly toward the middle is followed the same way, and one that does something else gets the drop at `to`.
+
+If the icons only trade places or the target moves aside, observe and aim again from where they are now.
 
 ```json
 {"ref": 12, "hold_ms": 800, "via": [{"x": 1170, "y": 1300, "pause_ms": 700}], "to": {"x": 187, "y": 702}}
@@ -326,7 +374,7 @@ Lists installed apps inside the agent's scope, user apps first, one per line: `N
 | `steps` | array, ≤ 50 | Each step has `tool` (`tap`, `type`, `swipe`, `pinch`, `drag`, `key`, `launch`, with or without the `phone_` prefix) and that tool's arguments, plus its own `intent`, `approval_id` and `settle_ms` |
 | `intent` | string | For steps without their own |
 
-Steps run in order, each settling first, and the batch stops at the first step that is not `settled` (`approval_pending`, `uncertain`, an error); a step whose screen kept moving (`settle: timeout`) does not stop it. The result's first line is the last step's status; then `step N:` blocks follow with each step's status and changes. To finish a batch that stopped at `approval_pending`, repeat that step alone as its own tool call with the `approval_id`.
+Steps run in order, each settling first, and the batch stops at the first step that is not `settled` (`approval_pending`, `uncertain`, an error); a step whose screen kept moving (`settle: timeout`) does not stop it. A batch also stops before a step when the call's 45 s may not be enough for it (as long as its slowest step so far, at least 5 s): the result is the last step's, and its message says how many steps ran and which did not ("Ran steps 1-3 of 6, then stopped: … Not done: steps 4-6; continue with it in a new call."). The result's first line is the last step's status; then `step N:` blocks follow with each step's status and changes. To finish a batch that stopped at `approval_pending`, repeat that step alone as its own tool call with the `approval_id`.
 
 ### phone_wait_for
 
@@ -386,7 +434,7 @@ Installs, updates, uninstalls or stops (force-quits) an app: for an agent that b
 - **Files.** Only files in the phone's folder on the computer install: paths that leave it (`..`, absolute paths) are `invalid_argument`, and so are symbolic links on the way; missing files are `not_found`. An agent on another computer uploads the file first with `phone_files { action: "upload" }`. Pinky reads the package before it asks and installs from a copy that it reads again, so the file cannot change after the person said yes.
 - **Android** takes an `.apk`, or the split APKs of one app (one base and its splits, one signer), and installs it for the user the phone's screen runs as. Test-only builds (Android Studio's Run) install; downgrades and an app signed with another key do not, and the message says what to do.
 - **iPhone** takes a development-signed `.ipa` or `.app` folder, over the cable or Wi-Fi, with or without the WebDriverAgent helper. Before asking, Pinky refuses (`invalid_argument`) a build for the Simulator, one without a provisioning profile, an expired profile, an App Store profile, and a profile that does not list this iPhone, naming its UDID; what the iPhone itself refuses after the transfer (a signature it does not accept, an iOS too old for the app) comes back in the same plain words. iOS Simulators return `unsupported`.
-- **Approvals.** `install` and `uninstall` always ask the person, whatever they chose in Settings › Safety (rules `Installing from the computer` and `Uninstalling apps`): up to 45 s, then `approval_pending`. The panel names the app, its id and version, who signed it, the files and, for an update, the version it replaces. "Allow for this task" covers installing the same app id signed by the same signer again (the build, install, check loop asks once), or uninstalling the same app again; there is no "Always allow". `stop` does not ask, except while every action asks.
+- **Approvals.** `install` and `uninstall` ask the person, whatever they chose in Settings › Safety (rules `Installing from the computer` and `Uninstalling apps`): up to 45 s, then `approval_pending`. The panel names the app, its id and version, who signed it, the files and, for an update, the version it replaces. "Allow for this task" covers installing the same app id signed by the same signer again (the build, install, check loop asks once), or uninstalling the same app again. An install also offers "Always allow": that agent then installs builds of the same app id signed by the same signer on that phone without asking, in later tasks too, until the person takes it back in Settings › Safety (not while every action asks, nor when a rule of the person's own asks about the app too). Another app id, another signer, another agent or another phone still asks. `uninstall` asks every time and has no "Always allow". `stop` does not ask, except while every action asks.
 - **Refused** (`blocked_by_policy`, with the rule): Pinky's own apps (`Pinky's own apps`), system apps (`System apps`), finance apps, password managers and apps the person blocked, for all three actions, judged for an install by the new app's id and name. Read-only mode refuses all three (`Read-only`); read-only and watch-only agents, and apps outside the agent's scope or the task's `apps`, get `scope_denied`.
 - The result says what happened (`Installed “Dinely” 1.3 (14) (com.example.dinely). Open it with phone_launch.`), and each call is a step in the task's history: "Installed “Dinely” 1.3 (14) from “app-debug.apk”", "Updated “Dinely” to 1.4 (15) from “app-debug.apk”", "Uninstalled “Dinely”", "Stopped “Dinely”". `stop` also returns the screen's changes.
 
@@ -412,7 +460,7 @@ The result's message says what it holds ("120 log lines of Example since 14:05:0
 - **Only that app's own processes.** Lines of other processes, the system's included, are never returned, so system lines about the app (Android's "Process … has died") are not either; the crash reports carry what matters of them.
 - **Scope.** An app outside the agent's scope or the task's `apps` is `scope_denied`; watch-only agents get `scope_denied` for every app. Read-only agents and read-only mode may read logs.
 - **Refused apps.** Blocked apps (even one the person allowed for the task), finance apps and password managers (even with those rules off), the phone's own system apps, Pinky Companion and the iPhone's WebDriverAgent helper return `blocked_by_policy` without asking; the rule is the app's rule, or `App logs`.
-- **Asking.** The first read of an app in a task asks the person (rule `App logs`, "Read the logs of Example?"), like an Ask action: up to 45 s, then `approval_pending`. "Allow for this task" covers that app's logs and crash reports until the task ends; there is no "Always allow". A development build does not ask: an Android app that is debuggable, or an iPhone app signed for development (`get-task-allow`, as Xcode installs it). Denied: `approval_denied` with the person's note.
+- **Asking.** The first read of an app in a task asks the person (rule `App logs`, "Read the logs of Example?"), like an Ask action: up to 45 s, then `approval_pending`. "Allow for this task" covers that app's logs and crash reports until the task ends; "Always allow" covers them for that agent on that phone, in later tasks too, until the person takes it back in Settings › Safety (not while every action asks). A development build does not ask: an Android app that is debuggable, or an iPhone app signed for development (`get-task-allow`, as Xcode installs it). Denied: `approval_denied` with the person's note.
 - **iPhones keep no log history Pinky can read.** Pinky starts listening to the app at the first `phone_logs` call for it in a task and keeps listening until the task ends (up to 20,000 lines), so the first call returns little; the message says from when Pinky listens. Make the app do what you want to see, then call again. Pinky finds a new process of the app within a second, sooner when `phone_launch` started it, so the very first lines of a fresh start can be missing. Only what the app logs through the system log reaches it (`os_log`, `Logger`, `NSLog`), not `print`; levels are `debug`, `info`, `error` and `fatal` (a fault). Crash reports have no such limit: the phone keeps them. iOS Simulators return `unsupported`.
 - **Android** reads logcat (the main, system and crash buffers) for the app's user id, and crash reports from the drop box (`data_app_crash`, `data_app_native_crash`, `data_app_anr`) and the crash buffer. An app that shares its user id with others is `unsupported`, as their lines cannot be told apart. What a phone still holds depends on its buffers: a busy phone may have dropped older lines.
 - Each call is a step in the task's history, with what was read and never the text: "Read 120 log lines of Example", "Read 1 crash report of Example".
@@ -432,7 +480,7 @@ The switches developers flip to test an app: the screen's rotation, light or dar
 
 The result has one line per switch, after the screen's changes: `rotation: landscape (was portrait)`, `appearance: dark`, `location: none`, or `location: unsupported · <why>`. Several switches in one call are read first, so one the phone lacks fails the call before anything changes, then set in the order rotation, appearance, location.
 
-- **Asking.** On a real phone a change asks the person (rule `Phone settings`; up to 45 s, then `approval_pending`), with Allow once and Allow for this task, which covers the task's later changes and language launches; there is no Always allow. On an emulator or a Simulator it asks only when the person chose to approve more than payments in Settings › Safety. Read-only agents get `scope_denied`, read-only mode `blocked_by_policy` (rule `Read-only`). `reset` never asks.
+- **Asking.** On a real phone a change asks the person (rule `Phone settings`; up to 45 s, then `approval_pending`), with Allow once, Allow for this task, which covers the task's later changes and language launches, and Always allow, which covers them for that agent on that phone in later tasks too, until the person takes it back in Settings › Safety (not while every action asks). The changes are still put back when each task ends. On an emulator or a Simulator it asks only when the person chose to approve more than payments in Settings › Safety. Read-only agents get `scope_denied`, read-only mode `blocked_by_policy` (rule `Read-only`). `reset` never asks.
 - **Putting back.** When the task ends, however it ends (released, stopped, the session gone), Pinky puts back every change, the last made first, as steps after "Finished" in history: "Put the appearance back to light", "Stopped the simulated location". A switch the person changed meanwhile stays as they set it ("Left the appearance as the person set it"), and a phone offline at the end keeps the change ("Could not put …").
 - **Each change is a step** in history: "Set the screen's rotation to landscape", "Set the location to 35.6812, 139.7671".
 - **Rotation** turns what the app in front allows: an app that only runs upright stays upright, though the phone counts as turned and is turned back.
@@ -482,7 +530,7 @@ An agent that writes a bug report or a pull request can keep what it saw as file
 - While an approval is open on a phone, other actions on it return `approval_pending` with that approval's id; reads still work.
 - Before acting on Allow, Pinky reads the screen again and compares the target's role, label, states and position (a few pixels of tolerance) and the screen's text and states (status bar excluded; OCR text only when the screen has no element text). Any change returns `stale`.
 - "Allow for this task" covers the rules that asked, in that app, for the rest of the task. An action that another rule also asks about still asks. `phone_request_approval` has no such answer: each question asks the person.
-- "Always allow" keeps the answer in the rules file: in that app, the rule that asked, and the rules that asked with it, no longer ask about the steps that rule asks about, in later tasks too, until the person takes it back in Settings › Safety. The approved call's message says `from now on "Payments" no longer asks in Dinely`; a later such action returns `settled` at once, its message starting `No approval needed: the person always allows "Payments" in Dinely.` It never lifts a deny, read-only mode, the agent's scope or the task's `apps`, and it does not apply while every action asks. The panel offers it for actions only: not for `phone_request_approval`, `phone_files`, `phone_app`, `phone_launch`, `phone_logs` or `phone_device`.
+- "Always allow" keeps the answer in the rules file: in that app, the rule that asked, and the rules that asked with it, no longer ask about the steps that rule asks about, in later tasks too, until the person takes it back in Settings › Safety. The approved call's message says `from now on "Payments" no longer asks in Dinely`; a later such action returns `settled` at once, its message starting `No approval needed: the person always allows "Payments" in Dinely.` It never lifts a deny, read-only mode, the agent's scope or the task's `apps`, and it does not apply while every action asks. The panel offers it for actions, and per agent and phone for `phone_logs` (per app) and `phone_device` (see those tools): not for `phone_request_approval`, `phone_files`, `phone_app`, `phone_launch` or recordings.
 - An MCP cancellation of the blocked call, a closed session, Stop and Take over all withdraw the panel without acting.
 - Only the client's `Decide` answers approvals. No tool can.
 
@@ -499,6 +547,7 @@ Sent only when the request carries `_meta.progressToken`: while waiting for an a
 | Limit | Value |
 | --- | --- |
 | Longest block of one call | 45 s |
+| Longest call | 45 s, see below |
 | Approval timeout | 60 s |
 | Handoff timeout | 15 min |
 | Settle limit | 3 s, or less with `settle_ms` |
@@ -507,3 +556,17 @@ Sent only when the request carries `_meta.progressToken`: while waiting for an a
 | `text` | 16384 characters |
 | `phone_batch` steps | 50 |
 | `phone_logs` result | 500 lines or 10 crash reports, 64 KB |
+
+### Call time
+
+Every call answers within 45 s of reaching Pinky, however slowly the phone answers: MCP clients give up on a call after about a minute, and some then drop the whole session. The time bounds what Pinky waits for (reading the screen, settling, approvals, `phone_batch` steps, `phone_wait_for`), never an input the phone is already performing. When it runs out:
+
+- before the action, the call returns `error: internal` saying the phone answered too slowly and nothing was done;
+- after the action, while the screen was read, the result is `uncertain`: the action was sent, so observe before anything else;
+- in `phone_batch`, between steps, the batch stops (above);
+- in `phone_wait_for`, the wait ends with `matched: false` and the last screen read;
+- in an approval wait, the call returns `approval_pending` early enough to leave 10 s for what follows.
+
+An approval's own timeout and `phone_handoff` keep their times: those calls return `approval_pending` and are repeated.
+
+After an action, a screen whose text OCR read while its accessibility tree has little (a web page shown before its links and buttons are in the tree) is read again until the tree has it, for up to 4 s and within the call's time. An app whose tree stays that way for the whole wait (a game, a canvas) is not waited for again until another app shows such a screen.

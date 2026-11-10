@@ -123,6 +123,7 @@ const (
 // Setup steps, in Info.Setup.
 const (
 	SetupTrust         = "trust"          // unlock the phone, tap Trust and enter its passcode
+	SetupTrustRecord   = "trust_record"   // the phone trusts the computer, but Apple's device service cannot replace the pairing record it holds; Detail says how to let it
 	SetupDeveloperMode = "developer_mode" // turn on Developer Mode, which restarts the phone
 	SetupUnlock        = "unlock"         // unlock the phone so the computer can finish preparing it
 	SetupPreparing     = "preparing"      // the computer is preparing the phone; nothing to do but wait
@@ -837,6 +838,34 @@ type CompanionInstaller interface {
 	InstallCompanion(ctx context.Context) error
 }
 
+// CompanionStartError is the error InstallCompanion returns when Pinky
+// turned the companion app's accessibility service on and it did not
+// answer.
+type CompanionStartError struct {
+	// Reason is what kept it off, as a code clients put into words: one of
+	// the CompanionStart* constants, or "" when the phone showed nothing
+	// that explains it.
+	Reason string
+	// Detail says what Pinky saw on the phone, in a sentence, for logs and
+	// for clients without words for Reason.
+	Detail string
+}
+
+func (e *CompanionStartError) Error() string {
+	return "the companion's accessibility service did not come on: " + e.Detail
+}
+
+// Why the companion's service did not come on, in CompanionStartError.Reason.
+const (
+	// CompanionStartUIAutomation: another tool holds Android's UI
+	// automation (uiautomator, uiautomator2, Appium, Maestro), and Android
+	// keeps every accessibility service off until it lets go.
+	CompanionStartUIAutomation = "ui_automation"
+	// CompanionStartNotUnlocked: the phone has not been unlocked since it
+	// started, and Android starts the service only after that.
+	CompanionStartNotUnlocked = "not_unlocked"
+)
+
 // AppManager installs, updates, uninstalls and stops apps for agents
 // (phone_app, docs/notes/apps.md). The gateway asks the person first and
 // refuses Pinky's own apps and system apps itself; a driver only does what
@@ -1200,6 +1229,12 @@ var (
 	// ErrPairOldTool: the pairing tool cannot pair over Wi-Fi, as an adb
 	// server older than platform-tools 30.
 	ErrPairOldTool = errors.New("this computer's adb server cannot pair over Wi-Fi")
+	// ErrPairNoNetwork: the pairing tool cannot reach the local network,
+	// which Pinky reaches, as an adb server that lost macOS's Local Network
+	// access, and the driver could not restart it. Also wrapped by the
+	// driver's other connections at an address: WiFiConnector,
+	// ConnectTailnet and the Android driver's own reconnects.
+	ErrPairNoNetwork = errors.New("this computer's adb server cannot reach the local network")
 )
 
 // ConnectionChooser is a Provider that can reach a phone in more than one
@@ -1248,6 +1283,26 @@ var (
 	ErrPINNotEntered = errors.New("the PIN was not entered")
 	ErrNotFound      = errors.New("not found")
 )
+
+// SetupError is a Provider.Open that failed because the phone waits for the
+// person to do a step first, the way Info.Setup and Info.Detail name a step
+// for a listed phone: the gateway shows the phone as needing setup at once,
+// without waiting for the next List to say so. Err is the driver's own
+// error.
+type SetupError struct {
+	Setup  string // a Setup* step
+	Detail string // what to do, in a sentence
+	Err    error
+}
+
+func (e *SetupError) Error() string {
+	if e.Err != nil {
+		return e.Err.Error()
+	}
+	return e.Detail
+}
+
+func (e *SetupError) Unwrap() error { return e.Err }
 
 // Checkups. A phone's checkup checks, item by item and for real, what
 // Pinky needs on it (a key that does nothing to see that input works, a

@@ -507,7 +507,7 @@ var (
 	reBlocked   = re(`^Blocked by “(.*?)”: (.*)$`)
 	reOutside   = re(`^Outside the scope: (.*)$`)
 	reFailed    = re(`^Failed: (.*)$`)
-	reConnected = re(`^Connected to (.*) for “(.*)”$`)
+	reConnected = re(`^Connected to (.*) for “(.*)”(, read only)?(, on the phone's own screen)?$`)
 	reFinished  = re(`^Finished: (.*)$`)
 	reWaited    = re(`^Waited for “(.*)”$`)
 	reAskedYou  = re(`^Asked you: (.*)$`)
@@ -587,7 +587,14 @@ func stepText(s string) string {
 		return locales.GwStepFailed(asked(m[1]))
 	}
 	if m := reConnected.FindStringSubmatch(s); m != nil {
-		return locales.GwStepConnected(m[1], m[2])
+		t := locales.GwStepConnected(m[1], m[2])
+		if m[3] != "" {
+			t = locales.GwStepConnectedReadOnly(t)
+		}
+		if m[4] != "" {
+			t = locales.GwStepConnectedOwnScreen(t)
+		}
+		return t
 	}
 	if m := reFinished.FindStringSubmatch(s); m != nil {
 		if f := outcomes[m[1]]; f != nil {
@@ -834,6 +841,11 @@ func needTitle(n gateway.NeedView) string {
 			return locales.GwUnlockTitle(name)
 		}
 		return n.Title
+	case n.Kind == gateway.NeedSetup:
+		if name, ok := strings.CutPrefix(n.Title, "Enter the passcode on "); ok {
+			return locales.GwSetupPasscodeTitle(name)
+		}
+		return n.Title
 	case n.Kind == gateway.NeedHandoff, n.Rule == "Agent request":
 		return n.Title // the agent's own words
 	}
@@ -842,6 +854,7 @@ func needTitle(n gateway.NeedView) string {
 
 var (
 	reUnlockDetail = re(`^(.+) is waiting for the phone to unlock · (.*)$`)
+	reSetupDetail  = re(`^iOS asks for it on the phone before the WebDriverAgent helper can control it, and stops asking after a while\. (.+) is waiting · (.*)$`)
 	reAgentWants   = re(`^(.+) wants to connect for “(.*)”\.(?: Allowing gives it (\S+) access\.)?$`)
 	reFilesDetail  = re(`^(.+) · into the phone's Pinky folder(: .*)?$`)
 	reSettingsBack = re(`^(.+) · Pinky puts it back when the task ends$`)
@@ -854,6 +867,9 @@ func needDetail(n gateway.NeedView) string {
 	}
 	if m := reUnlockDetail.FindStringSubmatch(n.Detail); m != nil && n.Kind == gateway.NeedUnlock {
 		return locales.GwUnlockDetail(m[1], m[2])
+	}
+	if m := reSetupDetail.FindStringSubmatch(n.Detail); m != nil && n.Kind == gateway.NeedSetup {
+		return locales.GwSetupPasscodeDetail(m[1], m[2])
 	}
 	if m := reAgentWants.FindStringSubmatch(n.Detail); m != nil && newAgentNeed(n) {
 		d := locales.GwAgentWants(m[1], m[2])
@@ -958,6 +974,10 @@ func statusLine(d gateway.DeviceView) string {
 		return locales.GwStatusMovingWiFi()
 	case "Moving to the cable":
 		return locales.GwStatusMovingCable()
+	case "Switching to the helper":
+		return locales.GwStatusSwitchHelper()
+	case "Switching to CoreDevice":
+		return locales.GwStatusSwitchCoreDevice()
 	}
 	if m := reReconnecting.FindStringSubmatch(s); m != nil {
 		return locales.GwStatusReconnecting(m[1])

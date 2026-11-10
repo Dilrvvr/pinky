@@ -291,7 +291,7 @@ func (s *Session) Act(ctx context.Context, c Call, a Action) *Result {
 		return res
 	}
 	defer s.done(l)
-	ctx, cancel := mergeCtx(ctx, l.ctx)
+	ctx, cancel := s.g.callCtx(ctx, l)
 	defer cancel()
 	return s.g.finish(l, s.g.act(ctx, l, c, a))
 }
@@ -421,6 +421,8 @@ type prep struct {
 	// result should show what it did before the agent decides whether to
 	// repeat it, and a payment allowed for the task does not ask again.
 	settleFull bool
+	// follow follows a home screen's page under a drag (dragfollow.go).
+	follow *dragFollow
 }
 
 // personAllowed reports whether an action that runs with verdict v runs
@@ -440,7 +442,14 @@ func (g *Gateway) act(ctx context.Context, l *lease, c Call, a Action) *Result {
 	}
 	g.readyScreen(ctx, l)
 	d := l.dev
-	d.act.Lock()
+	if !lockAct(ctx, d) {
+		// Another call's action still runs, as one the agent's client
+		// gave up on may.
+		if ctx.Err() != nil {
+			return errResult(ErrInternal, "The call was cancelled. Nothing was done.")
+		}
+		return errResult(ErrInternal, "Another action on the phone was still running when the call's %s ran out. Nothing was done. Observe, then try again.", human(g.opt.CallBudget))
+	}
 	// Check again under the device's action lock: another call may have
 	// opened an approval, or the person may have taken over, meanwhile.
 	if res := g.gate(l, "", true); res != nil {
@@ -788,7 +797,11 @@ func (g *Gateway) prepare(ctx context.Context, l *lease, a Action, cur *screen.S
 			if res != nil {
 				return p, res
 			}
-			p.target, p.point = e, tapPoint(cur, *e)
+			t, res := touchable(cur, e)
+			if res != nil {
+				return p, res
+			}
+			p.target, p.point = e, tapPoint(cur, t, d.provider.Platform())
 		} else {
 			if !inBounds(*a.Point) {
 				return p, errResult(ErrInvalidArgument, "%d,%d is outside the %dx%d screen.", a.Point.X, a.Point.Y, cur.Width, cur.Height)
@@ -797,6 +810,13 @@ func (g *Gateway) prepare(ctx context.Context, l *lease, a Action, cur *screen.S
 			p.target = hitTest(cur, p.point)
 		}
 		p.hasPt = true
+		if pad, ok := policy.HiddenKeypad(cur); ok && pad.Contains(p.point) {
+			// The app's own passcode keypad, which the person watching
+			// cannot see: a tap on it enters their passcode.
+			p.input.Target = p.target
+			p.desc = describe(a, p)
+			return p, &Result{Status: StatusBlocked, Rule: policy.RuleCredentials, Message: hiddenKeypadRefusal}
+		}
 	case "type":
 		p.input.Op = policy.OpType
 		p.input.Text, p.input.Submit = a.Text, a.Submit
@@ -805,7 +825,11 @@ func (g *Gateway) prepare(ctx context.Context, l *lease, a Action, cur *screen.S
 			if res != nil {
 				return p, res
 			}
-			if e.Role != screen.RoleInput && !e.Has(screen.StateEditable) && !e.Has(screen.StateFocused) {
+			// An app that draws its own search box shows only its
+			// placeholder ("搜索宝贝/帖子/用户", GitHub issue #76): tapping
+			// that focuses the box. A search button would search instead.
+			placeholder := e.Role != screen.RoleButton && e.Role != screen.RoleLink && policy.IsSearchField(e)
+			if e.Role != screen.RoleInput && !e.Has(screen.StateEditable) && !e.Has(screen.StateFocused) && !placeholder {
 				return p, errResult(ErrInvalidArgument, "[%d] is a %s, not a text field. Nothing was done.", a.Ref, e.Role)
 			}
 			p.target, p.point, p.hasPt = e, e.Bounds.Center(), true
@@ -829,13 +853,17 @@ func (g *Gateway) prepare(ctx context.Context, l *lease, a Action, cur *screen.S
 			p.from, p.to = *a.From, *a.To
 			p.target = hitTest(cur, p.from)
 		} else {
-			area := screen.Rect{X: 0, Y: 0, W: cur.Width, H: cur.Height}
+			var e *screen.Element
 			if a.Ref > 0 {
-				e, res := byRef(a.Ref)
-				if res != nil {
+				var res *Result
+				if e, res = byRef(a.Ref); res != nil {
 					return p, res
 				}
-				p.target, area = e, e.Bounds
+				p.target = e
+			}
+			area, res := swipeArea(cur, e, a.Direction)
+			if res != nil {
+				return p, res
 			}
 			p.from, p.to = swipeLine(area, a.Direction)
 		}
@@ -856,7 +884,7 @@ func (g *Gateway) prepare(ctx context.Context, l *lease, a Action, cur *screen.S
 				return p, errResult(ErrUnsupported, "This phone cannot drag. Nothing was done.")
 			}
 		}
-		if res := p.prepareDrag(a, cur, byRef, inBounds); res != nil {
+		if res := p.prepareDrag(a, cur, d.provider.Platform(), byRef, inBounds); res != nil {
 			return p, res
 		}
 	case "key":
@@ -916,6 +944,12 @@ func (g *Gateway) prepare(ctx context.Context, l *lease, a Action, cur *screen.S
 	return p, nil
 }
 
+// hiddenKeypadRefusal answers a tap on an app's passcode keypad that the
+// screenshot does not show (policy.HiddenKeypad).
+const hiddenKeypadRefusal = "This tap is on the app's passcode keypad, which it draws where screenshots do not reach, so the person watching sees blank space there. " +
+	"Pinky treats its keys like a password field: every key, Face ID and delete included, may count as a passcode attempt. Nothing was done. " +
+	"Call phone_handoff so the person can enter the passcode."
+
 func credentialOnScreen(s *screen.Screen) bool {
 	for i := range s.Elements {
 		e := &s.Elements[i]
@@ -956,10 +990,17 @@ func swipeLine(area screen.Rect, dir string) (from, to screen.Point) {
 // place in its tree is the app's reading order, though, so for an element
 // that large every other element counts at first, and only those listed
 // after it when that leaves no point clear.
-func tapPoint(s *screen.Screen, t screen.Element) screen.Point {
+//
+// A switch on an iPhone is tapped on the switch itself (switchPoint).
+func tapPoint(s *screen.Screen, t screen.Element, platform driver.Platform) screen.Point {
 	c := t.Bounds.Center()
 	if !actionable(t) || t.Ref == 0 {
 		return c
+	}
+	if t.Role == screen.RoleSwitch && platform == driver.IOS {
+		if p, ok := switchPoint(s, t); ok {
+			return p
+		}
 	}
 	big := s.Width > 0 && s.Height > 0 && t.Bounds.W*t.Bounds.H*2 >= s.Width*s.Height
 	var all, above []screen.Rect
@@ -992,6 +1033,50 @@ func tapPoint(s *screen.Screen, t screen.Element) screen.Point {
 		}
 	}
 	return c // nowhere clear: tap where it always did
+}
+
+// switchPoint is where a tap flips the iPhone switch t when t covers its
+// whole row. Settings and SwiftUI give a switch the frame of its row, label
+// included, and a tap at its centre lands on the label, which does nothing
+// (GitHub issue #51). WebDriverAgent lists the switch itself as a narrower
+// switch inside the row, its centre within it, which is tapped when it is
+// there. Otherwise the switch lies at the trailing end of the row: about
+// 38 points in from it, the middle of a 51-point switch with the row's
+// margin, or from the leading end in a right-to-left layout, where the
+// label lies in the row's right half.
+func switchPoint(s *screen.Screen, t screen.Element) (screen.Point, bool) {
+	b := t.Bounds
+	for _, e := range s.Elements {
+		if e.Ref == t.Ref || e.Role != screen.RoleSwitch || e.Bounds.Empty() {
+			continue
+		}
+		if b.Contains(e.Bounds.Center()) && e.Bounds.W*2 <= b.W {
+			return e.Bounds.Center(), true
+		}
+	}
+	scale := pointScale(s)
+	in := 38 * scale
+	if b.W < 4*b.H || b.W < 3*in {
+		return screen.Point{}, false // shaped like a switch, not a row
+	}
+	c := b.Center()
+	for _, e := range s.Elements {
+		if e.Ref != t.Ref && e.Label != "" && e.Label == t.Label && e.Role != screen.RoleSwitch &&
+			b.Contains(e.Bounds.Center()) && e.Bounds.X > c.X && e.Bounds.W*2 < b.W {
+			return screen.Point{X: b.X + in, Y: c.Y}, true // right to left
+		}
+	}
+	return screen.Point{X: b.X + b.W - in, Y: c.Y}, true
+}
+
+// pointScale guesses the pixels per point of an iPhone or iPad screen from
+// its size: iPhones at 3x are 1080 to 1320 pixels across, those at 2x 640
+// to 828, and iPads at 2x 1488 and more.
+func pointScale(s *screen.Screen) int {
+	if w := min(s.Width, s.Height); w >= 1000 && w <= 1400 {
+		return 3
+	}
+	return 2
 }
 
 // clearPoint returns the point of area farthest from the rectangles on it,
@@ -1359,8 +1444,10 @@ func (g *Gateway) awaitApproval(ctx context.Context, l *lease, c Call, a Action,
 // waitApproval blocks for up to MaxBlock, sending progress every 5 s.
 func (g *Gateway) waitApproval(ctx context.Context, l *lease, id string, info approval.Info, progress Progress) (approval.Outcome, error) {
 	start := time.Now()
-	deadline := start.Add(g.opt.MaxBlock)
-	total := g.opt.MaxBlock.Seconds()
+	// It leaves the call time for what follows a decision (budget.go): an
+	// approval still open then is picked up by the agent's next call.
+	deadline := budgetBefore(ctx, start.Add(g.opt.MaxBlock), approvalReserve)
+	total := deadline.Sub(start).Seconds()
 	for {
 		left := time.Until(deadline)
 		if left <= 0 {
@@ -1568,6 +1655,28 @@ func (g *Gateway) preflight(ctx context.Context, l *lease) *Result {
 // before picture is the kept one when it shows cur, and the after picture
 // is taken in the background (see shots.go).
 func (g *Gateway) execute(ctx context.Context, l *lease, c Call, a Action, p *prep, cur *screen.Screen, step int) *Result {
+	if a.Tool != "launch" {
+		return g.executeOn(ctx, l, c, a, p, cur, step)
+	}
+	// Opening an app that refuses screen sharing first moves the task to
+	// a connection that shares none, where the phone has one
+	// (taskconn.go). Only here, once the gate and the rules let the
+	// launch run: a launch that is refused, or waits for the person,
+	// leaves the phone's connection alone.
+	if g.preflight(ctx, l) != nil {
+		return g.executeOn(ctx, l, c, a, p, cur, step) // it records the refusal
+	}
+	start := time.Now()
+	res, note := g.launchConnection(ctx, l, a, p)
+	if res != nil {
+		g.recordStep(l, step, a, c, p, res, start, "", "", "")
+		return res
+	}
+	return withNote(g.executeOn(ctx, l, c, a, p, cur, step), note)
+}
+
+// executeOn is execute on the connection the task runs on.
+func (g *Gateway) executeOn(ctx context.Context, l *lease, c Call, a Action, p *prep, cur *screen.Screen, step int) *Result {
 	d := l.dev
 	start := time.Now()
 	bshot := g.beforeShot(d, cur)
@@ -1592,6 +1701,9 @@ func (g *Gateway) execute(ctx context.Context, l *lease, c Call, a Action, p *pr
 		g.oweSettleLocked(d, time.Now())
 	}
 	g.mu.Unlock()
+	if a.Tool == "drag" && dev != nil {
+		p.follow = g.followDrag(d, dev, onBG, cur, p)
+	}
 	if dev == nil {
 		cancel()
 		res := errResult(ErrDeviceOffline, "%s is offline. Nothing was done.", d.name())
@@ -1651,6 +1763,9 @@ func (g *Gateway) execute(ctx context.Context, l *lease, c Call, a Action, p *pr
 	next, err := g.observe(ctx, d, true)
 	if err != nil {
 		res := statusResult(StatusUncertain, "The action was sent, but the screen could not be read afterwards (%v). Observe before anything else; do not repeat it blindly.", err)
+		if errors.Is(err, errOutOfTime) {
+			res = outOfTimeAfterAction(g.opt.CallBudget)
+		}
 		g.recordStep(l, step, a, c, p, res, start, before, "", "")
 		return res
 	}
@@ -1661,6 +1776,9 @@ func (g *Gateway) execute(ctx context.Context, l *lease, c Call, a Action, p *pr
 	if a.Tool == "launch" && onBG && noApp(next) {
 		next, settled = g.awaitApp(ctx, d, next, settled, limit)
 		unread = noApp(next)
+	}
+	if !unread && g.awaitsTree(d, next) {
+		next = g.awaitTree(ctx, d, next)
 	}
 	// early: settle_ms ended the wait while the screen was still changing,
 	// so the read may come before the action's effect shows.
@@ -1690,6 +1808,12 @@ func (g *Gateway) execute(ctx context.Context, l *lease, c Call, a Action, p *pr
 	}
 	if inputNote != "" {
 		res.Message = strings.TrimSpace(res.Message + " " + inputNote)
+	}
+	if n := unflipped(a, p, next); n != "" {
+		res.Message = strings.TrimSpace(res.Message + " " + n)
+	}
+	if f := p.follow; f != nil && f.note != "" {
+		res.Message = strings.TrimSpace(res.Message + " " + f.note)
 	}
 	shot := g.startShot(d, next)
 	if early && shot == bshot {
@@ -1746,7 +1870,7 @@ func (g *Gateway) leaves(a Action, p *prep, cur *screen.Screen) bool {
 // for the app is never cut short by settle_ms: the app in front decides
 // what the agent may see and do next.
 func (g *Gateway) awaitLeave(ctx context.Context, d *device, from screen.App, next *screen.Screen, settled bool, limit time.Duration) (*screen.Screen, bool) {
-	deadline := time.Now().Add(g.opt.SettleMax)
+	deadline := budgetBefore(ctx, time.Now().Add(g.opt.SettleMax), 0)
 	for time.Now().Before(deadline) {
 		if !sleepCtx(ctx, g.opt.PollInterval, nil) {
 			break
@@ -1783,7 +1907,7 @@ var launchReadWait = 6 * time.Second
 // shows an app, then settles as the action does (limit) and reads once
 // more. It keeps next when no app comes.
 func (g *Gateway) awaitApp(ctx context.Context, d *device, next *screen.Screen, settled bool, limit time.Duration) (*screen.Screen, bool) {
-	deadline := time.Now().Add(launchReadWait)
+	deadline := budgetBefore(ctx, time.Now().Add(launchReadWait), 0)
 	for time.Now().Before(deadline) {
 		if !sleepCtx(ctx, max(g.opt.PollInterval, 300*time.Millisecond), nil) {
 			break
@@ -1821,7 +1945,7 @@ func launchUnreadMessage(p *prep) string {
 
 // emptyBackgroundMessage explains a background display that shows no app.
 const emptyBackgroundMessage = "The background display shows no app: none was started on it, or Android does not show the one just started there yet. " +
-	"Launch an app with phone_launch, or call phone_observe again in a few seconds."
+	"Launch an app with phone_launch, or call phone_observe again in a few seconds. " + ownScreenHint
 
 // stillIn reports whether s shows app in front, unlocked.
 func stillIn(s *screen.Screen, app screen.App) bool {
@@ -1862,6 +1986,16 @@ func (g *Gateway) perform(ctx context.Context, dev driver.Device, a Action, p *p
 		dr, ok := dev.(driver.Dragger)
 		if !ok || p.drag == nil {
 			return fmt.Errorf("dragging: %w", driver.ErrUnsupported)
+		}
+		if p.follow != nil {
+			if rp, ok := dev.(driver.DragReplanner); ok {
+				err := p.follow.run(ctx, rp, *p.drag)
+				if p.follow.moved {
+					// History shows where the finger let go.
+					p.to = p.follow.dropped
+				}
+				return err
+			}
 		}
 		return dr.Drag(ctx, *p.drag)
 	case "key":
@@ -1906,6 +2040,8 @@ func (g *Gateway) actionError(l *lease, err error) *Result {
 	case errors.Is(err, driver.ErrOffline):
 		g.setOffline(l.dev, "")
 		return statusResult(StatusUncertain, "The phone dropped during the action, which may or may not have happened. Observe when it is back before anything else; do not repeat it blindly.")
+	case errors.Is(err, context.DeadlineExceeded):
+		return statusResult(StatusUncertain, "The phone did not answer in time (%v), so the action may or may not have happened. Observe before anything else; do not repeat it blindly.", err)
 	}
 	return statusResult(StatusUncertain, "The action may or may not have happened (%v). Observe before anything else; do not repeat it blindly.", err)
 }
@@ -1927,8 +2063,14 @@ func (g *Gateway) readError(l *lease, err error) *Result {
 		return statusResult(StatusLocked, "The phone is locked. Call phone_handoff so the person can unlock it.")
 	case errors.Is(err, driver.ErrUnsupported):
 		return errResult(ErrUnsupported, "%v", err)
-	case errors.Is(err, context.Canceled), errors.Is(err, context.DeadlineExceeded):
+	case errors.Is(err, errOutOfTime):
+		return outOfTimeBeforeAction(g.opt.CallBudget)
+	case errors.Is(err, context.Canceled):
 		return errResult(ErrInternal, "The call was cancelled.")
+	case errors.Is(err, context.DeadlineExceeded):
+		// The read's own bound (observeTimeout) or the driver's, such as
+		// WebDriverAgent's 30 s: a slow phone or app, not a cancel.
+		return errResult(ErrInternal, "Reading the screen timed out: the phone did not answer in time (%v). Observe again; if reads keep timing out, the app in front may be stalled: go home with phone_key, or call phone_handoff.", err)
 	}
 	return errResult(ErrInternal, "Reading the screen failed: %v", err)
 }
@@ -1972,7 +2114,17 @@ func (g *Gateway) observeOCR(ctx context.Context, d *device, mode readOCR) (*scr
 	if dev == nil {
 		return nil, driver.ErrOffline
 	}
-	ctx, cancel := context.WithTimeout(ctx, observeTimeout)
+	if budgetSpent(ctx) {
+		return nil, errOutOfTime
+	}
+	// A read ends with the call's budget (budget.go), and the driver's
+	// read is cancelled then: the call answers before the agent's client
+	// gives up on it.
+	timeout, byBudget := observeTimeout, false
+	if left, ok := budgetLeft(ctx); ok && left < timeout {
+		timeout, byBudget = left, true
+	}
+	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 	start := stamp() // ordered against the pictures it vouches for (clock.go)
 	// The recording learns of the read before it runs: while it runs, what
@@ -2012,6 +2164,9 @@ func (g *Gateway) observeOCR(ctx context.Context, d *device, mode readOCR) (*scr
 			g.wake(ctx, d)
 			return g.observeOCR(ctx, d, mode)
 		}
+	}
+	if err != nil && byBudget && ctx.Err() == context.DeadlineExceeded {
+		err = fmt.Errorf("%w: %w", errOutOfTime, err)
 	}
 	if err != nil {
 		if errors.Is(err, driver.ErrOffline) {
@@ -2577,4 +2732,24 @@ func describe(a Action, p *prep) string {
 		return "Opened " + name + localeWords(a)
 	}
 	return a.Tool
+}
+
+// unflipped says so when a tap by ref on a switch or checkbox left it as it
+// was, which a settled status alone would hide (GitHub issue #51): the tap
+// may have missed the switch, or the app may have asked something first.
+func unflipped(a Action, p *prep, next *screen.Screen) string {
+	t := p.target
+	if a.Tool != "tap" || a.Ref <= 0 || a.LongPress || t == nil || next == nil ||
+		(t.Role != screen.RoleSwitch && t.Role != screen.RoleCheckbox) {
+		return ""
+	}
+	e, ok := next.Find(t.Ref)
+	if !ok || e.Role != t.Role || e.Label != t.Label || e.Has(screen.StateChecked) != t.Has(screen.StateChecked) {
+		return ""
+	}
+	state := "off"
+	if e.Has(screen.StateChecked) {
+		state = "on"
+	}
+	return fmt.Sprintf("[%d] is still %s after the tap. If nothing else came up, tap the switch itself by x and y.", t.Ref, state)
 }

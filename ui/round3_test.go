@@ -148,6 +148,7 @@ func TestUnlockErrors(t *testing.T) {
 		{errors.Join(errors.New("no pad"), driver.ErrPINNotEntered), "Pinky couldn't get to Mi 10 Pro's passcode screen, so it entered nothing."},
 		{secret.ErrNotFound, "No PIN is saved for Mi 10 Pro."},
 		{fmt.Errorf("wrapped: %w", secret.ErrMicrosoftAccount), "To unlock Mi 10 Pro, type your Microsoft account password"},
+		{fmt.Errorf("refused: %w", secret.ErrAccountRestricted), "Windows wouldn't check your password, so Mi 10 Pro wasn't unlocked."},
 		{secret.ErrUnsupported, notAvailableHere},
 		{gateway.ErrNoUnlock, "Unlocking from this computer isn't available."},
 		{driver.ErrOffline, "Mi 10 Pro is offline."},
@@ -226,6 +227,7 @@ func TestPairByQRCodeFails(t *testing.T) {
 		{driver.ErrPairNotListening, "The phone stopped waiting to pair, as it does when it leaves the scanning screen.", true},
 		{driver.ErrPairUnreachable, "The phone showed up on the network, but Pinky couldn't connect to it.", false},
 		{driver.ErrPairOldTool, "The adb server running on this computer is too old to pair phones over Wi-Fi.", false},
+		{driver.ErrPairNoNetwork, "This computer's adb server can't reach phones on your network, though Pinky can.", false},
 	} {
 		ta.waitFor(t, "the QR code", func() bool { tt.Frame(); return ta.add.pair.code != nil && ta.add.pair.state == "waiting" })
 		ta.api.FailPairing(fmt.Errorf("android: pairing with 192.168.1.42:37123 failed: %w (adb: pairing failed: Wrong password or connection was dropped.)", c.why))

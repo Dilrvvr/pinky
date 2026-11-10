@@ -25,7 +25,7 @@ import (
 // changed it since.
 
 // settingsRule is the rule changing the phone's settings asks under.
-const settingsRule = "Phone settings"
+const settingsRule = policy.RulePhoneSettings
 
 // changeLanguage names an app's own language in a task's change log, and
 // in phone_device's reset.
@@ -90,7 +90,7 @@ func (s *Session) Device(ctx context.Context, req DeviceRequest) *Result {
 	}
 	defer s.done(l)
 	g := s.g
-	ctx, cancel := mergeCtx(ctx, l.ctx)
+	ctx, cancel := g.callCtx(ctx, l)
 	defer cancel()
 	changing := len(want) > 0 || len(resets) > 0
 	if res := g.gate(l, req.ApprovalID, changing); res != nil {
@@ -350,7 +350,8 @@ func (g *Gateway) askSettings(ctx context.Context, l *lease, req DeviceRequest, 
 			detail = s.agent.Name + " · " + c
 		}
 		info = g.approvals.Open(approval.Request{Kind: approval.KindAction, Binding: b, Rule: settingsRule, Title: title,
-			Detail: detail, Agent: s.agent.Name, TaskID: l.task.id, DeviceName: l.dev.name()})
+			Detail: detail, Agent: s.agent.Name, TaskID: l.task.id, DeviceName: l.dev.name(),
+			Data: &standingAsk{rule: settingsRule, agent: s.agent.Name, device: l.dev.id, deviceName: l.dev.name()}})
 		if res := g.afterOpen(l, info); res != nil {
 			return res
 		}
@@ -391,8 +392,12 @@ func (g *Gateway) askSettings(ctx context.Context, l *lease, req DeviceRequest, 
 // person now: always on a real phone, whose settings are the person's
 // own; on an emulator or a Simulator only when they asked to approve more
 // than payments. Allow for this task, here or for a launch in another
-// language, ends the asking for the task.
+// language, ends the asking for the task; Always allow ends it for the
+// agent on this phone (standing.go).
 func (g *Gateway) settingsAsk(l *lease) bool {
+	if g.standingAllowed(l, settingsRule, screen.App{}) {
+		return false
+	}
 	g.mu.Lock()
 	defer g.mu.Unlock()
 	if settingsGrantedLocked(l) {
@@ -746,8 +751,10 @@ func (g *Gateway) switchError(l *lease, err error) *Result {
 	case errors.Is(err, driver.ErrOffline):
 		g.setOffline(l.dev, "")
 		return errResult(ErrDeviceOffline, "%s is offline.", l.dev.name())
-	case errors.Is(err, context.Canceled), errors.Is(err, context.DeadlineExceeded):
+	case errors.Is(err, context.Canceled):
 		return errResult(ErrInternal, "The call was cancelled.")
+	case errors.Is(err, context.DeadlineExceeded):
+		return errResult(ErrInternal, "The phone did not answer in time (%v). Check the phone before trying again.", err)
 	}
 	return errResult(ErrInternal, "%v", err)
 }

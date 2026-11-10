@@ -322,6 +322,22 @@ func TestSessionCloseReleasesLease(t *testing.T) {
 	}
 }
 
+// A client on this computer that drops its session and starts a new one,
+// as Claude Desktop does after a call times out, carries on with its task.
+func TestNewSessionContinuesTask(t *testing.T) {
+	h := newHarness(t)
+	c := h.connect(t, "claude-ai")
+	if text, isErr := c.call(t, "phone_connect", map[string]any{"task": "Lunch"}); isErr {
+		t.Fatalf("connect:\n%s", text)
+	}
+	c.cs.Close()
+	<-c.done
+	again := h.connect(t, "claude-ai")
+	if text, isErr := again.call(t, "phone_key", map[string]any{"key": "home"}); isErr {
+		t.Fatalf("the new session did not continue the task:\n%s", text)
+	}
+}
+
 func TestBatchAndScreenshot(t *testing.T) {
 	h := newHarness(t)
 	c := h.connect(t, "claude-code")
@@ -372,7 +388,8 @@ func TestHandoffOverMCP(t *testing.T) {
 }
 
 func TestDisplayName(t *testing.T) {
-	for in, want := range map[string]string{"claude-code": "Claude Code", "codex-mcp-client": "Codex", "my-agent": "My Agent", "": "Agent"} {
+	for in, want := range map[string]string{"claude-code": "Claude Code", "codex-mcp-client": "Codex", "my-agent": "My Agent", "": "Agent",
+		"local-agent-mode-pinky": "Claude Cowork", "local-agent-mode-phone": "Claude Cowork"} {
 		if got := DisplayName(in, ""); got != want {
 			t.Errorf("DisplayName(%q) = %q, want %q", in, got, want)
 		}

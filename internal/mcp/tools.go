@@ -60,6 +60,8 @@ type connectIn struct {
 	Apps   []string `json:"apps,omitempty" jsonschema:"Optional: the only apps this task needs, by name or id. Pinky then refuses to launch other apps and asks the person before typing into them."`
 	// ReadOnly lets an agent ask for less than the person gave it.
 	ReadOnly   bool   `json:"read_only,omitempty" jsonschema:"Run this task read-only, for tasks that only look: you may open apps, read and search, but anything the person's rules would ask about is refused, and typing works only in search fields. A new agent's approval card then offers read-only access."`
+	OwnScreen  bool   `json:"own_screen,omitempty" jsonschema:"Work on the phone's own screen even when the person has Pinky work on a background display, which has no home screen. Only for work on the home screen itself: moving app icons, making folders, widgets. If the person used the phone in the last minute, the task starts paused until they hand it over; if it is locked, they unlock it."`
+	Connection string `json:"connection,omitempty" jsonschema:"iPhone only: how Pinky connects to the phone for this task. auto (default): Pinky chooses, and moves the task to the WebDriverAgent helper when phone_launch opens an app known to refuse screen sharing (DBS digibank, China Merchants Bank), once the launch may run. helper: the WebDriverAgent helper, which shares no screen, for apps that refuse screen sharing; slower. coredevice: back to the faster CoreDevice. The phone returns to the person's choice after the task; a connection the person fixed in Settings is kept, and nothing moves while the person is in control, the phone is locked or an approval is open."`
 	ApprovalID string `json:"approval_id,omitempty" jsonschema:"From an approval_pending result: repeat the same call with the same arguments and this id to keep waiting for the person's answer."`
 }
 
@@ -90,7 +92,7 @@ type tapIn struct {
 type typeIn struct {
 	actionArgs
 	Text   string `json:"text" jsonschema:"The text to type, up to 16384 characters. Any language works."`
-	Ref    int    `json:"ref,omitempty" jsonschema:"The text field to type into; default the focused field."`
+	Ref    int    `json:"ref,omitempty" jsonschema:"The text field to type into, or the placeholder text of a search box an app draws itself; default the focused field."`
 	Append bool   `json:"append,omitempty" jsonschema:"Keep the field's text and add to it; default replaces it."`
 	Submit bool   `json:"submit,omitempty" jsonschema:"Press Enter afterwards. In a chat app this sends the message, which asks the person first if they chose to approve messages."`
 }
@@ -352,11 +354,12 @@ func (s *Server) addTools(srv *sdk.Server, remote bool) {
 			"The task name shows in Pinky, so the person knows what you are doing. The first connection of a new agent waits for the person's approval (approval_pending; repeat with approval_id). " +
 			"Another session's phone returns lease_held. A phone that waits for the person to do a step before Pinky can use it (trust this computer, allow USB debugging, Developer Mode) " +
 			"returns device_needs_setup with the step: ask the person with phone_handoff. Call phone_release when done.",
-		InputSchema: schema[connectIn](nil), Annotations: &sdk.ToolAnnotations{OpenWorldHint: boolp(false)}},
+		InputSchema: schema[connectIn](func(p map[string]*jsonschema.Schema) { enum(p["connection"], "auto", "helper", "coredevice") }),
+		Annotations: &sdk.ToolAnnotations{OpenWorldHint: boolp(false)}},
 		func(ctx context.Context, req *sdk.CallToolRequest, in connectIn) (*sdk.CallToolResult, any, error) {
 			return render(s.session(req, remote).Connect(ctx, gateway.ConnectRequest{
 				Call: gateway.Call{Device: strings.TrimSpace(in.Device), ApprovalID: strings.TrimSpace(in.ApprovalID), Progress: progress(ctx, req)},
-				Task: in.Task, Apps: in.Apps, ReadOnly: in.ReadOnly})), nil, nil
+				Task: in.Task, Apps: in.Apps, ReadOnly: in.ReadOnly, OwnScreen: in.OwnScreen, Connection: in.Connection})), nil, nil
 		})
 
 	sdk.AddTool(srv, &sdk.Tool{Name: "phone_release", Title: "Release the phone",
@@ -433,7 +436,10 @@ func (s *Server) addTools(srv *sdk.Server, remote bool) {
 
 	sdk.AddTool(srv, &sdk.Tool{Name: "phone_drag", Title: "Drag",
 		Description: "Drag with one finger to move something: press an element (ref) or a point (from), rest there hold_ms to pick it up, move through the via points (resting at each for its pause_ms) to to, rest pause_ms and let go, without the fling of a swipe. " +
-			"For app icons between home screen pages or into folders, list rows, sliders and map pins; use phone_swipe to scroll. A home screen turns one page while the finger rests about 0.7 s near its left or right edge, and more the longer it rests; to drop into a folder, or onto an app to make one, let go over the middle of its icon. " +
+			"For app icons between home screen pages or into folders, list rows, sliders and map pins; use phone_swipe to scroll. A home screen turns one page while the finger rests about 0.7 s near its left or right edge, and more the longer it rests. " +
+			"To drop into a folder, or onto an app to make one, let go over its icon where it is during the drag; the picked-up icon keeps where the finger holds it, so press the app at its ref and aim from the target's ref point. " +
+			"Give to where the target is on the screen you read: on an Android home screen with hold_ms 300 or more, Pinky follows the page, which Pixel Launcher shrinks toward the middle (the dock stays) as soon as it picks an icon up. It lifts the icon a little, compares the screen with the one from before and lets go where to went; via points stay where they are. That adds under a second (more over Wi-Fi with the mirror closed), and the result says when it moved the drop or could not see where to went. " +
+			"If the icons only traded places or moved aside, observe and aim again from where they are now. " +
 			"The person's rules judge a drag like a swipe, at every point the finger presses, rests on or lets go at.",
 		InputSchema: schema[dragIn](func(p map[string]*jsonschema.Schema) {
 			patchDrag(p)

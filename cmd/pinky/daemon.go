@@ -21,6 +21,7 @@ import (
 	"github.com/DIYgod/pinky/internal/mcp"
 	"github.com/DIYgod/pinky/internal/policy"
 	"github.com/DIYgod/pinky/internal/telemetry"
+	"github.com/DIYgod/pinky/internal/update"
 	"github.com/DIYgod/pinky/ui"
 )
 
@@ -37,7 +38,9 @@ func runDaemon(args []string) error {
 	c.Log = newLogger(os.Stderr, *verbose)
 	if dirs, err := api.DefaultDirs(); err == nil && dirs.Ensure() == nil {
 		crashes := captureCrashes(dirs, "daemon", c.Log)
-		defer crashes.Stop()
+		// Not a plain Stop: a panic runs deferred calls, and a Stop removed the
+	// crash file before the runtime wrote the panic to it.
+	defer func() { crashes.Exit(recover()) }()
 		c.Crashes = crashes
 	}
 
@@ -45,7 +48,15 @@ func runDaemon(args []string) error {
 	if err != nil {
 		return err
 	}
+	// Once the gateway has closed, as the app's settings say then.
+	var restarting bool
+	defer func() {
+		s := loadSettings(filepath.Join(rg.Dirs.Config, "settings.json"), c.Log)
+		stopADBAtQuit(s.StopADBOnQuit, c.Fake, restarting, c.Log)
+	}()
 	defer rg.Close()
+	// Agents' copies of Pinky's skill follow this version.
+	go refreshSkills(c.Log)
 	// Recording, retention, iPhones over Wi-Fi and usage statistics follow
 	// the app's settings, when there are any.
 	s := loadSettings(filepath.Join(rg.Dirs.Config, "settings.json"), c.Log)
@@ -77,6 +88,8 @@ func runDaemon(args []string) error {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 	rg.srv.Quit = stop
+	// The app takes over from a daemon when the person opens it.
+	rg.srv.Kind = api.KindDaemon
 	upd := newUpdater(rg.Dirs, c.Log)
 	if err := startedUpdate(upd, c.Log).Confirm(); err != nil {
 		c.Log.Warn("update: confirm", "err", err)
@@ -85,6 +98,7 @@ func runDaemon(args []string) error {
 		go daemonUpdates(ctx, upd, c.Log)
 	}
 	err = rg.Serve(ctx)
+	restarting = update.Restarting(rg.Dirs.Config)
 	c.Log.Info("gateway stopping")
 	return err
 }
