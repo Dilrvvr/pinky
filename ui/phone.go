@@ -50,6 +50,9 @@ func (a *app) phonesPage(c *mg.Context) {
 		}
 	} else if d := a.device(a.sel); d != nil {
 		name, line = d.Info.Name, connectionLine(*d)
+		if d.Streaming {
+			line += " · " + locales.PhoneStreaming()
+		}
 		if t := a.taskOf(d.Info.ID); a.backgroundTask(*d, t) {
 			line += " · " + locales.PhoneWorksInBackground(agentOrTheAgent(t))
 		}
@@ -80,6 +83,10 @@ func (a *app) phoneCenter(c *mg.Context, d gateway.DeviceView) {
 	p := pal(c)
 	if a.chk.showing == d.Info.ID {
 		a.checkupPanel(c, d)
+		return
+	}
+	if d.Paused {
+		a.pausedPage(c, d)
 		return
 	}
 	if d.Status == gateway.DeviceConnecting {
@@ -412,8 +419,11 @@ func (a *app) moreControls(c *mg.Context, d gateway.DeviceView, m *mirror) {
 				a.setBackground(d, on)
 			}
 		})
-		if a.canRemove() {
+		if a.canPause() || a.canRemove() {
 			mg.Box(c).Height(1).Background(p.line).Margin(6, 4)
+		}
+		a.pauseMenuItem(c, d, func() { open = false })
+		if a.canRemove() {
 			if menuItem(c, locales.RemovePhoneMenu(), p.red).Clicked() {
 				open = false
 				a.askRemove(d)
@@ -478,7 +488,8 @@ func tileColumns(room float32, phones int) (n int, width float32) {
 	return n, max(width, tileMinWidth)
 }
 
-// allPhonesGrid shows a live tile per phone; a click selects it. The
+// allPhonesGrid shows a tile per phone, live or with its last picture
+// (tileStill); a click selects it. The
 // tiles sit in columns centered in the room between the sidebar and the
 // right panel, a last row that is not full starting in the first column,
 // and scroll under the page's header when there are more than the window
@@ -516,8 +527,8 @@ func (a *app) phoneTiles(c *mg.Context, cols []mg.Track, width float32) {
 				tile.Background(p.bg2)
 			}
 			hovered := tile.Hovered()
-			if a.canRemove() {
-				tile.ContextMenu(func(m *mg.Menu) { a.removeMenuItem(m, d) })
+			if a.hasPhoneMenu() {
+				tile.ContextMenu(func(m *mg.Menu) { a.phoneMenu(m, d) })
 			}
 			tile.Children(func() {
 				sel := mg.ButtonBase(c).Column().AlignItems(mg.Stretch).Justify(mg.Start).FillWidth().Padding(14).Gap(10).Radius(14).Label(locales.PhoneShow(d.Info.Name))
@@ -544,7 +555,13 @@ func (a *app) phoneTiles(c *mg.Context, cols []mg.Track, width float32) {
 							}
 						})
 					default:
-						m, bgTask := a.screenFor(d, t, true)
+						var m *mirror
+						bgTask := false
+						if a.tileStill(d, t) {
+							m = a.stillFor(d.Info.ID)
+						} else {
+							m, bgTask = a.screenFor(d, t, true)
+						}
 						pw, ph, sw, sh := fitBezel(m.aspect(d), slotW, tileSlotHeight, 5)
 						radius, inner := bezelRadius(kind, sw, sh, 5)
 						slot.Children(func() {
@@ -594,6 +611,25 @@ func (a *app) phoneTiles(c *mg.Context, cols []mg.Track, width float32) {
 			})
 		}
 	})
+}
+
+// tileStill reports whether a phone's tile in All phones shows the
+// phone's last picture instead of its live screen: an iPhone that no task
+// runs on and the person does not hold. While a view of an iPhone's
+// display stream is open, iOS shows screen sharing and never locks the
+// phone by itself, so All phones, Pinky's home page, would keep an idle
+// iPhone awake for as long as it shows. An Android phone's tile stays
+// live: its stream (scrcpy, which does not turn the screen on) costs the
+// phone nothing, and the phone sleeps and locks as usual.
+func (a *app) tileStill(d gateway.DeviceView, t *gateway.TaskView) bool {
+	if d.Info.Platform != driver.IOS || d.Status == gateway.DeviceInControl {
+		return false
+	}
+	if t != nil && running(t.State) {
+		return false
+	}
+	_, handoff := a.handoffFor(d.Info.ID)
+	return !handoff
 }
 
 // tileMore is the ⋯ button on a phone's tile in All phones, which shows

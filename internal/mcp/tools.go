@@ -57,7 +57,7 @@ func waypoints(in []waypoint) []gateway.Waypoint {
 type connectIn struct {
 	Device string   `json:"device,omitempty" jsonschema:"The phone, by device id or name. Optional when one phone is connected."`
 	Task   string   `json:"task" jsonschema:"One line naming the task, shown to the person, e.g. Reorder last week's lunch."`
-	Apps   []string `json:"apps,omitempty" jsonschema:"Optional: the only apps this task needs, by name or id. Pinky then refuses to launch other apps and asks the person before typing into them."`
+	Apps   []string `json:"apps,omitempty" jsonschema:"Optional: the only apps this task needs, by name or id, as a list of strings: [\"Settings\", \"com.apple.mobilecal\"]. Pinky then refuses to launch other apps and asks the person before typing into them."`
 	// ReadOnly lets an agent ask for less than the person gave it.
 	ReadOnly   bool   `json:"read_only,omitempty" jsonschema:"Run this task read-only, for tasks that only look: you may open apps, read and search, but anything the person's rules would ask about is refused, and typing works only in search fields. A new agent's approval card then offers read-only access."`
 	OwnScreen  bool   `json:"own_screen,omitempty" jsonschema:"Work on the phone's own screen even when the person has Pinky work on a background display, which has no home screen. Only for work on the home screen itself: moving app icons, making folders, widgets. If the person used the phone in the last minute, the task starts paused until they hand it over; if it is locked, they unlock it."`
@@ -174,7 +174,7 @@ type batchStep struct {
 type batchIn struct {
 	Device string      `json:"device,omitempty" jsonschema:"The phone, by device id or name. Required when this session holds more than one phone."`
 	Intent string      `json:"intent,omitempty" jsonschema:"Why, for steps without their own intent."`
-	Steps  []batchStep `json:"steps" jsonschema:"The steps, in order. The batch stops at the first step that does not settle."`
+	Steps  []batchStep `json:"steps" jsonschema:"The steps, in order, each an object naming its action in tool and that action's arguments beside it: [{\"tool\":\"tap\",\"ref\":12},{\"tool\":\"type\",\"text\":\"coffee\",\"submit\":true},{\"tool\":\"swipe\",\"direction\":\"up\"}]. The batch stops at the first step that does not settle."`
 }
 
 type waitForIn struct {
@@ -269,7 +269,35 @@ func schema[T any](patch func(props map[string]*jsonschema.Schema)) *jsonschema.
 	if patch != nil {
 		patch(s.Properties)
 	}
+	dropNull(s)
 	return s
+}
+
+// dropNull advertises every optional field, at any depth, with its plain
+// type instead of ["null", type]: Claude Code shows a property typed that
+// way with its description alone, no type or items, so agents guessed
+// phone_batch's step shape and phone_connect's apps.
+func dropNull(s *jsonschema.Schema) {
+	if s == nil {
+		return
+	}
+	if len(s.Types) > 0 {
+		var kept []string
+		for _, t := range s.Types {
+			if t != "null" {
+				kept = append(kept, t)
+			}
+		}
+		if len(kept) == 1 {
+			s.Type, s.Types = kept[0], nil
+		} else {
+			s.Types = kept
+		}
+	}
+	for _, p := range s.Properties {
+		dropNull(p)
+	}
+	dropNull(s.Items)
 }
 
 func enum(s *jsonschema.Schema, values ...string) {
@@ -353,7 +381,8 @@ func (s *Server) addTools(srv *sdk.Server, remote bool) {
 		Description: "Start a task on a phone: leases the phone to this session and returns its first screen. " +
 			"The task name shows in Pinky, so the person knows what you are doing. The first connection of a new agent waits for the person's approval (approval_pending; repeat with approval_id). " +
 			"Another session's phone returns lease_held. A phone that waits for the person to do a step before Pinky can use it (trust this computer, allow USB debugging, Developer Mode) " +
-			"returns device_needs_setup with the step: ask the person with phone_handoff. Call phone_release when done.",
+			"returns device_needs_setup with the step: ask the person with phone_handoff. A phone the person paused in Pinky returns device_paused: " +
+			"ask them to resume it, or use another phone. Call phone_release when done.",
 		InputSchema: schema[connectIn](func(p map[string]*jsonschema.Schema) { enum(p["connection"], "auto", "helper", "coredevice") }),
 		Annotations: &sdk.ToolAnnotations{OpenWorldHint: boolp(false)}},
 		func(ctx context.Context, req *sdk.CallToolRequest, in connectIn) (*sdk.CallToolResult, any, error) {

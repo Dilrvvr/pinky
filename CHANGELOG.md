@@ -2,6 +2,25 @@
 
 What changed for people in each release of Pinky, newest first. A version is the release's date in Asia/Shanghai and that day's count: 2026.1107.2 is the second release of 7 November 2026. Notes wait under "Unreleased" until the next release takes them; see [docs/RELEASING.md](docs/RELEASING.md).
 
+## 2026.1111.3 (2026-11-11)
+
+- Leaving Pinky on All phones no longer keeps an idle iPhone from locking: its tile shows the last picture until a task runs on it, so screen sharing stops and the phone locks by itself.
+
+## 2026.1111.2 (2026-11-11)
+
+- You can now pause Pinky's connection to a phone without removing it: Pause connection in the phone's menu stops its screen stream and keeps agents off it until you resume it or plug it in again, so the camera, microphone and banking apps work as usual.
+- The phone page now shows when Pinky is streaming the phone's screen.
+
+## 2026.1111.1 (2026-11-11)
+
+- Agents in Claude Code now see the shape of a batch's steps and of the apps list, so they no longer have to guess it.
+- Handing an iPhone on Wi-Fi to you to unlock no longer fails when the phone drops off the network for a moment as it unlocks.
+- A locked iPad on Wi-Fi no longer fills the log with lines about it coming and going.
+
+## 2026.1110.32 (2026-11-10)
+
+- On Windows, the live picture of iPhones on iOS versions before 27 now works. Thanks to @kingmissh.
+
 ## 2026.1110.31 (2026-11-10)
 
 - Pinky now makes sure the WebDriverAgent helper ends on the iPhone after a task, after a crash and when Pinky quits, so the phone locks on its own again.
