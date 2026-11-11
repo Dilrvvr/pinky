@@ -334,6 +334,7 @@ type app struct {
 	comp      companionState // the Android companion app, per phone
 	bg        bgState        // background displays, per phone
 	conn      connState      // iPhones: how Pinky connects, per phone
+	helper    helperState    // iPhones: installing the helper from the window (helper.go)
 	rec       recState       // task recordings in Activity
 	remote    remoteState    // Settings › Agents › Remote agents
 	setup     setupState     // Settings › Agents › Connect an agent, and the sidebar's card
@@ -341,6 +342,7 @@ type app struct {
 	tn        tailnetState   // phones away from this computer's network, through Tailscale
 	phoneWiFi phoneWiFiState // phones without Wireless debugging moved to Wi-Fi (wifiswitch.go)
 	ask       askState       // Ask Pinky: the box at the top of Tasks, and its settings (ask.go)
+	rotate    rotateState    // Rotate in ⋯ under the mirror (rotate.go)
 
 	vit phoneVitalsState // phones' battery and storage (vitals.go)
 
@@ -446,9 +448,12 @@ func (a *app) ready() {
 	a.main = mygo.NewWindow(mygo.WindowOptions{
 		Title: "Pinky", Width: 1280, Height: 820, MinWidth: 960, MinHeight: 620,
 		StateKey: "main", TitleBarStyle: mygo.TitleBarHidden, Hidden: a.opt.Hidden,
-		TrafficLightPosition: &mygo.Point{X: 18, Y: 17},
+		TrafficLightPosition: &mygo.Point{X: 18, Y: 19},
 		BackgroundColor:      "light-dark(#f7f7f8, #212125)",
-		Content:              mg.View(a.view),
+		// The sidebar shows the desktop through, blurred, on macOS and
+		// Windows 11 (Mica); elsewhere it is the wings' gray.
+		Vibrancy: mygo.VibrancySidebar,
+		Content:  mg.View(a.view),
 	})
 	a.postMu.Lock()
 	a.postWin = a.main

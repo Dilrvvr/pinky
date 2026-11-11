@@ -25,7 +25,8 @@ const (
 	// RuleUninstall asks before every uninstall.
 	RuleUninstall = "Uninstalling apps"
 	// RulePinkyApps refuses to touch Pinky Companion and the iPhone's
-	// WebDriverAgent runner, which give Pinky its access to the phone.
+	// helper (an XCTest runner, see IsPinkyApp), which give Pinky its access
+	// to the phone.
 	RulePinkyApps = "Pinky's own apps"
 	// RuleSystemApps refuses to touch apps the phone ships with.
 	RuleSystemApps = "System apps"
@@ -41,11 +42,31 @@ func (op Op) AppChange() bool {
 	return op == OpInstall || op == OpUninstall || op == OpStop
 }
 
-// pinkyApps are Pinky Companion's package names.
-var pinkyApps = []string{"app.pinky.companion", "app.pinky.companion.dev"}
+// StandaloneApp is the package of the standalone prototype
+// (android/standalone, docs/notes/standalone-phone.md): Pinky running on
+// the phone itself, whose screen and controls hold the person's approvals
+// and Stop. Its screen is blocked outright (Blocked, Evaluate) and no task
+// can lift that, so an agent can never press its controls.
+const StandaloneApp = "app.pinky.standalone"
+
+// pinkyApps are Pinky Companion's package names and the standalone
+// prototype's.
+var pinkyApps = []string{"app.pinky.companion", "app.pinky.companion.dev", StandaloneApp}
+
+// IsStandalone reports whether the app is the standalone prototype.
+func IsStandalone(app screen.App) bool {
+	return strings.EqualFold(clonePackage(app.ID), StandaloneApp)
+}
 
 // IsPinkyApp reports whether the app is part of Pinky on the phone: Pinky
-// Companion, or a WebDriverAgent runner (<prefix>.WebDriverAgentRunner.xctrunner).
+// Companion, or the iPhone's helper. The helper is WebDriverAgent's XCTest
+// runner, and every runner counts, whatever its bundle id: Pinky Helper keeps
+// the id it was first installed with, which may be anything ending in
+// .xctrunner (iPhone Use's cc.diygod.iphoneuse.wda.xctrunner, a --bundle-id of
+// `pinky helper install`, Xcode's <prefix>.WebDriverAgentRunner.xctrunner),
+// and a phone only runs XCTest runners for development. The cost is that
+// agents cannot uninstall or stop a developer's own UI test runner, which the
+// person still can.
 func IsPinkyApp(app screen.App) bool {
 	id := strings.ToLower(clonePackage(app.ID))
 	for _, p := range pinkyApps {
@@ -53,7 +74,7 @@ func IsPinkyApp(app screen.App) bool {
 			return true
 		}
 	}
-	return strings.HasSuffix(id, ".xctrunner") && strings.Contains(id, "webdriveragentrunner")
+	return strings.HasSuffix(id, ".xctrunner")
 }
 
 // appChangeLocked decides an install, uninstall or stop. Unlike the screen

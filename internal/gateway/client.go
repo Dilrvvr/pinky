@@ -53,6 +53,10 @@ func (g *Gateway) Devices() []DeviceView {
 		v := DeviceView{Info: info, Status: st, StatusLine: line, Paused: paused, Streaming: g.capturingLocked(d)}
 		if d.online && d.dev != nil {
 			v.Features = featuresOf(d.dev)
+			// Over CoreDevice, the person's Rotate and pinch move to the
+			// helper (helperneed.go).
+			v.Features.Rotate = v.Features.Rotate || g.helperReadyLocked(d)
+			v.Features.Pinch = v.Features.Pinch || g.helperReadyLocked(d)
 		}
 		if d.lease != nil {
 			v.TaskID = d.lease.task.id
@@ -81,6 +85,7 @@ func featuresOf(dev driver.Device) Features {
 	_, f.Files = dev.(driver.Files)
 	_, f.Companion = dev.(driver.CompanionInstaller)
 	_, f.Pinch = dev.(driver.MultiToucher)
+	_, f.Rotate = dev.(driver.Switcher)
 	return f
 }
 
@@ -112,6 +117,11 @@ func (g *Gateway) statusLocked(d *device, open []approval.Info) (DeviceStatus, s
 		if d.info.State == driver.StateNeedsSetup && d.info.Setup == driver.SetupDeviceService {
 			// The computer's device service lost it on Wi-Fi (wifi.go).
 			return DeviceNeedsSetup, "Lost on Wi-Fi"
+		}
+		if d.info.State == driver.StateNeedsSetup && d.info.Setup == driver.SetupMediaInUse {
+			// An app on the iPhone uses the camera or microphone, and iOS
+			// does not mirror it then; it connects once they are free.
+			return DeviceNeedsSetup, "Camera or microphone in use"
 		}
 		if waitsForStep(d.info.State) {
 			// Listed but not opened: the phone is connected and waits for
@@ -652,6 +662,11 @@ func (g *Gateway) personInput(deviceID string) (*device, driver.Device, error) {
 	g.takeOver(d, true)
 	g.mu.Lock()
 	dev := d.dev
+	if d.lease == nil && d.switchBack != nil {
+		// A connection a task or the person's Rotate moved the phone to
+		// stays while the person uses it (helperneed.go).
+		g.switchBackLater(d)
+	}
 	g.mu.Unlock()
 	if dev == nil {
 		return nil, nil, driver.ErrOffline

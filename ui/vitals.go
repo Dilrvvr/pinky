@@ -111,7 +111,7 @@ func (a *app) phoneAbout(c *mg.Context, d gateway.DeviceView) {
 	key := "about:" + id
 	open := a.more[key]
 	label := locales.PhoneAboutButton(d.Info.Name)
-	b := mg.ButtonBase(c.Key("about-"+id)).Height(30).Padding(0, 9).Radius(8).Gap(6).AlignItems(mg.Center).Shrink(0).
+	b := mg.ButtonBase(c.Key("about-"+id)).Height(30).Padding(0, sp2).Radius(rControl).Gap(6).AlignItems(mg.Center).Shrink(0).
 		Label(label).Tooltip(label)
 	if b.Hovered() || open {
 		b.Background(p.bg3)
@@ -121,13 +121,13 @@ func (a *app) phoneAbout(c *mg.Context, d gateway.DeviceView) {
 	}
 	b.Children(func() {
 		if bt := v.Battery; bt != nil {
-			batteryBadge(c, *bt, 13)
+			batteryBadge(c, *bt, fsSmall)
 		} else {
 			mg.Icon(c, icInfo).FontSize(17).TextColor(p.ink2)
 		}
 	})
 	mg.PopoverBase(c, b, &open, func(panel mg.Element) {
-		menuPanel(c, panel).MinWidth(300).MaxWidth(420).Padding(14, 16, 16, 16).Margin(6, 0, 0, 0).
+		menuPanel(c, panel).MinWidth(300).MaxWidth(420).Padding(sp4).Margin(6, 0, 0, 0).
 			AttachTo(b, mg.AnchorBottomEnd, mg.AnchorTopEnd)
 		phoneAboutPanel(c, d, v)
 	})
@@ -142,7 +142,7 @@ func (a *app) tileBattery(c *mg.Context, d gateway.DeviceView) {
 		return
 	}
 	mg.Spacer(c)
-	batteryBadge(c, *b, 12.5)
+	batteryBadge(c, *b, fsCaption)
 }
 
 // phoneAboutPanel is what the header's button opens: the phone's model and
@@ -154,25 +154,25 @@ func phoneAboutPanel(c *mg.Context, d gateway.DeviceView, v gateway.PhoneVitals)
 		model = d.Info.Name
 	}
 	mg.Column(c).Gap(2).Children(func() {
-		mg.Text(c, model).FontSize(15).FontWeight(650)
+		mg.Text(c, model).FontSize(fsHeadline).FontWeight(fwSemibold)
 		if os := gateway.OSName(d.Info); os != "" {
-			mg.Text(c, os).FontSize(13).TextColor(p.ink2)
+			mg.Text(c, os).FontSize(fsSmall).TextColor(p.ink2)
 		}
 	})
-	mg.Box(c).Height(1).Background(p.line).Margin(12, 0)
-	mg.Grid(c).ColumnTracks(mg.FitContent(), mg.Fr(1)).Gap(12).AlignItems(mg.Center).Children(func() {
+	mg.Box(c).Height(1).Background(p.line).Margin(sp3, 0)
+	mg.Grid(c).ColumnTracks(mg.FitContent(), mg.Fr(1)).Gap(sp3).AlignItems(mg.Center).Children(func() {
 		if b := v.Battery; b != nil {
-			mg.Text(c, locales.PhoneAboutBattery()).FontSize(13).TextColor(p.ink2)
-			mg.Row(c).Gap(8).AlignItems(mg.Center).MinWidth(0).Children(func() {
+			mg.Text(c, locales.PhoneAboutBattery()).FontSize(fsSmall).TextColor(p.ink2)
+			mg.Row(c).Gap(sp2).AlignItems(mg.Center).MinWidth(0).Children(func() {
 				batteryGlyph(c, *b)
-				mg.Text(c, batteryText(*b)).FontSize(13).FontFeatures("tnum")
+				mg.Text(c, batteryText(*b)).FontSize(fsSmall).FontFeatures("tnum")
 			})
 		}
 		if s := v.Storage; s != nil {
-			mg.Text(c, locales.PhoneAboutStorage()).FontSize(13).TextColor(p.ink2).AlignSelf(mg.Start)
-			mg.Column(c).Gap(7).MinWidth(0).Children(func() {
+			mg.Text(c, locales.PhoneAboutStorage()).FontSize(fsSmall).TextColor(p.ink2).AlignSelf(mg.Start)
+			mg.Column(c).Gap(sp2).MinWidth(0).Children(func() {
 				free, total := gateway.StorageText(s.Free), gateway.StorageText(s.Total)
-				mg.Text(c, locales.PhoneAboutStorageFree(free, total)).FontSize(13).FontFeatures("tnum")
+				mg.Text(c, locales.PhoneAboutStorageFree(free, total)).FontSize(fsSmall).FontFeatures("tnum")
 				storageBar(c, *s)
 			})
 		}
@@ -218,7 +218,7 @@ func storageBar(c *mg.Context, s driver.Storage) {
 // computer's menu bar shows them.
 func batteryBadge(c *mg.Context, b driver.Battery, size float32) {
 	p := pal(c)
-	mg.Row(c).Gap(5).AlignItems(mg.Center).Shrink(0).Label(locales.PhoneAboutBatteryLabel(b.Level)).Children(func() {
+	mg.Row(c).Gap(sp1).AlignItems(mg.Center).Shrink(0).Label(locales.PhoneAboutBatteryLabel(b.Level)).Children(func() {
 		mg.Text(c, locales.PhoneAboutPercent(b.Level)).FontSize(size).TextColor(p.ink2).FontFeatures("tnum")
 		batteryGlyph(c, b)
 	})

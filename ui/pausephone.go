@@ -73,8 +73,8 @@ func (a *app) pausedPage(c *mg.Context, d gateway.DeviceView) {
 		mg.Box(c).Size(200, 420).Radius(32).Border(2, p.line2).Background(p.bg2).Center().Children(func() {
 			mg.Icon(c, icPause).FontSize(30).TextColor(p.ink3)
 		})
-		mg.Text(c, locales.PhonePausedTitle(d.Info.Name)).FontSize(16).FontWeight(600)
-		mg.Text(c, locales.PhonePausedDetail()).FontSize(13.5).TextColor(p.ink2).TextAlign(mg.Center)
+		mg.Text(c, locales.PhonePausedTitle(d.Info.Name)).FontSize(fsTitle3).FontWeight(fwSemibold)
+		mg.Text(c, locales.PhonePausedDetail()).FontSize(fsSmall).TextColor(p.ink2).TextAlign(mg.Center)
 		if a.canPause() && button(c.Key("resume-"+d.Info.ID), locales.PhonePausedResume(), btnOpt{kind: btnPrimary, icon: icPlay}).Clicked() {
 			a.setPaused(d, false)
 		}
@@ -89,18 +89,12 @@ func (a *app) pauseMenuItem(c *mg.Context, d gateway.DeviceView, close func()) {
 		return
 	}
 	p := pal(c)
-	b := mg.ButtonBase(c.Key("pause-"+d.Info.ID)).Label(locales.PausePhoneMenu()).MinHeight(36).Padding(6, 10).Radius(8).Gap(10).
+	b := mg.ButtonBase(c.Key("pause-"+d.Info.ID)).Label(locales.PausePhoneMenu()).MinHeight(36).Padding(sp2, 10).Radius(rSmall).
 		AlignItems(mg.Center).Justify(mg.Start)
 	if b.Hovered() || b.Focused() {
 		b.Background(p.bg3)
 	}
-	b.TextColor(p.ink).Children(func() {
-		mg.Icon(c, icPause).FontSize(15).TextColor(p.ink2)
-		mg.Column(c).Grow(1).MinWidth(0).Children(func() {
-			mg.Text(c, locales.PausePhoneMenu()).FontSize(14)
-			mg.Text(c, locales.PausePhoneMenuDesc()).FontSize(12.5).TextColor(p.ink2)
-		})
-	})
+	b.Children(func() { menuText(c, locales.PausePhoneMenu(), locales.PausePhoneMenuDesc(), p.ink) })
 	if b.Clicked() {
 		close()
 		a.setPaused(d, true)

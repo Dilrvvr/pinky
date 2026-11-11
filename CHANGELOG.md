@@ -2,6 +2,56 @@
 
 What changed for people in each release of Pinky, newest first. A version is the release's date in Asia/Shanghai and that day's count: 2026.1107.2 is the second release of 7 November 2026. Notes wait under "Unreleased" until the next release takes them; see [docs/RELEASING.md](docs/RELEASING.md).
 
+## 2026.1111.19 (2026-11-11)
+
+- On macOS, Pinky's PIN and API key fields now keep what you type hidden from accessibility tools, as password fields should. Thanks @pseudoyu.
+- On Windows set to English, Chinese text in Pinky now shows in one font, and numbers and English words wrap where they should.
+- On Linux, text in Pinky's window is now laid out as in the desktop's other apps.
+- On macOS, after an automatic update Pinky's window comes back when it was minimized to the Dock, as on Windows and Linux.
+
+## 2026.1111.18 (2026-11-11)
+
+- Ask Pinky now stops at its time limit even while the AI model is still answering, instead of finishing the task late. Thanks @pseudoyu.
+
+## 2026.1111.17 (2026-11-11)
+
+- Agents can now ask phone_logs for an app's log lines with kind "logs", as the tool describes it; it was refused before. Thanks @Talaxy009.
+
+## 2026.1111.16 (2026-11-11)
+
+- When the saved PIN doesn't unlock a phone, its card now offers Try again, which enters the PIN once more after Touch ID or Windows Hello, so you no longer have to pause and resume the phone to unlock it from the computer again. Pinky still never retries by itself. Thanks @demystify0137.
+
+## 2026.1111.15 (2026-11-11)
+
+- An iPhone that uses a private Wi-Fi address and that the Mac's device service lost on Wi-Fi now offers Restart device service…, instead of saying the iPhone is not on the same network. Thanks @poer2023.
+
+## 2026.1111.14 (2026-11-11)
+
+- Installing the iPhone helper and preparing iOS Simulators now work when Xcode is set to a custom build location (Xcode › Settings › Locations › Advanced…). Thanks @IOSTimor.
+
+## 2026.1111.13 (2026-11-11)
+
+- On a Mac with Xcode, Pinky can now install its helper on an older iPhone from its window (the phone's page, its checkup, and Add phone › Try an older iPhone), and install it again when its signature is about to run out, showing each step, asking you to unlock the phone when needed, and saying why when it fails.
+- An iPhone on iOS 27 that Pinky can't show because an app on it is using the camera or microphone (during a call, for example) now says so on its page and in the sidebar, with what to do, and connects by itself once they're free.
+- Agents can no longer uninstall or stop the Pinky helper on an iPhone, whatever its bundle ID.
+
+## 2026.1111.12 (2026-11-11)
+
+- You can now turn a phone's screen yourself: Rotate in the ⋯ menu under its picture offers portrait, landscape and the other ways it turns, with the current one marked. On an iPhone or iPad it needs the iPhone helper. Thanks @NaNhkNaN.
+- On iOS 27, when the iPhone helper is installed, Pinky moves the phone to it by itself for what only the helper can do, such as turning the screen or a pinch, also an agent's, and goes back to the quicker connection afterwards.
+- Pinching on the picture of an iPhone or iPad on iOS 27 now works when the iPhone helper is installed. The first pinch moves the phone to the helper; the next one goes through.
+
+## 2026.1111.11 (2026-11-11)
+
+- The iPhone helper (WebDriverAgent) now shows on the phone as Pinky Helper, with Pinky's icon.
+- On a Mac with Xcode, `pinkyctl helper install` builds, signs and installs the iPhone helper in one command, also on a phone that is only on Wi-Fi. Run it again when the helper's signature runs out.
+
+## 2026.1111.10 (2026-11-11)
+
+- Pinky has a new, calmer look: a translucent sidebar on macOS and Windows 11, one set of sizes and spacing across every screen, and Settings in grouped rows.
+- Activity shows a task's steps on a timeline, each with its picture.
+- Add phone's choices, the dialogs, and the phone page's empty and error states are tidier and consistent.
+
 ## 2026.1111.9 (2026-11-11)
 
 - Ask Pinky: type a task at the top of Tasks and Pinky does it on the phone by itself with an AI model you choose (an Anthropic- or OpenAI-compatible API, with your own key kept in the system keychain), under your rules and approvals and within step, time and cost limits.

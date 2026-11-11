@@ -32,7 +32,7 @@ func (a *API) features(d *device) gateway.Features {
 		return gateway.Features{}
 	}
 	android := d.info.Platform == driver.Android
-	return gateway.Features{Unlock: true, Background: android, Files: android, Companion: android, Pinch: true}
+	return gateway.Features{Unlock: true, Background: android, Files: android, Companion: android, Pinch: true, Rotate: true}
 }
 
 // --- pairing ---
@@ -321,9 +321,10 @@ func (a *API) SetConnection(deviceID, way string) error {
 	}
 	d.way = way
 	if way == "wda" {
-		d.info.State, d.info.Detail = driver.StateNeedsSetup, "The WebDriverAgent helper is not installed on this iPhone. Install it once from Xcode, or choose another connection in Settings > Phones."
+		d.info.State, d.info.Setup = driver.StateNeedsSetup, driver.SetupInstallHelper
+		d.info.Detail = "The WebDriverAgent helper is not installed on this iPhone. Install it once on a Mac with Xcode, with Install the helper in Pinky's window or pinkyctl helper install, or choose another connection in Settings > Phones."
 	} else {
-		d.info.State, d.info.Detail, d.info.Backend = driver.StateOnline, "", "coredevice"
+		d.info.State, d.info.Setup, d.info.Detail, d.info.Backend = driver.StateOnline, "", "", "coredevice"
 	}
 	a.mu.Unlock()
 	a.emit(gateway.Event{Kind: gateway.EventDevices, DeviceID: deviceID})

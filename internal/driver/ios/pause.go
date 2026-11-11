@@ -11,7 +11,8 @@ import (
 // tunnel stays up. List still lists them, by usbmuxd's entry alone: it
 // does not look at their developer services, which takes a CoreDevice
 // tunnel each time, and it ends the helper's runner that waited for the
-// passcode. Once the person resumes one, List looks at it afresh.
+// passcode and the session that waited for the camera and microphone. Once
+// the person resumes one, List looks at it afresh.
 
 // SetPaused implements driver.Pauser.
 func (p *Provider) SetPaused(id string, paused bool) {
@@ -25,16 +26,17 @@ func (p *Provider) SetPaused(id string, paused bool) {
 		stop = p.wdaWaits[id]
 		delete(p.wdaWaits, id)
 		delete(p.wdaHolds, id)
+		p.stopMediaWaitLocked(id)
 	} else if p.paused[id] {
 		delete(p.paused, id)
 		delete(p.known, id) // inspected again at the next List
 	}
 	p.mu.Unlock()
+	// The gateway tells every provider and logs the pause itself, so this
+	// logs only what pausing stopped here: the id may be an Android phone's.
 	if stop != nil {
+		p.logger().Info("iphone: paused: stopping the helper's runner that waited for the passcode", "device", id)
 		go stop.stop()
-	}
-	if paused {
-		p.logger().Info("iphone: paused", "device", id)
 	}
 }
 

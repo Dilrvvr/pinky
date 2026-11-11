@@ -698,13 +698,21 @@
   "@addPhoneOlderHelper": {
     "description": "Add phone › older iPhone: the first way to connect, by installing a helper app (WebDriverAgent) on the iPhone. Also its accessibility label."
   },
-  "addPhoneOlderHelperDetail": "WebDriverAgent, signed with your Apple ID. With a free Apple ID it needs re-signing every 7 days; a paid developer account lasts a year.",
+  "addPhoneOlderHelperDetail": "WebDriverAgent, signed with your Apple ID; on the iPhone it shows as Pinky Helper. With a free Apple ID it needs re-signing every 7 days; a paid developer account lasts a year.",
   "@addPhoneOlderHelperDetail": {
-    "description": "Add phone › older iPhone: under \"Install the Pinky helper\", what the helper is and how long its signature lasts. WebDriverAgent is a name."
+    "description": "Add phone › older iPhone: under \"Install the Pinky helper\", what the helper is, its name on the iPhone's home screen, and how long its signature lasts. WebDriverAgent is a name. The home screen name is the one Pinky gives the helper in the iPhone's language: Pinky Helper, 「Pinky 助手」 in Chinese, 「Pinky ヘルパー」 in Japanese."
+  },
+  "addPhoneOlderHelperHow": "Install it once on a Mac with Xcode: run pinkyctl helper install in Terminal, with the iPhone connected and unlocked. Pinky finds the iPhone after that.",
+  "@addPhoneOlderHelperHow": {
+    "description": "Add phone › older iPhone, Install the Pinky helper chosen, where Pinky cannot install it from its window (no Mac, or no Xcode): how to install it. pinkyctl helper install is a command typed in Terminal (macOS's app, named as Apple names it in the language) and stays as it is."
   },
   "addPhoneOlderIPhone": "Try an older iPhone",
   "@addPhoneOlderIPhone": {
     "description": "Add phone › iPhone: the quiet button to the right of Pair that switches to the ways of connecting an older iPhone."
+  },
+  "addPhoneOlderMirrorNotYet": "Pinky can't connect through iPhone Mirroring yet. Install the Pinky helper instead, or update to iOS 27.",
+  "@addPhoneOlderMirrorNotYet": {
+    "description": "Add phone › older iPhone, Use iPhone Mirroring chosen: Pinky has no way in through iPhone Mirroring yet. iPhone Mirroring is Apple's name for the feature in the language."
   },
   "addPhoneOlderMirroring": "Use iPhone Mirroring (this Mac only)",
   "@addPhoneOlderMirroring": {
@@ -713,10 +721,6 @@
   "addPhoneOlderMirroringDetail": "Nothing to install, but Pinky can read the screen only as an image, so it is slower.",
   "@addPhoneOlderMirroringDetail": {
     "description": "Add phone › older iPhone: under \"Use iPhone Mirroring\", its drawback."
-  },
-  "addPhoneOlderNotYet": "This build can't set that up yet: the gateway's iOS backends for older iPhones come in M3.",
-  "@addPhoneOlderNotYet": {
-    "description": "Add phone › older iPhone: shown once the person picks a way to connect, as neither works in this build yet. M3 is a milestone of the project."
   },
   "addPhoneOlderTitle": "This iPhone needs one more step",
   "@addPhoneOlderTitle": {
@@ -1036,14 +1040,10 @@
       }
     }
   },
-  "askMeta": "{model} · up to {limit} a task",
-  "@askMeta": {
-    "description": "Ask Pinky, next to Start: the model that will do the task, and the cost limit of a task (askDollars or askTokens).",
+  "askTaskLimit": "Up to {limit} a task",
+  "@askTaskLimit": {
+    "description": "Ask Pinky, under the model's name next to Start: the cost limit of a task (askDollars or askTokens).",
     "placeholders": {
-      "model": {
-        "type": "String",
-        "example": "Claude Opus 5.5"
-      },
       "limit": {
         "type": "String",
         "example": "US$2.00"
@@ -1666,9 +1666,23 @@
   "@checkDiskImageTitle": {
     "description": "Checkup, an iPhone's item: the title of the item about Apple's developer disk image, the add-on that gives the iPhone its developer services."
   },
-  "checkHelperExpired": "The helper on {phone} stopped working on {when, date, ::MMMMEEEEdjmm}: its signature ran out. Install it again from Xcode; signed with a free Apple ID, it lasts 7 days.",
+  "checkHelperExpired": "The helper on {phone} stopped working on {when, date, ::MMMMEEEEdjmm}: its signature ran out. Install it again with pinkyctl helper install on a Mac with Xcode; signed with a free Apple ID, it lasts 7 days.",
   "@checkHelperExpired": {
-    "description": "Checkup and the Phone screen, an iPhone's helper (WebDriverAgent): the signature (provisioning profile) made with the person's Apple ID ran out, so the iPhone no longer starts the helper; the button below opens how to install it. phone is the iPhone's name; when is when it ran out, with the time.",
+    "description": "Checkup and the Phone screen, an iPhone's helper (WebDriverAgent): the signature (provisioning profile) made with the person's Apple ID ran out, so the iPhone no longer starts the helper; pinkyctl helper install is a command that stays as it is; the button below opens how to install it. phone is the iPhone's name; when is when it ran out, with the time.",
+    "placeholders": {
+      "phone": {
+        "type": "String",
+        "example": "DIYgod's iPhone"
+      },
+      "when": {
+        "type": "DateTime",
+        "example": "Friday, November 13 at 2:05 PM"
+      }
+    }
+  },
+  "checkHelperExpiredHere": "The helper on {phone} stopped working on {when, date, ::MMMMEEEEdjmm}: its signature ran out. Install it again; signed with a free Apple ID, it lasts 7 days.",
+  "@checkHelperExpiredHere": {
+    "description": "Checkup and the Phone screen, on a Mac with Xcode, an iPhone's helper (WebDriverAgent): the signature (provisioning profile) made with the person's Apple ID ran out, so the iPhone no longer starts the helper; the button below, Install again, installs it. phone is the iPhone's name; when is when it ran out, with the time.",
     "placeholders": {
       "phone": {
         "type": "String",
@@ -1692,9 +1706,23 @@
   "@checkHelperPass": {
     "description": "Checkup, an iPhone's item: the helper answers."
   },
-  "checkHelperSoon": "The helper on {phone} stops working on {when, date, ::MMMMEEEEdjmm}: install it again from Xcode.",
+  "checkHelperSoon": "The helper on {phone} stops working on {when, date, ::MMMMEEEEdjmm}: install it again with pinkyctl helper install on a Mac with Xcode.",
   "@checkHelperSoon": {
-    "description": "Checkup and a reminder on the Phone screen, an iPhone's helper (WebDriverAgent): its signature (provisioning profile) runs out within two days, after which the iPhone no longer starts the helper; the button beside it opens how to install it. phone is the iPhone's name; when is when it runs out, with the time.",
+    "description": "Checkup and a reminder on the Phone screen, an iPhone's helper (WebDriverAgent): its signature (provisioning profile) runs out within two days, after which the iPhone no longer starts the helper; pinkyctl helper install is a command that stays as it is; the button beside it opens how to install it. phone is the iPhone's name; when is when it runs out, with the time.",
+    "placeholders": {
+      "phone": {
+        "type": "String",
+        "example": "DIYgod's iPhone"
+      },
+      "when": {
+        "type": "DateTime",
+        "example": "Friday, November 13 at 2:05 PM"
+      }
+    }
+  },
+  "checkHelperSoonHere": "The helper on {phone} stops working on {when, date, ::MMMMEEEEdjmm}: install it again before then.",
+  "@checkHelperSoonHere": {
+    "description": "Checkup and a reminder on the Phone screen, on a Mac with Xcode, an iPhone's helper (WebDriverAgent): its signature (provisioning profile) runs out within two days, after which the iPhone no longer starts the helper; the button beside it, Install again, installs it. phone is the iPhone's name; when is when it runs out, with the time.",
     "placeholders": {
       "phone": {
         "type": "String",
@@ -2738,9 +2766,9 @@
   "@connectionNoAnswer": {
     "description": "Settings › Phones, an iPhone's connection choice: why a way cannot be checked."
   },
-  "connectionNotInstalled": "The helper isn't installed on this iPhone. Install it once with Xcode (WebDriverAgent's WebDriverAgentRunner, Product › Test); Pinky starts it after that.",
+  "connectionNotInstalled": "The helper isn't installed on this iPhone. Install it once on a Mac with Xcode: run pinkyctl helper install in Terminal. Pinky starts it after that.",
   "@connectionNotInstalled": {
-    "description": "Settings › Phones, an iPhone's connection choice: why the WebDriverAgent helper cannot be used yet, and how to install it. WebDriverAgent, WebDriverAgentRunner and Product › Test are names in Xcode."
+    "description": "Settings › Phones, an iPhone's connection choice: why the WebDriverAgent helper cannot be used yet, and how to install it. pinkyctl helper install is a command typed in Terminal (macOS's app, named as Apple names it in the language) and stays as it is."
   },
   "connectionOffline": "{platform} · offline",
   "@connectionOffline": {
@@ -2774,7 +2802,7 @@
   "@connectionWDA": {
     "description": "Settings › Phones, an iPhone's connection choice: the way through the WebDriverAgent helper app. WebDriverAgent is a name."
   },
-  "connectionWDADesc": "Works from iOS 17.4, and shares no screen, so banking apps that refuse screen sharing keep working. Needs the helper installed once from Xcode, and now and then iOS asks on the iPhone for its passcode before the helper starts. The live picture and reading the screen are slower.",
+  "connectionWDADesc": "Works from iOS 17.4, and shares no screen, so banking apps that refuse screen sharing keep working. Needs the helper installed once from a Mac with Xcode, and now and then iOS asks on the iPhone for its passcode before the helper starts. The live picture and reading the screen are slower.",
   "@connectionWDADesc": {
     "description": "Settings › Phones, an iPhone's connection choice: what the WebDriverAgent helper gives and costs."
   },
@@ -4606,6 +4634,10 @@
   "@gwStatusLostOnWiFi": {
     "description": "A phone's status line: the Mac's device service (usbmuxd) stopped listing an iPhone that is on the same Wi-Fi. Shown only in other languages; in English the gateway's own words show."
   },
+  "gwStatusMediaInUse": "Camera or microphone in use",
+  "@gwStatusMediaInUse": {
+    "description": "A phone's status line: iOS does not mirror the iPhone while an app on it uses the camera or microphone (a call, for one); Pinky connects once they are free. Shown only in other languages; in English the gateway's own words show."
+  },
   "gwStatusMovingCable": "Moving to the cable",
   "@gwStatusMovingCable": {
     "description": "A phone's status line while Pinky opens it again over its cable after it was plugged in. Shown only in other languages."
@@ -5226,6 +5258,188 @@
   "@gwValueUpsideDown": {
     "description": "A value of the screen's rotation. Shown only in other languages; in English the gateway's own words show."
   },
+  "helperCancel": "Cancel",
+  "@helperCancel": {
+    "description": "Button that stops installing the iPhone helper while Xcode builds or installs it."
+  },
+  "helperChooseTeam": "This Mac can sign the helper for more than one team. Which one should sign it?",
+  "@helperChooseTeam": {
+    "description": "Installing the iPhone helper: the Mac has signing certificates of several Apple developer teams, and the person picks one with the buttons below."
+  },
+  "helperErrAppleID": "Xcode has no Apple ID to sign the helper with. Add yours in Xcode › Settings › Accounts (a free one works), then try again.",
+  "@helperErrAppleID": {
+    "description": "Installing the iPhone helper failed: Xcode has no Apple account or team to sign with. Xcode › Settings › Accounts stays in English: Xcode has no other language."
+  },
+  "helperErrDeveloperMode": "Developer Mode is off on {phone}. Turn it on in Settings › Privacy & Security › Developer Mode (the phone restarts), then try again.",
+  "@helperErrDeveloperMode": {
+    "description": "Installing the iPhone helper failed: Developer Mode is off; the path is the iPhone's Settings, named as Apple names them in the language. phone is the iPhone's name, or \"the iPhone\".",
+    "placeholders": {
+      "phone": {
+        "type": "String",
+        "example": "DIYgod's iPhone"
+      }
+    }
+  },
+  "helperErrDownload": "Pinky couldn't download the helper. Check this Mac's internet connection, then try again.",
+  "@helperErrDownload": {
+    "description": "Installing the iPhone helper failed: downloading its source failed."
+  },
+  "helperErrInUse": "An agent is working on {phone}. Try again once its task ends.",
+  "@helperErrInUse": {
+    "description": "Installing the iPhone helper refused: an agent's task holds the phone. phone is the iPhone's name.",
+    "placeholders": {
+      "phone": {
+        "type": "String",
+        "example": "DIYgod's iPhone"
+      }
+    }
+  },
+  "helperErrOther": "Installing the helper on {phone} failed.",
+  "@helperErrOther": {
+    "description": "Installing the iPhone helper failed for a reason Pinky has no words for; Xcode's own words follow in small print. phone is the iPhone's name, or \"the iPhone\".",
+    "placeholders": {
+      "phone": {
+        "type": "String",
+        "example": "DIYgod's iPhone"
+      }
+    }
+  },
+  "helperErrOtherTeam": "Another team signed the helper already on {phone}, and iOS replaces it only with one of that team. Delete Pinky Helper (or WebDriverAgentRunner) from the phone, then try again.",
+  "@helperErrOtherTeam": {
+    "description": "Installing the iPhone helper failed: the helper on the phone was signed by a team this Mac cannot sign for. Pinky Helper is the helper's name on the iPhone's home screen in the language (Pinky 助手, Pinky ヘルパー); WebDriverAgentRunner, an older one's, stays as it is. phone is the iPhone's name, or \"the iPhone\".",
+    "placeholders": {
+      "phone": {
+        "type": "String",
+        "example": "DIYgod's iPhone"
+      }
+    }
+  },
+  "helperErrPasscode": "Nobody entered the passcode in time when {phone} asked for it to allow automation. Try again, and enter it on the phone when it asks.",
+  "@helperErrPasscode": {
+    "description": "Installing the iPhone helper failed: iOS asked for the phone's passcode before it lets the helper control the phone, and it was not entered in time. phone is the iPhone's name, or \"the iPhone\".",
+    "placeholders": {
+      "phone": {
+        "type": "String",
+        "example": "DIYgod's iPhone"
+      }
+    }
+  },
+  "helperErrPhone": "Xcode can't reach {phone}. Connect it with a cable, or keep it unlocked on the same Wi-Fi as this Mac, then try again.",
+  "@helperErrPhone": {
+    "description": "Installing the iPhone helper failed: Xcode does not see the phone. phone is the iPhone's name, or \"the iPhone\".",
+    "placeholders": {
+      "phone": {
+        "type": "String",
+        "example": "DIYgod's iPhone"
+      }
+    }
+  },
+  "helperErrSigning": "Xcode found no way to sign the helper for {phone}. Check your team in Xcode › Settings › Accounts, then try again.",
+  "@helperErrSigning": {
+    "description": "Installing the iPhone helper failed: Xcode found no signing certificate or provisioning profile that covers the phone. Xcode › Settings › Accounts stays in English. phone is the iPhone's name, or \"the iPhone\".",
+    "placeholders": {
+      "phone": {
+        "type": "String",
+        "example": "DIYgod's iPhone"
+      }
+    }
+  },
+  "helperErrTrust": "Your developer certificate isn't trusted on {phone} yet. On the phone, trust it in Settings › General › VPN & Device Management, then try again.",
+  "@helperErrTrust": {
+    "description": "Installing the iPhone helper failed: the phone does not trust the developer who signed the helper yet; the path is the iPhone's Settings, named as Apple names them in the language. phone is the iPhone's name, or \"the iPhone\".",
+    "placeholders": {
+      "phone": {
+        "type": "String",
+        "example": "DIYgod's iPhone"
+      }
+    }
+  },
+  "helperErrUnlock": "Xcode couldn't install the helper while {phone} was locked. Unlock it, keep it unlocked, then try again.",
+  "@helperErrUnlock": {
+    "description": "Installing the iPhone helper failed: the phone stayed locked while Xcode waited for it. phone is the iPhone's name, or \"the iPhone\".",
+    "placeholders": {
+      "phone": {
+        "type": "String",
+        "example": "DIYgod's iPhone"
+      }
+    }
+  },
+  "helperErrXcode": "Installing the helper needs Xcode. Install it from the App Store, open it once, then try again.",
+  "@helperErrXcode": {
+    "description": "Installing the iPhone helper failed: this Mac has no Xcode."
+  },
+  "helperInstall": "Install the helper",
+  "@helperInstall": {
+    "description": "Button on a Mac with Xcode, in the checkup, on the Phone screen and in Add phone: Pinky builds the Pinky helper (WebDriverAgent) with Xcode and installs it on the iPhone."
+  },
+  "helperInstallAgain": "Install again",
+  "@helperInstallAgain": {
+    "description": "Button on a Mac with Xcode: installs an iPhone's helper (WebDriverAgent) again, as its signature runs out soon or ran out."
+  },
+  "helperInstallNote": "Pinky builds the helper with Xcode and signs it with your Apple ID. Keep the iPhone unlocked until it is done.",
+  "@helperInstallNote": {
+    "description": "Under the button that installs the iPhone helper from Pinky's window: what it does, and what the person keeps in mind meanwhile."
+  },
+  "helperInstalledToast": "The Pinky helper is installed on {phone}.",
+  "@helperInstalledToast": {
+    "description": "Toast once the iPhone helper is installed from Pinky's window. phone is the iPhone's name, or \"the iPhone\".",
+    "placeholders": {
+      "phone": {
+        "type": "String",
+        "example": "DIYgod's iPhone"
+      }
+    }
+  },
+  "helperShowLog": "Show the log",
+  "@helperShowLog": {
+    "description": "Link after installing the iPhone helper failed: shows Xcode's log of the install in Finder."
+  },
+  "helperStepBuilding": "Building the helper with Xcode. This takes a minute or two.",
+  "@helperStepBuilding": {
+    "description": "Installing the iPhone helper from Pinky's window: Xcode builds it on this Mac."
+  },
+  "helperStepInstalling": "Installing the helper on {phone}. If the phone asks for its passcode, enter it there.",
+  "@helperStepInstalling": {
+    "description": "Installing the iPhone helper from Pinky's window: Xcode installs it on the phone and starts it; iOS may ask for the phone's passcode to allow automation, which the person enters on the phone. phone is the iPhone's name, or \"the iPhone\" when Pinky does not know it yet.",
+    "placeholders": {
+      "phone": {
+        "type": "String",
+        "example": "DIYgod's iPhone"
+      }
+    }
+  },
+  "helperStepPreparing": "Getting ready…",
+  "@helperStepPreparing": {
+    "description": "Installing the iPhone helper from Pinky's window, first step: Pinky finds the iPhone and the team that signs, and downloads the helper the first time."
+  },
+  "helperStepUnlock": "Unlock {phone} and keep it unlocked: Xcode is waiting for it.",
+  "@helperStepUnlock": {
+    "description": "Installing the iPhone helper from Pinky's window, shown in bold: the phone is locked and Xcode waits for the person to unlock it. phone is the iPhone's name, or \"the iPhone\".",
+    "placeholders": {
+      "phone": {
+        "type": "String",
+        "example": "DIYgod's iPhone"
+      }
+    }
+  },
+  "helperTeam": "{name} ({id})",
+  "@helperTeam": {
+    "description": "Button choosing the Apple developer team that signs the iPhone helper: the team's name and ID, as Xcode lists them.",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "Wenjie Fan"
+      },
+      "id": {
+        "type": "String",
+        "example": "5MBUP9F55A"
+      }
+    }
+  },
+  "helperThisIPhone": "the iPhone",
+  "@helperThisIPhone": {
+    "description": "Stands for the phone's name in the messages about installing the iPhone helper, when Pinky does not know the phone yet (Add phone); written to read well in their middle."
+  },
   "listMany": "{rest} and {last}",
   "@listMany": {
     "description": "Three or more names in a sentence: rest is the names before the last, joined with listSeparator.",
@@ -5331,6 +5545,24 @@
         "example": "DIYgod's iPhone"
       }
     }
+  },
+  "mediaInUseDetail": "An app on {phone} is using the camera or microphone, and iOS does not let Pinky show the screen while it does. End the call or close that app: a green or orange dot at the top of the iPhone's screen shows that one is in use, and Control Center shows which app.",
+  "@mediaInUseDetail": {
+    "description": "The phone's page, the checkup and Add phone › iPhone: what to do while iOS refuses to mirror an iPhone because an app uses its camera or microphone (a call or FaceTime, Camera, Voice Memos, a screen recording with the microphone, dictation, a Mac using it as Continuity Camera). The dot is iOS's recording indicator: green for the camera, orange for the microphone. Control Center is iOS's own name. phone is its name.",
+    "placeholders": {
+      "phone": {
+        "type": "String",
+        "example": "DIYgod's iPhone"
+      }
+    }
+  },
+  "mediaInUseNote": "Pinky connects by itself as soon as the camera and microphone are free.",
+  "@mediaInUseNote": {
+    "description": "Under mediaInUseDetail: Pinky keeps trying, and opens the iPhone once no app uses its camera or microphone."
+  },
+  "mediaInUseTitle": "Camera or microphone in use",
+  "@mediaInUseTitle": {
+    "description": "The phone's page, the checkup and Add phone › iPhone: the title of the step where iOS refuses to mirror an iPhone because an app uses its camera or microphone."
   },
   "menuActivity": "Activity",
   "@menuActivity": {
@@ -6438,6 +6670,10 @@
   "@phoneHandBack": {
     "description": "Button that gives the phone back to the agents after the person took over: on the banner above the mirror and on All phones tiles."
   },
+  "phoneHelperPasscode": "Enter the passcode on {phone}: iOS asks for it before the WebDriverAgent helper can work. Then try again.",
+  "@phoneHelperPasscode": {
+    "description": "A toast after the person turned the screen (Rotate in ⋯ under the mirror) of an iPhone or iPad over CoreDevice: Pinky moved it to the WebDriverAgent helper to turn it, and iOS asks on the phone for its passcode before the helper starts. phone is the phone's name. WebDriverAgent is a name."
+  },
   "phoneKeyBack": "Back",
   "@phoneKeyBack": {
     "description": "Android's Back key, a button under the mirror (accessibility label and tooltip)."
@@ -6636,11 +6872,39 @@
   },
   "phoneRotate": "Rotate",
   "@phoneRotate": {
-    "description": "Item of ⋯ under the mirror, shown disabled: would rotate the phone's screen."
+    "description": "A row of ⋯ under the mirror: the buttons beside it turn the phone's screen to portrait, landscape and the like. Also shown disabled, with phoneRotateTooltip, on an iPhone or iPad without the WebDriverAgent helper."
   },
-  "phoneRotateTooltip": "Not in the gateway API yet",
+  "phoneRotateAuto": "Auto-rotate",
+  "@phoneRotateAuto": {
+    "description": "A button of the Rotate row (Android only), as its tooltip: the screen turns with how the phone is held again."
+  },
+  "phoneRotateCall": "turn the screen",
+  "@phoneRotateCall": {
+    "description": "A verb phrase that completes the toast \"Couldn't …: <error>\" when turning the phone's screen from the Rotate row fails."
+  },
+  "phoneRotateDesc": "Apps that only run upright stay upright.",
+  "@phoneRotateDesc": {
+    "description": "Under Rotate in ⋯ under the mirror: what turning does not change."
+  },
+  "phoneRotateLandscape": "Landscape, top to the left",
+  "@phoneRotateLandscape": {
+    "description": "A button of the Rotate row, as its tooltip: the phone turned a quarter counterclockwise, its top on the left."
+  },
+  "phoneRotatePortrait": "Portrait",
+  "@phoneRotatePortrait": {
+    "description": "A button of the Rotate row, as its tooltip: the phone upright."
+  },
+  "phoneRotateReverseLandscape": "Landscape, top to the right",
+  "@phoneRotateReverseLandscape": {
+    "description": "A button of the Rotate row, as its tooltip: the phone turned a quarter clockwise, its top on the right."
+  },
+  "phoneRotateTooltip": "Turning the screen needs the WebDriverAgent helper. Settings › Phones says how to install it, or lets you choose it for this phone.",
   "@phoneRotateTooltip": {
-    "description": "The tooltip of the disabled Rotate item."
+    "description": "The tooltip of the disabled Rotate item on an iPhone or iPad that cannot use the WebDriverAgent helper: it is not installed, or the person chose CoreDevice for it in Settings › Phones. The app calls both phones. Settings › Phones says how to install the helper and offers it as connectionWDA. WebDriverAgent is a name."
+  },
+  "phoneRotateUpsideDown": "Upside down",
+  "@phoneRotateUpsideDown": {
+    "description": "A button of the Rotate row, as its tooltip: the phone turned upside down."
   },
   "phoneScreenLabel": "{phone} screen",
   "@phoneScreenLabel": {
@@ -9496,9 +9760,9 @@
       }
     }
   },
-  "unlockErrWrongPIN": "The saved PIN didn't unlock {name}. To keep the phone from locking you out, Pinky won't try it again until you unlock the phone yourself or change the PIN in Settings › Phones.",
+  "unlockErrWrongPIN": "The saved PIN didn't unlock {name}. To keep the phone from locking you out, Pinky won't try it again by itself. If you're sure the PIN is right, click Try again; if it changed, update it in Settings › Phones.",
   "@unlockErrWrongPIN": {
-    "description": "A notice when the phone refused its saved PIN. Pinky stops trying it, as phones lock out, or erase themselves, after repeated wrong PINs. name is the phone's name; Settings › Phones is Pinky's Settings page.",
+    "description": "A notice when the phone refused its saved PIN. Pinky stops trying it by itself, as phones lock out, or erase themselves, after repeated wrong PINs; the person can still try it once more with Try again (unlockTryAgain) on the phone's card. name is the phone's name; Settings › Phones is Pinky's Settings page.",
     "placeholders": {
       "name": {
         "type": "String",
@@ -9578,9 +9842,9 @@
       }
     }
   },
-  "unlockOnPhoneWrongPIN": "The saved PIN didn't unlock it, so Pinky won't try it again. Unlock it on the phone{end} If its PIN changed, update it in Settings › Phones.",
+  "unlockOnPhoneWrongPIN": "The saved PIN didn't unlock it, so Pinky won't try it again by itself. Unlock it on the phone{end} If you're sure the PIN is right, click Try again; if it changed, update it in Settings › Phones.",
   "@unlockOnPhoneWrongPIN": {
-    "description": "The locked phone's card, after the phone refused its saved PIN: Pinky won't try it again. end as in unlockOnPhone.",
+    "description": "The locked phone's card, after the phone refused its saved PIN: Pinky won't try it again by itself, and the button Try again (unlockTryAgain) below lets the person try it once more. end as in unlockOnPhone.",
     "placeholders": {
       "end": {
         "type": "String",
@@ -9603,6 +9867,20 @@
   "unlockPitchWindows": "Save its PIN and you can unlock it from this computer with Windows Hello when an agent needs it, without picking the phone up.",
   "@unlockPitchWindows": {
     "description": "Windows: the locked phone's card when no PIN is saved for it, above the button Save PIN…. The card is in a narrow side panel."
+  },
+  "unlockTryAgain": "Try again",
+  "@unlockTryAgain": {
+    "description": "A button on a locked phone's card after the phone refused its saved PIN: it enters the saved PIN once more, after Touch ID or Windows Hello. Pinky never tries it again by itself, as phones lock out after repeated wrong PINs."
+  },
+  "unlockTryAgainLabel": "Try the saved PIN on {name} again",
+  "@unlockTryAgainLabel": {
+    "description": "The accessibility label of the button Try again (unlockTryAgain). name is the phone's name.",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "Pixel 9"
+      }
+    }
   },
   "updateActionLabel": "{action} Pinky {version}",
   "@updateActionLabel": {

@@ -70,7 +70,7 @@ const (
 type DeviceView struct {
 	Info       driver.Info
 	Status     DeviceStatus
-	StatusLine string // plain words: "Claude Code · Reorder lunch", "Idle", "Locked", "Needs setup", "Offline"
+	StatusLine string // plain words: "Claude Code · Reorder lunch", "Idle", "Locked", "Needs setup", "Camera or microphone in use", "Offline"
 	TaskID     string // the running task, if any
 	// Features says what the phone's driver offers, so the client shows
 	// only the controls that work. All false while the phone is offline.
@@ -94,6 +94,7 @@ type Features struct {
 	Files      bool // driver.Files: the phone's Pinky folder
 	Companion  bool // driver.CompanionInstaller: an Android companion app to install
 	Pinch      bool // driver.MultiToucher: the person pinches on the mirror (Touch2)
+	Rotate     bool // driver.Switcher, or the helper to move to (helperneed.go): the person turns the screen from the ⋯ menu (SetDeviceSwitch)
 }
 
 // TaskState is the state of an agent task.
