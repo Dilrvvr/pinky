@@ -49,7 +49,9 @@ type device struct {
 	pauseAway bool
 	// capturing is what the client last heard of whether the phone sends
 	// its screen to Pinky (pollCapture).
-	capturing    bool
+	capturing bool
+	vitals    vitalsState // battery and storage, read when asked (vitals.go)
+
 	offlineSince time.Time
 	offlineWhy   string
 	// openErr is why the last Open failed, nil once it opened: a task
@@ -312,7 +314,7 @@ const (
 	OutcomeExpired      = "expired"      // idle too long
 	OutcomeDisconnected = "disconnected" // the agent's session closed
 	OutcomeOffline      = "offline"      // the phone did not come back in time
-	OutcomeReplaced     = "replaced"     // the agent started another task on the device
+	OutcomeReplaced     = "replaced"     // the agent started another task on the device; only in history from before phone_connect refused that (shared.go)
 	OutcomePaused       = "paused"       // the person paused Pinky's connection to the phone (pause.go)
 )
 
