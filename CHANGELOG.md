@@ -2,6 +2,73 @@
 
 What changed for people in each release of Pinky, newest first. A version is the release's date in Asia/Shanghai and that day's count: 2026.1107.2 is the second release of 7 November 2026. Notes wait under "Unreleased" until the next release takes them; see [docs/RELEASING.md](docs/RELEASING.md).
 
+## 2026.1112.16 (2026-11-12)
+
+- Pinky Helper is now called Pinky for iPhone, and it speaks English, Simplified Chinese and Japanese.
+- On iOS 27, you can pair Pinky for iPhone with your phone from the phone itself: pick Pinky in Settings › Privacy & Security › Developer Mode and type the code it shows. Not yet tried on a real phone.
+- Installing from the computer now installs Pinky for iPhone and keeps its testing service running for you.
+- Pinky for iPhone turns its VPN back on when iOS turns it off, and warns you two days before its signature runs out.
+- A task no longer gives up when the first look at the phone's screen fails once.
+
+## 2026.1112.15 (2026-11-12)
+
+- A Wi-Fi Android phone now comes back after Pinky updates or restarts even while its screen is off: Pinky connects it again at the address it last used, instead of leaving it offline until you wake it. Some phones, such as those on HyperOS, stop announcing themselves on the network while asleep. Thanks to @vinsew for the report.
+
+## 2026.1112.14 (2026-11-12)
+
+- When an agent passes a `phone_read_list` continuation with the wrong direction or scroll area, Pinky still tells it what to pass, and now the corrected call reads on from where the list stopped instead of finding the continuation gone. Thanks to @pseudoyu.
+
+## 2026.1112.13 (2026-11-12)
+
+- On Android 15 and earlier without Pinky for Android, Pinky again refuses to type into an empty one-time-code field. Since 2026.1112.10 it could take the field's hint for text already typed and let the agent type there. Thanks to @pseudoyu.
+
+## 2026.1112.12 (2026-11-12)
+
+- New in Settings › Phones › Web mirror: **Answer approvals in the browser** lets you allow or deny a held step from your own phone through Tailscale. Each answer asks for Face ID, a fingerprint or the phone's passcode, and while an agent uses the phone the browser is on (and for 30 seconds after), the page there answers nothing. Payments, sends and agents' questions can be answered there; new agents, blocked apps and handoffs stay in Pinky's window. Off by default, and not yet tried with a real passkey in Safari or Chrome.
+
+## 2026.1112.11 (2026-11-12)
+
+- On macOS, the menu bar panel now has rounded corners, a translucent background and a shadow that follows its edge, like other menu bar apps. Thanks to @egoist for the report.
+
+## 2026.1112.10 (2026-11-12)
+
+- On iPhones and iOS Simulators, apps are now named as the home screen names them, in the phone's language (微信, not WeChat). Agents can still find them by their English names.
+- Pinky no longer refuses to type into a field because of the text already in it. A message draft that mentions a "code", or Chrome's address bar showing an address with "code" in it, was taken for a one-time-code field.
+- Typing into a "Barcode" field is no longer refused as a one-time code.
+- Agents can read a long list in one call with `phone_read_list`: Pinky scrolls it, removes the overlap between screens and returns the text. Each scroll is a step in the task's history, and the read stops instead of asking you when a scroll needs your approval. Thanks to @lbyxunxunnini.
+- When Pinky on an Android phone is running a task of its own, agents on the computer now see the phone as busy instead of failing, and Stop on the phone ends the computer's task.
+
+## 2026.1112.9 (2026-11-12)
+
+- Settings › Phones › Web mirror shows a phone's live screen in a web browser, on this computer or on your other devices through Tailscale. With "Let the browser use the phone" on, a second link also takes taps, swipes, Back and Home. Off by default. Thanks to @xcc3641.
+
+## 2026.1112.8 (2026-11-12)
+
+- On iPhones with two screens (iPhone Duo), Home goes back to the home screen with a swipe when the button does nothing, and when taps don't reach the screen in use, Pinky tells the agent so instead of reporting success.
+
+## 2026.1112.7 (2026-11-12)
+
+- An iPhone on iOS 27 left idle in Pinky for a minute and a half no longer keeps Pinky's connections to it open, so it stays smooth after an agent is done; Pinky reconnects by itself the next time it is needed.
+- While nobody watches its screen, Pinky checks whether an idle iPhone on Wi-Fi is locked less often.
+
+## 2026.1112.6 (2026-11-12)
+
+- Each release now also carries Pinky for Android as its own download (pinky-android.apk), and one APK installs on every Android phone, 32-bit ones and x86_64 emulators included.
+- The description of Pinky for Android's accessibility service now says that, on phones where you turn it on yourself, it stays on until you turn it off there.
+
+## 2026.1112.5 (2026-11-12)
+
+- On Android phones where only you can turn on Pinky for Android's accessibility service (such as vivo with OriginOS 6), Pinky now leaves it on after a task, after an update and after Pinky restarts, until you turn it off on the phone, so you no longer turn it on before every task. Settings › Phones and the checkup say that it stays on and that apps on the phone, banking apps among them, can see it.
+
+## 2026.1112.4 (2026-11-12)
+
+- While no agent has connected yet, Settings › Agents shows Connect an agent first, without scrolling.
+- Choosing the team that signs the iPhone helper no longer runs off the window: a long team name is shortened in the middle, with the whole name on hover, and a long list of teams scrolls.
+- The reminder above an iPhone that asks which team should sign the helper now has Cancel.
+- When an update is available, What's new on its card gives the same day as What's new after the update; west of China it could show the day before.
+- Approvals in English now ask for the action itself, as "Tap at 540,1200?" or "Press back?", instead of "Tapped at 540,1200?".
+- When another program's adb server holds an Android phone on a USB cable, the checkup and Add phone › Android now say so, give its port, and explain how to free the phone for Pinky.
+
 ## 2026.1112.3 (2026-11-12)
 
 - On phones that accept Pinky's change to their accessibility settings without keeping it, such as vivo phones with OriginOS 6, Pinky now says so right away: the Pinky for Android card, the checkup and Settings › Phones tell you to turn on Pinky in the phone's accessibility settings by hand, and tasks on those phones no longer wait 10 seconds for it first.

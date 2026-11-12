@@ -15,9 +15,15 @@
     <string name="phone_app_info">アプリ情報</string>
     <string name="phone_core_starting">Pinky を起動しています…</string>
     <string name="phone_core_failed">Pinky をこのスマホで起動できませんでした。</string>
+    <string name="phone_no_core_title">このスマホでは単独でタスクを実行できません</string>
+    <string name="phone_no_core_body">Pinky がスマホ上でタスクを実行できるのは、64 ビット ARM プロセッサのスマホだけです。このスマホでは、パソコンと一緒に使えます。Pinky を実行しているパソコンにこのスマホを接続すると、パソコンのエージェントが操作できます。</string>
+    <string name="phone_core_failed_hint">スマホを再起動してから、もう一度 Pinky を開いてください。それでも起動しない場合は、Pinky を再インストールしてください。</string>
     <string name="phone_setup">Pinky は選んだ AI モデルを使って、スマホでの簡単なタスクを自分でこなせます。</string>
     <string name="phone_setup_key">API キーを追加</string>
     <string name="phone_setup_model">モデルを選ぶ</string>
+
+    <string name="phone_computer_title">パソコンの Pinky がこのスマホを操作中です</string>
+    <string name="phone_computer_detail">終わったら、ここでタスクを開始できます。</string>
 
     <string name="phone_task_hint">このスマホで Pinky に何をしてもらいますか？</string>
     <string name="phone_start">開始</string>
@@ -27,7 +33,16 @@
     <string name="phone_waiting_hint">画面下部のカードで答えてください。</string>
     <string name="phone_stop">停止</string>
     <string name="phone_dismiss">閉じる</string>
+    <string name="phone_task_steps">操作内容</string>
     <string name="phone_activity">アクティビティ</string>
+
+    <string name="phone_history_all">すべて表示</string>
+    <string name="phone_history_more">さらに表示</string>
+    <string name="phone_history_empty">完了したタスクはまだありません。</string>
+    <string name="phone_history_failed">アクティビティを読み込めませんでした。</string>
+    <string name="phone_history_gone">このタスクはもうアクティビティにありません。</string>
+    <string name="phone_today">今日</string>
+    <string name="phone_yesterday">昨日</string>
 
     <string name="phone_end_done">完了</string>
     <string name="phone_end_stopped">停止しました</string>
@@ -51,7 +66,8 @@
     <string name="phone_err_no_device">Pinky がオフです。ユーザー補助の設定でオンにしてください。</string>
     <string name="phone_err_no_model">先に「設定」でモデルを選んでください。</string>
     <string name="phone_err_busy">Pinky はすでにタスクを実行中です。</string>
-    <string name="phone_err_start">開始できませんでした：%1$s</string>
+    <string name="phone_err_computer">パソコンの Pinky がこのスマホを操作中です。終わってからもう一度お試しください。</string>
+    <string name="phone_err_start">タスクを開始できませんでした。もう一度お試しください。</string>
     <string name="phone_err_key_lost">保存した API キーを読み取れなくなりました。「設定」でもう一度追加してください。</string>
 
     <plurals name="phone_steps">
@@ -71,6 +87,7 @@
     <string name="phone_pill_working">作業中 · %1$s</string>
     <string name="phone_pill_starting">開始しています</string>
     <string name="phone_pill_waiting">あなたの対応待ち</string>
+    <string name="phone_pill_computer">パソコンから操作中</string>
     <string name="phone_close">閉じる</string>
     <string name="phone_asks">Pinky からの確認</string>
     <string name="phone_rule">ルール：%1$s</string>
@@ -80,7 +97,7 @@
     <string name="phone_allow_once">許可</string>
     <string name="phone_decline">拒否</string>
     <string name="phone_hand_back">完了</string>
-    <string name="phone_err_answer">回答できませんでした：%1$s</string>
+    <string name="phone_err_answer">回答を送信できませんでした。もう一度お試しください。</string>
 
     <string name="phone_section_model">AI モデル</string>
     <string name="phone_service">サービス</string>
@@ -96,7 +113,7 @@
     <string name="phone_key_hint">API キーを貼り付け</string>
     <string name="phone_key_saved_toast">API キーを保存しました</string>
     <string name="phone_key_removed_toast">API キーを削除しました</string>
-    <string name="phone_key_err_save">キーを保存できませんでした：%1$s</string>
+    <string name="phone_key_err_save">キーを保存できませんでした。もう一度お試しください。</string>
     <string name="phone_model">モデル</string>
     <string name="phone_model_claude_desc">Opus が最も高性能で、Sonnet と Haiku は費用が抑えられます。</string>
     <string name="phone_model_desc">サービスが示すモデル名。画像を読めて、ツールを使えるモデルが必要です。</string>
@@ -132,6 +149,17 @@
     <string name="phone_off">オフ</string>
     <string name="phone_accessibility_desc">Pinky はこのサービスで画面を読み取り、操作します。</string>
     <string name="phone_app_info_desc">Pinky の電池使用量と制限付き設定。</string>
+    <string name="phone_battery_title">Pinky を動かし続ける</string>
+    <string name="phone_battery_body">長いタスクの途中で、Android がバックグラウンドの Pinky を停止することがあります。Pinky の電池使用を「制限なし」にしてください。</string>
+    <string name="phone_battery_allow">許可</string>
+    <string name="phone_autostart_body">このスマホは、自動起動が許可されていないアプリも停止します。Pinky の自動起動をオンにしてください。</string>
+    <string name="phone_autostart_open">自動起動を開く</string>
+    <string name="phone_battery">電池</string>
+    <string name="phone_battery_unrestricted">制限なし</string>
+    <string name="phone_battery_optimized">最適化</string>
+    <string name="phone_battery_desc">「制限なし」にすると、長いタスクの途中でも Pinky が動き続けます。</string>
+    <string name="phone_autostart">自動起動</string>
+    <string name="phone_autostart_desc">このスマホが Pinky を停止したときに、もう一度起動できるようにします。</string>
     <string name="phone_section_about">情報</string>
     <string name="phone_version">バージョン</string>
     <string name="phone_update_check">アップデートを確認</string>
@@ -140,8 +168,13 @@
     <string name="phone_update_available">新しいバージョン：Pinky %1$s</string>
     <string name="phone_update_download">ダウンロード</string>
     <string name="phone_update_later">後で</string>
-    <string name="phone_update_failed">アップデートを確認できませんでした：%1$s</string>
+    <string name="phone_update_failed">アップデートを確認できませんでした。しばらくしてからもう一度お試しください。</string>
+    <string name="phone_update_offline">アップデートを確認できませんでした。インターネット接続を確認して、もう一度お試しください。</string>
     <string name="phone_update_dev">開発版はアップデートしません。</string>
+    <string name="phone_update_downloading">アップデートをダウンロードしています…</string>
+    <string name="phone_update_download_offline">アップデートをダウンロードできませんでした。インターネット接続を確認して、もう一度お試しください。</string>
+    <string name="phone_update_mismatch">ダウンロードしたファイルが Pinky の正式リリースと一致しないため、インストールしませんでした。しばらくしてからもう一度お試しください。</string>
+    <string name="phone_update_install_failed">アップデートをインストールできませんでした。しばらくしてからもう一度お試しください。</string>
 
     <string name="phone_step_waiting">確認待ち：%1$s</string>
     <string name="phone_step_answered">回答しました：%1$s</string>

@@ -14,8 +14,16 @@
 //	watch [-decide D] [-after 2s]   print steps and needs until the task ends,
 //	                           answering each need with D (allow_once, deny,
 //	                           or none to leave it), and time each step
-//	stop | dismiss
+//	stop [-computer]           stop the task, or with -computer Pinky on a
+//	                           computer, as Stop on the pill does
+//	dismiss
 //	decide NEED DECISION
+//	history [-before MS] [-limit N]   list the tasks that ended, newest first
+//	history ID                 print one task with its steps
+//	model -provider P [-base-url U] [-model M]   set the model as Settings
+//	                           does and save the key read from standard
+//	                           input (one line), so that it never appears
+//	                           on a command line (debug builds only)
 package main
 
 import (
@@ -33,6 +41,10 @@ import (
 // socket is the development build's core socket (CORE_SOCKET in
 // android/companion/app/build.gradle.kts).
 const socket = "@pinky_core_dev"
+
+// serviceSocket is the development build's accessibility service socket
+// (SOCKET_NAME in android/companion/app/build.gradle.kts).
+const serviceSocket = "@pinky_companion_dev"
 
 // The parts of standalone.State it reads. It does not import the core, so
 // it builds as a static binary for the phone's shell.
@@ -62,14 +74,16 @@ type state struct {
 }
 
 type reply struct {
-	OK    bool            `json:"ok"`
-	Error string          `json:"error"`
-	State json.RawMessage `json:"state"`
+	OK      bool            `json:"ok"`
+	Error   string          `json:"error"`
+	State   json.RawMessage `json:"state"`
+	History json.RawMessage `json:"history"`
+	More    bool            `json:"more"`
 }
 
 func main() {
 	if len(os.Args) < 2 {
-		fmt.Fprintln(os.Stderr, "usage: corectl state|start|watch|stop|dismiss|decide|preset")
+		fmt.Fprintln(os.Stderr, "usage: corectl state|start|watch|stop|dismiss|decide|preset|history")
 		os.Exit(2)
 	}
 	cmd, args := os.Args[1], os.Args[2:]
@@ -95,8 +109,13 @@ func main() {
 		_ = fs.Parse(args)
 		_, err = call(map[string]any{"cmd": "start", "task": *task, "key": *key, "provider": *provider, "base_url": *base, "model": *model,
 			"max_steps": *steps, "max_minutes": *mins})
-	case "stop", "dismiss":
-		_, err = call(map[string]any{"cmd": cmd})
+	case "stop":
+		fs := flag.NewFlagSet("stop", flag.ExitOnError)
+		computer := fs.Bool("computer", false, "end Pinky on a computer's claim instead of the task")
+		_ = fs.Parse(args)
+		_, err = call(map[string]any{"cmd": "stop", "computer": *computer})
+	case "dismiss":
+		_, err = call(map[string]any{"cmd": "dismiss"})
 	case "decide":
 		if len(args) != 2 {
 			err = fmt.Errorf("decide NEED DECISION")
@@ -119,6 +138,29 @@ func main() {
 		stopAfter := fs.Duration("stop-after", 0, "press Stop after this long (0: never)")
 		_ = fs.Parse(args)
 		err = watch(*decide, *after, *stopAfter)
+	case "history":
+		fs := flag.NewFlagSet("history", flag.ExitOnError)
+		before := fs.Int64("before", 0, "tasks that started before this, in Unix milliseconds (0: now)")
+		limit := fs.Int("limit", 0, "how many tasks (0: 20)")
+		_ = fs.Parse(args)
+		req := map[string]any{"cmd": "history", "before": *before, "limit": *limit}
+		if fs.NArg() == 1 {
+			req = map[string]any{"cmd": "history", "id": fs.Arg(0)}
+		}
+		var r reply
+		if r, err = call(req); err == nil {
+			var v any
+			_ = json.Unmarshal(r.History, &v)
+			b, _ := json.MarshalIndent(map[string]any{"history": v, "more": r.More}, "", "  ")
+			fmt.Println(string(b))
+		}
+	case "model":
+		fs := flag.NewFlagSet("model", flag.ExitOnError)
+		provider := fs.String("provider", "anthropic", "anthropic or openai")
+		base := fs.String("base-url", "", "the API's address (empty: the service's default)")
+		model := fs.String("model", "", "the model")
+		_ = fs.Parse(args)
+		err = setModel(*provider, *base, *model)
 	default:
 		err = fmt.Errorf("unknown command %q", cmd)
 	}
@@ -145,6 +187,44 @@ func call(req map[string]any) (reply, error) {
 		return r, fmt.Errorf("%s", r.Error)
 	}
 	return r, nil
+}
+
+// setModel sends debug_model to the service with the key read from
+// standard input. It prints only whether a key is saved, never the key.
+func setModel(provider, base, model string) error {
+	line, err := bufio.NewReader(os.Stdin).ReadString('\n')
+	if err != nil && line == "" {
+		return fmt.Errorf("no key on standard input")
+	}
+	key := strings.TrimSpace(line)
+	if key == "" {
+		return fmt.Errorf("no key on standard input")
+	}
+	conn, err := net.Dial("unix", serviceSocket)
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+	if err := json.NewEncoder(conn).Encode(map[string]any{"id": 1, "cmd": "debug_model", "provider": provider,
+		"base_url": base, "model": model, "key": key}); err != nil {
+		return err
+	}
+	var r struct {
+		OK     bool `json:"ok"`
+		Result struct {
+			Provider string `json:"provider"`
+			KeySaved bool   `json:"key_saved"`
+		} `json:"result"`
+		Error any `json:"error"`
+	}
+	if err := json.NewDecoder(conn).Decode(&r); err != nil {
+		return err
+	}
+	if !r.OK {
+		return fmt.Errorf("%v", r.Error)
+	}
+	fmt.Printf("provider %s, key saved: %v\n", r.Result.Provider, r.Result.KeySaved)
+	return nil
 }
 
 func watch(decide string, after, stopAfter time.Duration) error {

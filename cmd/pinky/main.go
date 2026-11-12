@@ -24,12 +24,14 @@ import (
 	"time"
 
 	"github.com/DIYgod/pinky/internal/api"
+	"github.com/DIYgod/pinky/internal/driver/ios"
 )
 
 // version is set at build time with -ldflags "-X main.version=...".
 var version = "0.0.0-dev"
 
 func main() {
+	ios.PinkyVersion = version // the iPhone app kit of this release
 	cmd := "app"
 	args := os.Args[1:]
 	if len(args) > 0 && (!strings.HasPrefix(args[0], "-") || isCommandFlag(args[0])) {
@@ -104,10 +106,12 @@ Commands:
   devices   list connected phones
   companion install [phone]
             install or update Pinky for Android, Pinky's app for the phone
-  helper install [--team ID] [--bundle-id ID] [--local-signing] [phone]
-            build the iPhone helper (WebDriverAgent) with Xcode, as
-            "Pinky Helper" with Pinky's icon, and install it on the phone;
-            run it again when its signature runs out (macOS)
+  helper install [--team ID] [--bundle-id ID] [--local-signing]
+                 [--helper-only] [phone]
+            build Pinky for iPhone, Pinky's app for the iPhone, with
+            WebDriverAgent in it, with Xcode and install it on the phone
+            (--helper-only: the older Pinky Helper); run it again when its
+            signature runs out (macOS)
   token     print the agent token, which agents connecting over HTTP send
   quit      quit the running Pinky (the app or the daemon)
   update [--check]

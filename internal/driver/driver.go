@@ -203,6 +203,13 @@ type HostCheck struct {
 	// Apple's iPhone driver, from the Apple Devices app or iTunes),
 	// "usbmuxd" (Linux: the usbmuxd package), "usbmuxd_stopped" (Linux:
 	// installed, but not running; it starts when an iPhone is plugged in).
+	// Android's: "adb" (no adb to start a server with), "adb_server" (no
+	// server runs, and starting one failed), "adb_old" (the server is
+	// older than protocol 41), "adb_no_network" (the server cannot reach
+	// phones on the local network), "adb_restarts" (another program keeps
+	// replacing the server), "adb_other_server" (another program's adb
+	// server, on another port, holds a phone on a cable; Detail begins
+	// "Another program's adb server, on port <port>,").
 	Missing string
 	Detail  string // the same in a sentence
 }
@@ -338,9 +345,10 @@ type App struct {
 	ID     string // package name or bundle id
 	Name   string
 	System bool
-	// Aliases are other names the person knows the app by: on an iPhone,
-	// the name its home screen shows when that differs from the app's own
-	// ("微信" for WeChat, whose bundle is named WeChat in every language).
+	// Aliases are other names the person or an agent may know the app by.
+	// On an iPhone or a Simulator, Name is the name the home screen shows,
+	// in the phone's language ("微信"), and the alias is the bundle's own
+	// name when that differs ("WeChat", the same in every language).
 	Aliases []string
 	// CloneOf is set on an app clone (Android's 应用分身, Dual apps, App
 	// Twin): a second copy of an installed app that the phone keeps in
@@ -935,6 +943,12 @@ const (
 	// Only the person can turn it on, in the phone's accessibility
 	// settings. Clients that do not know it treat it as CompanionOff.
 	CompanionManual CompanionState = "manual"
+	// CompanionManualOn: installed and current, and its service is on on a
+	// phone where only the person can turn it on (CompanionManual): they
+	// did, and Pinky leaves it on after tasks, until they turn it off on
+	// the phone. The phone's apps, banking apps among them, can see it
+	// while it is on. Clients that do not know it treat it as CompanionOn.
+	CompanionManualOn CompanionState = "manual_on"
 )
 
 // CompanionInstaller installs or updates the phone's companion app from the
@@ -1470,7 +1484,37 @@ var (
 	// attempt was used.
 	ErrPINNotEntered = errors.New("the PIN was not entered")
 	ErrNotFound      = errors.New("not found")
+	// ErrBusy: another agent drives the phone, so this one may not act on
+	// it until that one is done (BusyError says who).
+	ErrBusy = errors.New("another agent is using the phone")
+	// ErrStoppedOnPhone: the person stopped the agent's task on the phone
+	// itself (Stop on Pinky for Android's pill), and the task must end. A
+	// driver returns it from Observe and the actions until the agent stops
+	// working (WorkWatcher).
+	ErrStoppedOnPhone = errors.New("the person stopped this task on the phone")
 )
+
+// BusyError is ErrBusy with who holds the phone: By "phone" for Pinky on
+// the phone running a task of its own, Task that task's name when it has
+// one. A driver returns it from Observe and the actions while an agent
+// works on a phone another agent holds; nothing was done.
+type BusyError struct {
+	By   string // "phone" (Pinky on the phone) or "computer" (another computer)
+	Task string
+}
+
+func (e *BusyError) Error() string {
+	who := "Pinky on another computer is using the phone"
+	if e.By == "phone" {
+		who = "Pinky on the phone is running a task"
+	}
+	if e.Task != "" {
+		who += fmt.Sprintf(" (%q)", e.Task)
+	}
+	return who + "; nothing was done, and the phone stays busy until that task ends"
+}
+
+func (e *BusyError) Is(target error) bool { return target == ErrBusy }
 
 // SetupError is a Provider.Open that failed because the phone waits for the
 // person to do a step first, the way Info.Setup and Info.Detail name a step
