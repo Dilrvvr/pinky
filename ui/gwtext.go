@@ -166,7 +166,8 @@ var switchValues = map[string]func() string{
 	"portrait": locales.GwValuePortrait, "landscape": locales.GwValueLandscape, "upside down": locales.GwValueUpsideDown,
 	"reverse landscape": locales.GwValueReverseLandscape, "auto-rotate": locales.GwValueAutoRotate,
 	"light": locales.GwValueLight, "dark": locales.GwValueDark, "automatic": locales.GwValueAutomatic,
-	"custom": locales.GwValueCustom, "none": locales.GwValueNoLocation,
+	"custom": locales.GwValueCustom, "custom_schedule": locales.GwValueCustom, "custom_bedtime": locales.GwValueCustom,
+	"none": locales.GwValueNoLocation,
 }
 
 func switchName(s string) string {
@@ -879,7 +880,7 @@ func needTitle(n gateway.NeedView) string {
 
 var (
 	reUnlockDetail = re(`^(.+) is waiting for the phone to unlock · (.*)$`)
-	reSetupDetail  = re(`^iOS asks for it on the phone before (?:Pinky for iPhone|the WebDriverAgent helper) can control it, and stops asking after a while\. (.+) is waiting · (.*)$`)
+	reSetupDetail  = re(`^iOS asks for it on the phone before (?:Pinky on the iPhone|Pinky for iPhone|the WebDriverAgent helper) can control it, and stops asking after a while\. (.+) is waiting · (.*)$`)
 	reAgentWants   = re(`^(.+) wants to connect for “(.*)”\.(?: Allowing gives it (\S+) access\.)?$`)
 	reFilesDetail  = re(`^(.+) · into the phone's Pinky folder(: .*)?$`)
 	reSettingsBack = re(`^(.+) · Pinky puts it back when the task ends$`)
@@ -1007,7 +1008,7 @@ func statusLine(d gateway.DeviceView) string {
 		return locales.GwStatusMovingWiFi()
 	case "Moving to the cable":
 		return locales.GwStatusMovingCable()
-	case "Switching to Pinky for iPhone", "Switching to the helper":
+	case "Switching to Pinky on the iPhone", "Switching to Pinky for iPhone", "Switching to the helper":
 		return locales.GwStatusSwitchHelper()
 	case "Switching to CoreDevice":
 		return locales.GwStatusSwitchCoreDevice()

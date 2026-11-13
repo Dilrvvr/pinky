@@ -2,6 +2,28 @@
 
 What changed for people in each release of Pinky, newest first. A version is the release's date in Asia/Shanghai and that day's count: 2026.1107.2 is the second release of 7 November 2026. Notes wait under "Unreleased" until the next release takes them; see [docs/RELEASING.md](docs/RELEASING.md).
 
+## 2026.1113.4 (2026-11-13)
+
+- phone_device no longer fails on Android 13 and later phones whose dark theme turns on at set times or at bedtime.
+
+## 2026.1113.3 (2026-11-13)
+
+- Scrolling a list from a button in it (such as Delete order in an order list) is now just a scroll: Pinky no longer asks you about it as a payment, or refuses it in read-only mode.
+- Pressing Stop on Pinky's floating status on Android right after its accessibility service restarted no longer stalls and fails.
+
+## 2026.1113.2 (2026-11-13)
+
+- Ask Pinky and Pinky on the phone now work with OpenCode Go's OpenAI-compatible service, which refused every task asking for a session header.
+
+## 2026.1113.1 (2026-11-13)
+
+- Pinky on your Android phone can now do tasks by itself: type what you want in Pinky on the phone, with your own model key, and watch it work. Pinky on the phone is now one app.
+- Both phone apps are now simply called Pinky.
+- Pinky on the iPhone has a new look that matches Pinky on Android: setup, model and key, running a task, approvals and Activity.
+- A task done on the phone now writes its summary in the language of the task.
+- Starting a task on your Android phone no longer fails once after Android restarts Pinky's accessibility service.
+- Pinky on your computer now tells you that Pinky on the phone can do tasks by itself and how to set it up, on the phone's card and in Settings › Phones.
+
 ## 2026.1112.16 (2026-11-12)
 
 - Pinky Helper is now called Pinky for iPhone, and it speaks English, Simplified Chinese and Japanese.
