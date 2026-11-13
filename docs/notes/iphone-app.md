@@ -162,6 +162,10 @@ What the research found. [P] marks a primary source: Apple, or the project's own
 - **What ran**: the app was ended by its process id and launched again, keeping the tunnel. The core in the extension started the task 5 s after the launch and ended it 24 s later, done. The model made two calls: `phone_launch` Calculator, then one `phone_batch` of seven taps (clear, 1, 2, ×, 3, 4, =), whose result read 408 from the accessibility tree; then `finish` with "在 Calculator 里依次输入 12 × 34 =，得到结果 408。" (it wrote the summary in Chinese although the task was English; the prompt asks for the task's language). 30,399 tokens in all, not priced (the gateway's model is unknown to the price list). The first read was slow, 2.9 s, 2.7 s of it walking the tree; no memory kill.
 - **No computer in the path**: the phone's core reached the gateway over Wi-Fi by itself; the Mac only launched the app and read the syslog, and the gateway is another machine on the network (the Mac's own port 3425 listens on loopback only, which the phone cannot reach). Steps, the summary and the screen reads came from the history database in the extension's container (`devicectl device copy from --domain-type appDataContainer --domain-identifier <id>.tunnel`, `Library/Application Support/Pinky`), which a debug build allows; the copy was deleted afterwards. The app's own container could not be listed that way (CoreDevice error 3). The app now logs each pairing step to the syslog (`pinky pairing: …`, category `pairing`: listening, the phone asked for a code, a failed try with its error, paired and whether the phone sent a UDID; never the code). A debug build launched with `-pinkyForgetPairing YES` drops the pairing in its Keychain once, since that outlives reinstalling the app.
 
+### Model services
+
+Since 2026-11-13 Settings offers desktop Pinky's model services ([model-services.md](model-services.md)), from `ios/app/App/ModelServices.json` (generated from `internal/pilot`, read by `Services.swift`). UserDefaults keeps `service`, and per service `model.<id>` and `baseURL.<id>` (empty follows the preset's address); settings of before (`provider`, `model`, `baseURL`) name the service and give the model and address to their API's entries. Keys stay in the Keychain as `key.<name>`, the name being `pilot.KeyName`, so keys saved before still apply. Saving a key, model or address sends the core `check` (`AppModel.check`); Settings shows usage (today, 7 and 30 days, the last 7 days row by row) from the core's `usage`, and the task box shows today's. Checked: `ios/build.sh sim` and `ios/build.sh lite`, the string catalog in sync, and Settings and the task box in demo mode (`-pinkyDemo ready`) on a simulator. Not checked: the usage and check sections on screen, and a real phone (the simulator has no core).
+
 ## Plan for M2 and M3
 
 **M2** makes the app something a person can set up and use:
@@ -182,6 +186,16 @@ What the research found. [P] marks a primary source: Apple, or the project's own
 - **Polish** of what M2 leaves rough.
 
 **Release notes.** M1 has none: the app is built from source only, and a real model, approvals and Stop on the phone are not verified yet. Its one change to what people get, that agents can no longer open or act on Pinky's iPhone app, rides along with the next release. When the app is ready for people, its notes say what it does and that change too.
+
+## Quick entries
+
+Since 2026-11-13, after the Android app's (android-app.md, "Quick entries"):
+
+- **Voice input** in the task box (`App/Dictation.swift`): Apple's speech recognition, on the phone when its language allows (`requiresOnDeviceRecognition` when the recognizer supports it), otherwise through Apple as the keyboard's dictation does. It asks for speech recognition and the microphone the first time, listens until the person taps again or for 55 s (the recognizer takes about a minute), puts what it heard after what was typed, and never starts the task itself. It listens only while no task runs, so it never meets `SilentAudio`'s session.
+- **New Task in Pinky** (`App/QuickStart.swift`), an App Intent for Shortcuts and Siri ("New task in Pinky", "Ask Pinky"): it opens the app with the task in the box and, optionally, text or a link to go with it (the core's `shared`, as Android's Share to Pinky). A shortcut that takes the share sheet's input and runs it shares into Pinky. The person starts the task in the app: automations run without anyone looking, so a shortcut never starts one.
+- **No Share extension:** only the app can send the core in the tunnel a message (provider messages belong to the containing app), and with no App Group (AltStore appends the team id) an extension cannot hand the app what was shared. Pictures would also go through the tunnel extension's 50 MB, which a task already uses up to 28 MB of (run 7).
+- **No "ask about this screen":** a task starts from Pinky's own app, which is in front then, and opening the app from Shortcuts puts it in front too; there is no floating button over other apps on iOS.
+- **Checked:** the Simulator build (`ios/build.sh sim`), the App Intents metadata and both usage strings in the bundle, and the mic in the task box in the demo (`-pinkyDemo ready`, iOS 26.5 Simulator). Not checked: listening (the Simulator would use the Mac's microphone), the intent from Shortcuts, and both on a phone.
 
 ## Follow-ups
 

@@ -179,6 +179,60 @@ enum L {
         }
     }
 
+    // MARK: The person's messages to Pinky (steer, withdraw, continue)
+
+    /// A message to Pinky the core did not take.
+    static func notSent(_ error: String?) -> String {
+        let why = error ?? String(localized: "Something went wrong.", comment: "Unknown error")
+        return String(localized: "Couldn't send: \(why)", comment: "A message to Pinky failed; the reason")
+    }
+
+    static var alreadyRead: String {
+        String(localized: "Pinky has already read it.", comment: "A message to Pinky can no longer be edited or withdrawn")
+    }
+
+    /// A continue the core refused, by its code: as a start for the codes
+    /// they share.
+    static func continueRefused(_ code: String?, _ error: String?) -> String {
+        switch code {
+        case "no_device", "no_key", "no_model", "busy", "computer": refused(code, error)
+        default: notSent(error)
+        }
+    }
+
+    static var voiceNotAllowed: String {
+        String(localized: "Pinky may not use speech recognition or the microphone. You can allow them in Settings › Privacy & Security.",
+               comment: "Voice input in the task box: the person declined a permission")
+    }
+    static var voiceUnavailable: String {
+        String(localized: "Speech recognition is not available now.", comment: "Voice input in the task box could not start")
+    }
+
+    // MARK: Memory
+
+    /// Where a note came from: the person, or a task in an app.
+    static func memorySource(kind: String, app: String?) -> String {
+        guard kind == "learned" else { return String(localized: "From you", comment: "Memory: a note the person said or wrote") }
+        if let app, !app.isEmpty {
+            return String(localized: "Learned in \(app)", comment: "Memory: a note Pinky learned on a task; the app's name")
+        }
+        return String(localized: "Learned on a task", comment: "Memory: a note Pinky learned on a task")
+    }
+
+    /// Why the core kept no note, by its code (standalone's CodeMemory*).
+    static func memoryError(_ code: String?) -> String {
+        switch code {
+        case "memory_sensitive":
+            String(localized: "Memory never keeps passwords, codes, card, account, ID or phone numbers, email or street addresses.", comment: "Memory: a note was not saved")
+        case "memory_long":
+            String(localized: "A note has at most \(Memory.maxChars) characters.", comment: "Memory: a note was not saved; the most characters")
+        case "memory_full":
+            String(localized: "Memory keeps at most \(Memory.most) notes. Delete one first.", comment: "Memory: a note was not saved; the most notes")
+        default:
+            String(localized: "Couldn't save the note.", comment: "Memory: a note was not saved")
+        }
+    }
+
     /// A start or decide the core refused, by its code.
     static func refused(_ code: String?, _ error: String?) -> String {
         switch code {
@@ -187,6 +241,7 @@ enum L {
         case "no_task": String(localized: "Type a task first.", comment: "Start refused")
         case "no_model": String(localized: "Choose a model in Settings first.", comment: "Start refused")
         case "busy": String(localized: "Pinky is already working on a task.", comment: "Start refused")
+        case "shared": String(localized: "What came with the task is too long for Pinky.", comment: "Start refused: the text a shortcut passed along is too large")
         case "computer": String(localized: "Pinky on your computer is using this iPhone. Start the task when it is done, or once you choose Pause connection for this iPhone there.", comment: "Start refused")
         case "gone": String(localized: "This was already answered, or the time to answer ran out.", comment: "Decide refused")
         default: error ?? String(localized: "Something went wrong.", comment: "Unknown error")

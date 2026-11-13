@@ -50,6 +50,9 @@ class PinkyAccessibilityService : AccessibilityService() {
 
     /** Pinky's pill and approval card, while on-phone mode is on. */
     var overlays: Overlays? = null
+
+    // Pinky's floating button, when the person turned it on (QuickEntry).
+    private var quickEntry: QuickEntry? = null
         private set
 
     /**
@@ -70,6 +73,8 @@ class PinkyAccessibilityService : AccessibilityService() {
     @Volatile
     var includeNotImportant = false
         private set
+
+    private val notices by lazy { ScheduleNotices.Watcher(this) }
 
     private var server: CompanionServer? = null
     private val main = Handler(Looper.getMainLooper())
@@ -118,10 +123,12 @@ class PinkyAccessibilityService : AccessibilityService() {
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         if (event == null) return
         events.onEvent(event)
+        if (ScheduleRules.touches(event.eventType)) UserActivity.touch()
         if (event.eventType == AccessibilityEvent.TYPE_WINDOWS_CHANGED ||
             event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED
         ) {
             overlays?.windowsChanged()
+            quickEntry?.windowsChanged()
         }
     }
 
@@ -204,12 +211,18 @@ class PinkyAccessibilityService : AccessibilityService() {
 
     private fun startOnPhone() {
         Core.start(this)
-        if (overlays == null) overlays = Overlays(this).also { it.start() }
+        // The overlays follow the core's state; so do the schedules'
+        // notifications (ScheduleNotices), and the first state arms the
+        // schedules' alarm (Schedules.sync).
+        if (overlays == null) overlays = Overlays(this) { st -> notices.onState(st) }.also { it.start() }
+        if (quickEntry == null) quickEntry = QuickEntry(this).also { it.start() }
     }
 
     private fun stopOnPhone() {
         overlays?.stop()
         overlays = null
+        quickEntry?.stop()
+        quickEntry = null
     }
 
     /**
@@ -290,6 +303,14 @@ class PinkyAccessibilityService : AccessibilityService() {
     }
 
     companion object {
+        /**
+         * Whether the person turned on-phone mode on in Pinky's screen, as
+         * kept: for the schedules' alarm (Schedules.due), which skips a
+         * time while it is off.
+         */
+        fun onPhoneMode(context: android.content.Context): Boolean =
+            context.getSharedPreferences(MODE_PREFS, android.content.Context.MODE_PRIVATE).getBoolean(KEY_ON_PHONE, false)
+
         private const val TAG = "PinkyService"
         const val DEFAULT_IDLE_DISABLE_MS = 60_000L
 

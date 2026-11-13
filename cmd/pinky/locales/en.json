@@ -1,5 +1,347 @@
 {
   "@@locale": "en",
+  "schedButton": "Schedule…",
+  "@schedButton": {
+    "description": "Ask Pinky: the button beside Start that opens the dialog to run the typed task at set times instead of now."
+  },
+  "schedCondition": "Tell me only if",
+  "@schedCondition": {
+    "description": "Scheduled task dialog: the label of the optional condition, in the person's words, under which they want to hear of a run (\"it will rain\")."
+  },
+  "schedConditionDesc": "Leave it empty to hear of every run. Otherwise Pinky checks it each time and tells you only when it holds.",
+  "@schedConditionDesc": {
+    "description": "Scheduled task dialog: the note under the condition field."
+  },
+  "schedConditionHint": "it will rain (optional)",
+  "@schedConditionHint": {
+    "description": "Scheduled task dialog: the hint in the empty condition field, an example that completes \"Tell me only if\"."
+  },
+  "schedCooldown": "Tell me",
+  "@schedCooldown": {
+    "description": "Scheduled task dialog: the label of how often a condition that holds again tells the person."
+  },
+  "schedCooldownAlways": "Each time it holds",
+  "@schedCooldownAlways": {
+    "description": "Scheduled task dialog, Tell me: every run whose condition holds tells the person."
+  },
+  "schedCooldownDay": "At most once a day",
+  "@schedCooldownDay": {
+    "description": "Scheduled task dialog, Tell me: a condition that holds tells the person at most once a day."
+  },
+  "schedCooldownHour": "At most once an hour",
+  "@schedCooldownHour": {
+    "description": "Scheduled task dialog, Tell me: a condition that holds tells the person at most once an hour."
+  },
+  "schedDate": "Date",
+  "@schedDate": {
+    "description": "Scheduled task dialog: the label of the date of a task that runs once."
+  },
+  "schedDay": "{day, date, ::EEE}",
+  "@schedDay": {
+    "description": "Scheduled task dialog: a day of the week the person can pick, short.",
+    "placeholders": {
+      "day": {
+        "type": "DateTime",
+        "example": "Mon"
+      }
+    }
+  },
+  "schedDays": "Days",
+  "@schedDays": {
+    "description": "Scheduled task dialog: the label of the days of the week the task runs on."
+  },
+  "schedDelete": "Delete",
+  "@schedDelete": {
+    "description": "Scheduled task dialog: deletes the scheduled task."
+  },
+  "schedDesktopNote": "Scheduled tasks run while Pinky is open on this computer, also with its window closed. A time missed while Pinky is quit or the computer sleeps is skipped and reported; one the phone is busy for waits up to 15 minutes. Nobody watches a scheduled run: Pinky never pays in it, and a step that needs your approval waits for you as usual.",
+  "@schedDesktopNote": {
+    "description": "Scheduled task dialog: the note at the bottom on when scheduled tasks run on this computer and what Pinky does in a run nobody watches."
+  },
+  "schedErrDate": "Write the date as year-month-day, like 2026-11-20.",
+  "@schedErrDate": {
+    "description": "Scheduled task dialog: why it cannot be saved: the date of a task that runs once is not year-month-day."
+  },
+  "schedErrLong": "The task is too long.",
+  "@schedErrLong": {
+    "description": "Scheduled task dialog: why it cannot be saved: the task or the condition is too long."
+  },
+  "schedErrNoDays": "Choose at least one day.",
+  "@schedErrNoDays": {
+    "description": "Scheduled task dialog: why it cannot be saved: On certain days without a day."
+  },
+  "schedErrNoPhone": "Choose a phone.",
+  "@schedErrNoPhone": {
+    "description": "Scheduled task dialog: why it cannot be saved: no phone."
+  },
+  "schedErrNoTask": "Type a task.",
+  "@schedErrNoTask": {
+    "description": "Scheduled task dialog: why it cannot be saved: no task."
+  },
+  "schedErrNoTime": "Add a time.",
+  "@schedErrNoTime": {
+    "description": "Scheduled task dialog: why it cannot be saved: no time of day."
+  },
+  "schedErrOther": "Couldn't save the schedule: {detail}",
+  "@schedErrOther": {
+    "description": "Scheduled task dialog: saving failed; detail is the error, in English.",
+    "placeholders": {
+      "detail": {
+        "type": "String",
+        "example": "permission denied"
+      }
+    }
+  },
+  "schedErrPast": "That time has passed.",
+  "@schedErrPast": {
+    "description": "Scheduled task dialog: why it cannot be saved: the time of a task that runs once has passed."
+  },
+  "schedErrRunning": "A scheduled task is already running. Try again when it ends.",
+  "@schedErrRunning": {
+    "description": "Scheduled task dialog, Run now: another scheduled task runs."
+  },
+  "schedErrTime": "Write times as hours and minutes, like 08:00 or 20:30.",
+  "@schedErrTime": {
+    "description": "Scheduled task dialog: why it cannot be saved: a time is not hours and minutes."
+  },
+  "schedErrTooMany": "{count, plural, one {# time a day at most.} other {# times a day at most.}}",
+  "@schedErrTooMany": {
+    "description": "Scheduled task dialog: why it cannot be saved: too many times a day.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "12"
+      }
+    }
+  },
+  "schedErrZone": "Pinky doesn't know this time zone. Use a name like Asia/Shanghai, or leave it empty.",
+  "@schedErrZone": {
+    "description": "Scheduled task dialog: why it cannot be saved: an unknown time zone. Asia/Shanghai is an example of an IANA name and stays as it is (a Japanese one may give Asia/Tokyo)."
+  },
+  "schedEvery": "Every",
+  "@schedEvery": {
+    "description": "Scheduled task dialog, Every few hours: the label of the choice of how many hours apart."
+  },
+  "schedHours": "{count, plural, one {Every hour} other {Every # hours}}",
+  "@schedHours": {
+    "description": "Scheduled task dialog, Every few hours: a choice of how many hours apart the task runs.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "4"
+      }
+    }
+  },
+  "schedInterrupted": "Pinky quit before the task ended.",
+  "@schedInterrupted": {
+    "description": "A scheduled task's run that never ended: Pinky quit while it ran."
+  },
+  "schedMet": "condition met",
+  "@schedMet": {
+    "description": "After how a scheduled task's run went: its condition held, so the person was told."
+  },
+  "schedNew": "New schedule…",
+  "@schedNew": {
+    "description": "The right panel, under the list of scheduled tasks: opens the dialog for a new one."
+  },
+  "schedNext": "Next runs",
+  "@schedNext": {
+    "description": "Scheduled task dialog: the heading of the next three times the task runs, or why it cannot be saved."
+  },
+  "schedNextAt": "Next {when, date, ::MMMEEEdjmm}",
+  "@schedNextAt": {
+    "description": "A scheduled task's row in the right panel: when it runs next.",
+    "placeholders": {
+      "when": {
+        "type": "DateTime",
+        "example": "Fri, Nov 14, 8:00 AM"
+      }
+    }
+  },
+  "schedNoNext": "It won't run again.",
+  "@schedNoNext": {
+    "description": "A scheduled task that runs no more: one that ran once."
+  },
+  "schedNoRuns": "It hasn't run yet.",
+  "@schedNoRuns": {
+    "description": "Scheduled task dialog, Last runs: none yet."
+  },
+  "schedNotMet": "condition not met",
+  "@schedNotMet": {
+    "description": "After how a scheduled task's run went: its condition did not hold."
+  },
+  "schedNotifyTitle": "Scheduled: {task}",
+  "@schedNotifyTitle": {
+    "description": "The title of the notification, or the toast, of how a scheduled task went. task is the task's words, shortened.",
+    "placeholders": {
+      "task": {
+        "type": "String",
+        "example": "Check the weather"
+      }
+    }
+  },
+  "schedOpen": "Open the schedule “{task}”",
+  "@schedOpen": {
+    "description": "Accessible name of a scheduled task's row in the right panel, which opens its dialog. task is the task's words, shortened.",
+    "placeholders": {
+      "task": {
+        "type": "String",
+        "example": "Check the weather"
+      }
+    }
+  },
+  "schedPause": "Pause",
+  "@schedPause": {
+    "description": "Scheduled task dialog: stops the task from running at its times until Resume."
+  },
+  "schedPaused": "Paused",
+  "@schedPaused": {
+    "description": "A scheduled task's row in the right panel: the person paused it, so it does not run."
+  },
+  "schedPaymentDenied": "A scheduled task never pays: Pinky denied this step by itself.",
+  "@schedPaymentDenied": {
+    "description": "The note of an approval Pinky denied by itself: a payment step in a scheduled task nobody watched."
+  },
+  "schedRepeat": "Repeat",
+  "@schedRepeat": {
+    "description": "Scheduled task dialog: the label of the choice of how the task repeats."
+  },
+  "schedRepeatDaily": "Every day",
+  "@schedRepeatDaily": {
+    "description": "Scheduled task dialog, Repeat: every day, at one or more times."
+  },
+  "schedRepeatInterval": "Every few hours",
+  "@schedRepeatInterval": {
+    "description": "Scheduled task dialog, Repeat: every few hours, from a time of day to midnight."
+  },
+  "schedRepeatOnce": "Once",
+  "@schedRepeatOnce": {
+    "description": "Scheduled task dialog, Repeat: run once, on a date at a time."
+  },
+  "schedRepeatWeekdays": "Weekdays",
+  "@schedRepeatWeekdays": {
+    "description": "Scheduled task dialog, Repeat: Monday to Friday, at one or more times."
+  },
+  "schedRepeatWeekly": "On certain days",
+  "@schedRepeatWeekly": {
+    "description": "Scheduled task dialog, Repeat: on the days of the week the person picks, at one or more times."
+  },
+  "schedResume": "Resume",
+  "@schedResume": {
+    "description": "Scheduled task dialog: runs a paused task at its times again, from now on."
+  },
+  "schedRunNow": "Run now",
+  "@schedRunNow": {
+    "description": "Scheduled task dialog: runs the task at once, with the person there; also marks such a run in Last runs."
+  },
+  "schedRuns": "Last runs",
+  "@schedRuns": {
+    "description": "Scheduled task dialog: the heading of the task's last ten runs."
+  },
+  "schedSection": "Scheduled",
+  "@schedSection": {
+    "description": "The right panel: the heading of the list of scheduled tasks (Ask Pinky tasks set to run at set times), under Tasks."
+  },
+  "schedSkipBusy": "{phone} was busy with another task.",
+  "@schedSkipBusy": {
+    "description": "A scheduled task's skipped run: another task had the phone for 15 minutes after its time.",
+    "placeholders": {
+      "phone": {
+        "type": "String",
+        "example": "Pixel 9"
+      }
+    }
+  },
+  "schedSkipInUse": "You were using {phone}.",
+  "@schedSkipInUse": {
+    "description": "A scheduled task's skipped run: the person had taken over the phone for 15 minutes after its time.",
+    "placeholders": {
+      "phone": {
+        "type": "String",
+        "example": "Pixel 9"
+      }
+    }
+  },
+  "schedSkipLocked": "{phone} was locked.",
+  "@schedSkipLocked": {
+    "description": "A scheduled task's skipped run: the phone was locked, and Pinky never unlocks it for a scheduled task.",
+    "placeholders": {
+      "phone": {
+        "type": "String",
+        "example": "Pixel 9"
+      }
+    }
+  },
+  "schedSkipNoPhone": "The phone is no longer in Pinky.",
+  "@schedSkipNoPhone": {
+    "description": "A scheduled task's skipped run: its phone was removed from Pinky."
+  },
+  "schedSkipNotRunning": "{count, plural, one {Pinky wasn't running at that time.} other {Pinky wasn't running: # times were missed.}}",
+  "@schedSkipNotRunning": {
+    "description": "A scheduled task's skipped run: Pinky was quit or the computer asleep at its times. count is how many times were missed.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "schedSkipOff": "Ask Pinky was turned off.",
+  "@schedSkipOff": {
+    "description": "A scheduled task's skipped run: the person turned Ask Pinky off in Settings › Agents."
+  },
+  "schedSkipOffline": "{phone} wasn't connected.",
+  "@schedSkipOffline": {
+    "description": "A scheduled task's skipped run: the phone was not connected to Pinky, or not ready.",
+    "placeholders": {
+      "phone": {
+        "type": "String",
+        "example": "Pixel 9"
+      }
+    }
+  },
+  "schedSkipped": "Skipped",
+  "@schedSkipped": {
+    "description": "How a scheduled task's run went: it did not run at its time, for the reason below."
+  },
+  "schedStartAt": "Starting at",
+  "@schedStartAt": {
+    "description": "Scheduled task dialog, Every few hours: the label of the first time of each day."
+  },
+  "schedTask": "Task",
+  "@schedTask": {
+    "description": "Scheduled task dialog: the label of the field with the task, in the person's words, as they would type it into Ask Pinky."
+  },
+  "schedTime": "Time",
+  "@schedTime": {
+    "description": "Scheduled task dialog: the label of the time of day of a task that runs once."
+  },
+  "schedTimes": "Times",
+  "@schedTimes": {
+    "description": "Scheduled task dialog: the label of the times of day the task runs at, one or more, separated by commas."
+  },
+  "schedTitleEdit": "Scheduled task",
+  "@schedTitleEdit": {
+    "description": "The title of the dialog that shows and edits a scheduled task."
+  },
+  "schedTitleNew": "Schedule a task",
+  "@schedTitleNew": {
+    "description": "The title of the dialog that makes a scheduled task."
+  },
+  "schedWhen": "{when, date, ::MMMEEEdjmm}",
+  "@schedWhen": {
+    "description": "A time a scheduled task runs or ran: the weekday, the day and the time.",
+    "placeholders": {
+      "when": {
+        "type": "DateTime",
+        "example": "Fri, Nov 14, 8:00 AM"
+      }
+    }
+  },
+  "schedZone": "Time zone",
+  "@schedZone": {
+    "description": "Scheduled task dialog: the label of the time zone the times are in; empty is this computer's, which the hint shows."
+  },
   "activityAnsweredIn": "Answered in {duration}",
   "@activityAnsweredIn": {
     "description": "The second line of a step where the person allowed or denied what the agent asked: how long they took to answer. duration is as \"14 s\" or \"1 min 02 s\".",
@@ -942,6 +1284,42 @@
       }
     }
   },
+  "askCancel": "Cancel",
+  "@askCancel": {
+    "description": "Ask Pinky: leaves the message as it was."
+  },
+  "askContinue": "Continue",
+  "@askContinue": {
+    "description": "Ask Pinky once its task ended: the button that continues the same task, with the message typed. The limits count anew."
+  },
+  "askContinueField": "Next message for Pinky",
+  "@askContinueField": {
+    "description": "Ask Pinky once its task ended: the accessible name of the field that continues the same task with a new message."
+  },
+  "askContinuePlaceholder": "Tell Pinky what to do next…",
+  "@askContinuePlaceholder": {
+    "description": "Ask Pinky once its task ended: the placeholder of askContinueField."
+  },
+  "askByAgent": "Asked by {agent}",
+  "@askByAgent": {
+    "description": "Ask Pinky, under the box's state: an agent on the computer handed Pinky this task (phone_task_run).",
+    "placeholders": {
+      "agent": {
+        "type": "String",
+        "example": "Claude Code"
+      }
+    }
+  },
+  "askCancelled": "{agent} cancelled the task.",
+  "@askCancelled": {
+    "description": "Why an Ask Pinky task ended: the agent that handed Pinky the task cancelled it (phone_task_cancel).",
+    "placeholders": {
+      "agent": {
+        "type": "String",
+        "example": "Claude Code"
+      }
+    }
+  },
   "askDismiss": "Dismiss",
   "@askDismiss": {
     "description": "Ask Pinky: the button that hides how its last task ended."
@@ -955,6 +1333,10 @@
         "example": "2.00"
       }
     }
+  },
+  "askEdit": "Edit",
+  "@askEdit": {
+    "description": "Ask Pinky: the button that edits a message Pinky has not read yet."
   },
   "askEndDone": "Done",
   "@askEndDone": {
@@ -985,6 +1367,16 @@
   "askEndStopped": "Stopped",
   "@askEndStopped": {
     "description": "Ask Pinky after a task: the person stopped it, or it reached a limit (then why follows)."
+  },
+  "askErrSend": "Couldn't send: {detail}",
+  "@askErrSend": {
+    "description": "Ask Pinky, in red: a message to Pinky or Continue failed.",
+    "placeholders": {
+      "detail": {
+        "type": "String",
+        "example": "Pinky runs no task on this phone"
+      }
+    }
   },
   "askErrStart": "Couldn't start: {detail}",
   "@askErrStart": {
@@ -1040,6 +1432,26 @@
       }
     }
   },
+  "askMemoryDrop": "Don't",
+  "@askMemoryDrop": {
+    "description": "Ask Pinky: the button that does not keep a suggested note."
+  },
+  "askMemoryDropped": "Not remembered",
+  "@askMemoryDropped": {
+    "description": "Ask Pinky: a suggested note the person did not keep."
+  },
+  "askMemoryKeep": "Remember",
+  "@askMemoryKeep": {
+    "description": "Ask Pinky: the button that keeps a suggested note."
+  },
+  "askMemoryKept": "Remembered",
+  "@askMemoryKept": {
+    "description": "Ask Pinky: a suggested note the person kept."
+  },
+  "askMemoryTitle": "Remember for later tasks?",
+  "@askMemoryTitle": {
+    "description": "Ask Pinky: over the notes a finished task suggests keeping."
+  },
   "askTaskLimit": "Up to {limit} a task",
   "@askTaskLimit": {
     "description": "Ask Pinky, under the model's name next to Start: the cost limit of a task (askDollars or askTokens).",
@@ -1064,6 +1476,10 @@
   "@askNoKey": {
     "description": "Why Ask Pinky could not start a task."
   },
+  "askPendingNote": "Pinky reads this at its next step",
+  "@askPendingNote": {
+    "description": "Ask Pinky: under a message the person sent that Pinky has not read yet; it can still be edited or withdrawn."
+  },
   "askPhone": "Phone",
   "@askPhone": {
     "description": "Ask Pinky on All phones: the accessible name of the menu that chooses the phone for the task."
@@ -1078,9 +1494,21 @@
       }
     }
   },
+  "askRead": "Pinky has already read it.",
+  "@askRead": {
+    "description": "Ask Pinky, in red: the person tried to edit or withdraw a message that Pinky read in the meantime."
+  },
   "askRefused": "The model declined this task.",
   "@askRefused": {
     "description": "Why Ask Pinky could not finish a task."
+  },
+  "askSave": "Save",
+  "@askSave": {
+    "description": "Ask Pinky: saves the edited message."
+  },
+  "askSend": "Send",
+  "@askSend": {
+    "description": "Ask Pinky while its task runs: the button that sends the message in askSteerField."
   },
   "askSetup": "Pinky can do simple tasks on your phone by itself, with an AI model you choose.",
   "@askSetup": {
@@ -1097,6 +1525,26 @@
   "askStart": "Start",
   "@askStart": {
     "description": "Ask Pinky: the button that starts the task typed in the field."
+  },
+  "askSteerField": "Message for Pinky",
+  "@askSteerField": {
+    "description": "Ask Pinky while its task runs: the accessible name of the field where the person writes to Pinky as it works."
+  },
+  "askSteerPlaceholder": "Add or change instructions…",
+  "@askSteerPlaceholder": {
+    "description": "Ask Pinky while its task runs: the placeholder of askSteerField. Pinky reads the message at its next step."
+  },
+  "askScreen": "About the screen",
+  "@askScreen": {
+    "description": "Ask Pinky: the button that starts a question about what the phone shows now; the field may be empty."
+  },
+  "askScreenTooltip": "Ask Pinky about what the phone shows now, or have it explained when the field is empty. Blocked apps and hidden codes stay hidden.",
+  "@askScreenTooltip": {
+    "description": "Ask Pinky: the tooltip of the button that asks about the phone's screen."
+  },
+  "askScreenDefault": "Explain what the phone shows.",
+  "@askScreenDefault": {
+    "description": "Ask Pinky: the task sent when the person asks about the screen with an empty field."
   },
   "askSteps": "{count, plural, one {# step} other {# steps}}",
   "@askSteps": {
@@ -1116,6 +1564,16 @@
   "@askTitle": {
     "description": "The name of Pinky's own agent, which does a task the person types on a phone by itself: the box at the top of Tasks, and its part of Settings › Agents."
   },
+  "askToday": "Today: {amount}",
+  "@askToday": {
+    "description": "Ask Pinky, under the model's name next to Start: what Pinky's own agent used today (askTokens, then askDollars when known).",
+    "placeholders": {
+      "amount": {
+        "type": "String",
+        "example": "48,210 tokens · US$0.21"
+      }
+    }
+  },
   "askTokens": "{count, plural, one {# token} other {# tokens}}",
   "@askTokens": {
     "description": "Ask Pinky: how many tokens a task used, or its limit, for a model whose prices Pinky does not know.",
@@ -1125,6 +1583,14 @@
         "example": "1000000"
       }
     }
+  },
+  "askUnread": "Pinky didn't read these before the task ended. Continue to send them.",
+  "@askUnread": {
+    "description": "Ask Pinky once its task ended: above the messages the person sent that Pinky never read; Continue sends them."
+  },
+  "askWithdraw": "Withdraw",
+  "@askWithdraw": {
+    "description": "Ask Pinky: the button that takes back a message Pinky has not read yet."
   },
   "askWorking": "Pinky is working on it",
   "@askWorking": {
@@ -1534,6 +2000,18 @@
   "@checkBackgroundUnlocked": {
     "description": "The checkup, working in the background: works on Android 11 and 12, only while the phone is unlocked."
   },
+  "checkBadAnswer": "The address answered, but not as an API Pinky knows. Check the API address.",
+  "@checkBadAnswer": {
+    "description": "A check of the model: an answer that is not the API's."
+  },
+  "checkBadKey": "The service didn't accept the API key. Check that it is a key of this service.",
+  "@checkBadKey": {
+    "description": "A check of the model: the service refused the key (HTTP 401 or 403)."
+  },
+  "checkBusy": "The service is busy or limited the request. Try again in a moment.",
+  "@checkBusy": {
+    "description": "A check of the model: HTTP 429 or the service's own error (5xx)."
+  },
   "checkCompanionManual": "Installed, but this phone doesn't let Pinky turn on its accessibility service over USB debugging. Turn on Pinky in the phone's accessibility settings by hand before an agent works on the phone. It then stays on until you turn it off there, and while it's on, the phone's apps, banking apps among them, can see it.",
   "@checkCompanionManual": {
     "description": "The checkup, Pinky on the phone, on a phone that took Pinky's change to its accessibility settings without an error and kept nothing of it (vivo's OriginOS 6 does): only the person can turn the app's service on, in the phone's settings. Pinky then leaves it on after tasks, until the person turns it off on the phone, and the phone's apps can see an accessibility service that is on (banking apps check for such services). A note follows that says where the switch is. Pinky is the app's name on the phone."
@@ -1876,6 +2354,30 @@
   "@checkLocalNetworkUnknown": {
     "description": "The checkup, local network: the check could not run."
   },
+  "checkNoCredit": "The service says the account has no credit left. Top it up on the service's site.",
+  "@checkNoCredit": {
+    "description": "A check of the model: HTTP 402."
+  },
+  "checkNoKey": "Add an API key first.",
+  "@checkNoKey": {
+    "description": "A check of the model: no API key is saved for the service."
+  },
+  "checkNoModel": "Choose a model first.",
+  "@checkNoModel": {
+    "description": "A check of the model in Settings › Agents › Ask Pinky: no model is chosen."
+  },
+  "checkNoTools": "The model answered but didn't use a tool. Pinky works through tools, so choose a model that uses them.",
+  "@checkNoTools": {
+    "description": "A check of the model: it answered without calling the tool, or the service said it does not support tools."
+  },
+  "checkNotFound": "The service doesn't know this model or address. Check the model's name and the API address.",
+  "@checkNotFound": {
+    "description": "A check of the model: HTTP 404."
+  },
+  "checkRejected": "The service refused the request.",
+  "@checkRejected": {
+    "description": "A check of the model: another error of the service; settingsAskCheckDetail follows with its words."
+  },
   "checkScreenFail": "The phone sends no screenshots, so agents can't see the screen. Restart the phone, then check again.",
   "@checkScreenFail": {
     "description": "The checkup, seeing the screen: failed."
@@ -1931,6 +2433,10 @@
   "checkUSBPermissionNote": "On Linux: add yourself to the plugdev group (sudo usermod -aG plugdev $LOGNAME), log out and in again, and install your distribution's udev rules for Android phones (android-sdk-platform-tools-common on Ubuntu and Debian). Then unplug the phone and plug it in again.",
   "@checkUSBPermissionNote": {
     "description": "The checkup and Add phone: how to fix checkUSBPermission. android-udev-rules and plugdev are names of Linux packages and groups: keep them as they are."
+  },
+  "checkUnreachable": "Pinky couldn't reach the API address. Check it, and that the service or server is running.",
+  "@checkUnreachable": {
+    "description": "A check of the model: no answer from the address."
   },
   "checkWiFiFail": "Pinky can't use this phone over Wi-Fi.",
   "@checkWiFiFail": {
@@ -2257,6 +2763,58 @@
   "companionNotNow": "Not now",
   "@companionNotNow": {
     "description": "The Pinky on the phone card: the quiet button that hides the card for this phone."
+  },
+  "memoryErrFull": "{count, plural, one {Memory keeps at most # note. Delete one first.} other {Memory keeps at most # notes. Delete one first.}}",
+  "@memoryErrFull": {
+    "description": "Why a note of Ask Pinky's memory was not saved: there are as many as it keeps.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "50"
+      }
+    }
+  },
+  "memoryErrLong": "{count, plural, one {A note has at most # character.} other {A note has at most # characters.}}",
+  "@memoryErrLong": {
+    "description": "Why a note of Ask Pinky's memory was not saved: it is too long.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "200"
+      }
+    }
+  },
+  "memoryErrSave": "Couldn't save: {error}",
+  "@memoryErrSave": {
+    "description": "Why a note of Ask Pinky's memory was not saved: the file could not be written.",
+    "placeholders": {
+      "error": {
+        "type": "String",
+        "example": "permission denied"
+      }
+    }
+  },
+  "memoryErrSensitive": "Memory never keeps passwords, codes, card, account, ID or phone numbers, email or street addresses.",
+  "@memoryErrSensitive": {
+    "description": "Why a note of Ask Pinky's memory was not saved: it holds something memory never keeps."
+  },
+  "memoryFromYou": "From you",
+  "@memoryFromYou": {
+    "description": "Under a note of Ask Pinky's memory: the person said it in a task, or wrote it."
+  },
+  "memoryLearned": "Learned on a task",
+  "@memoryLearned": {
+    "description": "Under a note of Ask Pinky's memory: a way of doing something Pinky found on a task."
+  },
+  "memoryLearnedIn": "Learned in {app}",
+  "@memoryLearnedIn": {
+    "description": "Under a note of Ask Pinky's memory: a way of doing something in an app that Pinky found on a task.",
+    "placeholders": {
+      "app": {
+        "type": "String",
+        "example": "Meituan"
+      }
+    }
   },
   "phoneTasksTitle": "Pinky on the phone can work by itself",
   "@phoneTasksTitle": {
@@ -5218,6 +5776,30 @@
       }
     }
   },
+  "gwStepAgentSaid": "{agent} said: “{message}”",
+  "@gwStepAgentSaid": {
+    "description": "A step: a message to Pinky's own agent from the agent on the computer that handed it the task (phone_task_steer), which Pinky's agent read. Shown only in other languages; in English the gateway's own words show.",
+    "placeholders": {
+      "agent": {
+        "type": "String",
+        "example": "Claude Code"
+      },
+      "message": {
+        "type": "String",
+        "example": "Use the blue one"
+      }
+    }
+  },
+  "gwStepYouSaid": "You said: “{message}”",
+  "@gwStepYouSaid": {
+    "description": "A step: the person's message to Pinky's own agent while it worked, which the agent read. Shown only in other languages; in English the gateway's own words show.",
+    "placeholders": {
+      "message": {
+        "type": "String",
+        "example": "Use the blue one"
+      }
+    }
+  },
   "gwStepYouStopped": "You stopped the task",
   "@gwStepYouStopped": {
     "description": "A step of the demo's fake gateway: the person stopped the task. Shown only in other languages; in English the gateway's own words show."
@@ -8114,11 +8696,55 @@
   "@settingsAgentsWorking": {
     "description": "Settings › Agents: the state at the end of an agent's row, next to a green dot: one of its tasks is running."
   },
+  "settingsAskCheck": "Check",
+  "@settingsAskCheck": {
+    "description": "Settings › Agents › Ask Pinky: the title of the row that checks the model."
+  },
+  "settingsAskCheckAgain": "Check Again",
+  "@settingsAskCheckAgain": {
+    "description": "Settings › Agents › Ask Pinky: the button that checks the model again after a check."
+  },
+  "settingsAskCheckDesc": "Sends the model one tiny request to see that it answers and uses tools. Pinky does it when you save a key, model or address.",
+  "@settingsAskCheckDesc": {
+    "description": "Settings › Agents › Ask Pinky: under Check."
+  },
+  "settingsAskCheckDetail": "The service said: {detail}",
+  "@settingsAskCheckDetail": {
+    "description": "Settings › Agents › Ask Pinky: under a failed check, the service's own words, in its language.",
+    "placeholders": {
+      "detail": {
+        "type": "String",
+        "example": "HTTP 401 · invalid x-api-key"
+      }
+    }
+  },
+  "settingsAskCheckLabel": "Check the model now",
+  "@settingsAskCheckLabel": {
+    "description": "Settings › Agents › Ask Pinky: what screen readers say for the Check and Check Again button."
+  },
+  "settingsAskCheckNow": "Check",
+  "@settingsAskCheckNow": {
+    "description": "Settings › Agents › Ask Pinky: the button that checks the model now."
+  },
+  "settingsAskCheckOK": "The model answered and used a tool, in {seconds} s.",
+  "@settingsAskCheckOK": {
+    "description": "Settings › Agents › Ask Pinky: a check that went well; seconds has one decimal.",
+    "placeholders": {
+      "seconds": {
+        "type": "String",
+        "example": "1.4"
+      }
+    }
+  },
+  "settingsAskChecking": "Checking…",
+  "@settingsAskChecking": {
+    "description": "Settings › Agents › Ask Pinky: while the check runs."
+  },
   "settingsAskCost": "Cost per task",
   "@settingsAskCost": {
     "description": "Settings › Agents › Ask Pinky: the title of the cost limit."
   },
-  "settingsAskCostDesc": "Counted from what the service reports, at Anthropic's prices.",
+  "settingsAskCostDesc": "Counted from what the service reports, at the prices it publishes.",
   "@settingsAskCostDesc": {
     "description": "Settings › Agents › Ask Pinky with a Claude model whose prices Pinky knows: the line under settingsAskCost."
   },
@@ -8178,6 +8804,16 @@
   "@settingsAskKeyKeepWindows": {
     "description": "Settings › Agents › Ask Pinky, on Windows: the line under settingsAskKey."
   },
+  "settingsAskKeyOptional": "Only if you set one up on the server. {keep}",
+  "@settingsAskKeyOptional": {
+    "description": "Settings › Agents › Ask Pinky: under API key, for a server on the person's own computer, which needs no key by default; keep says where a key stays (settingsAskKeyKeepMac and the others).",
+    "placeholders": {
+      "keep": {
+        "type": "String",
+        "example": "It stays in the macOS Keychain."
+      }
+    }
+  },
   "settingsAskKeyPlaceholder": "Paste the API key",
   "@settingsAskKeyPlaceholder": {
     "description": "Settings › Agents › Ask Pinky: the hint in the empty API key field."
@@ -8222,13 +8858,25 @@
   "@settingsAskModelDesc": {
     "description": "Settings › Agents › Ask Pinky with another service: the line under settingsAskModel."
   },
+  "settingsAskModelLocal": "The name of a model the server runs. It must read images and use tools.",
+  "@settingsAskModelLocal": {
+    "description": "Settings › Agents › Ask Pinky: under Model, for a server on the person's own computer, such as Ollama."
+  },
   "settingsAskModelNone": "None",
   "@settingsAskModelNone": {
     "description": "Settings › Agents › Ask Pinky: no model is chosen."
   },
+  "settingsAskModelOther": "Other…",
+  "@settingsAskModelOther": {
+    "description": "Settings › Agents › Ask Pinky, the Model menu: the entry that lets the person type another model's name."
+  },
   "settingsAskModelPlaceholder": "Model name",
   "@settingsAskModelPlaceholder": {
     "description": "Settings › Agents › Ask Pinky: the hint in the empty model field."
+  },
+  "settingsAskModelSuggested": "Models that read images and use tools, as Pinky needs. Choose Other… for another model of the service.",
+  "@settingsAskModelSuggested": {
+    "description": "Settings › Agents › Ask Pinky: under Model, for a service whose models Pinky suggests."
   },
   "settingsAskOn": "Show Ask Pinky",
   "@settingsAskOn": {
@@ -8238,6 +8886,14 @@
   "@settingsAskOnDesc": {
     "description": "Settings › Agents › Ask Pinky: the line under settingsAskOn."
   },
+  "settingsAskRegionChina": "China",
+  "@settingsAskRegionChina": {
+    "description": "settingsAskServiceRegion: the entry of a service for its mainland China address."
+  },
+  "settingsAskRegionGlobal": "International",
+  "@settingsAskRegionGlobal": {
+    "description": "settingsAskServiceRegion: the entry of a service for its address outside mainland China."
+  },
   "settingsAskService": "Service",
   "@settingsAskService": {
     "description": "Settings › Agents › Ask Pinky: the title of the setting that chooses the API the model is reached through."
@@ -8246,13 +8902,27 @@
   "@settingsAskServiceAnthropic": {
     "description": "Settings › Agents › Ask Pinky: a choice of service: Anthropic's Messages API, or a service that speaks it."
   },
-  "settingsAskServiceDesc": "Claude through Anthropic's API, or another model through a service compatible with OpenAI's. Each has its own key.",
+  "settingsAskServiceDesc": "Who runs the model. Each service keeps its own API key, model and address.",
   "@settingsAskServiceDesc": {
-    "description": "Settings › Agents › Ask Pinky: the line under settingsAskService."
+    "description": "Settings › Agents › Ask Pinky: under Service, what the choice is."
   },
   "settingsAskServiceOpenAI": "OpenAI-compatible API",
   "@settingsAskServiceOpenAI": {
     "description": "Settings › Agents › Ask Pinky: a choice of service: OpenAI's Chat Completions API, or a service that speaks it."
+  },
+  "settingsAskServiceRegion": "{service} ({region})",
+  "@settingsAskServiceRegion": {
+    "description": "Settings › Agents › Ask Pinky, the Service menu: a service that has one entry for mainland China and one for elsewhere, such as Qwen (China).",
+    "placeholders": {
+      "service": {
+        "type": "String",
+        "example": "Qwen"
+      },
+      "region": {
+        "type": "String",
+        "example": "China"
+      }
+    }
   },
   "settingsAskSteps": "Steps per task",
   "@settingsAskSteps": {
@@ -8286,13 +8956,51 @@
   "@settingsAskURLDescAnthropic": {
     "description": "Settings › Agents › Ask Pinky with the Anthropic-compatible service: the line under settingsAskURL."
   },
+  "settingsAskURLDescLocal": "The server on this computer by default. Change it when the server runs on another computer or port.",
+  "@settingsAskURLDescLocal": {
+    "description": "Settings › Agents › Ask Pinky: under API address, for a server on the person's own computer, such as Ollama."
+  },
   "settingsAskURLDescOpenAI": "The address of the service's OpenAI-compatible API, such as https://…/v1. OpenAI's own by default.",
   "@settingsAskURLDescOpenAI": {
     "description": "Settings › Agents › Ask Pinky with the OpenAI-compatible service: the line under settingsAskURL."
   },
+  "settingsAskURLDescService": "The service's own address by default. Change it only to go through another address, such as a proxy.",
+  "@settingsAskURLDescService": {
+    "description": "Settings › Agents › Ask Pinky: under API address, for a service Pinky knows."
+  },
   "settingsAskURLErr": "Enter an address that starts with https:// or http://.",
   "@settingsAskURLErr": {
     "description": "Settings › Agents › Ask Pinky, in red, under the API address field."
+  },
+  "settingsAskUsage": "Usage",
+  "@settingsAskUsage": {
+    "description": "Settings › Agents › Ask Pinky: the heading of the tokens Pinky's own agent used."
+  },
+  "settingsAskUsageDesc": "The tokens Pinky's own agent used, as the services reported them, and what they cost where Pinky knows the prices. Kept on this computer only.",
+  "@settingsAskUsageDesc": {
+    "description": "Settings › Agents › Ask Pinky: under Usage."
+  },
+  "settingsAskUsageMonth": "Last 30 days",
+  "@settingsAskUsageMonth": {
+    "description": "Settings › Agents › Ask Pinky, Usage: the total of the last 30 days, today included."
+  },
+  "settingsAskUsageNone": "Nothing yet.",
+  "@settingsAskUsageNone": {
+    "description": "Settings › Agents › Ask Pinky, Usage: no tokens used in the period."
+  },
+  "settingsAskUsageRequests": "{count, plural, one {# request} other {# requests}}",
+  "@settingsAskUsageRequests": {
+    "description": "Settings › Agents › Ask Pinky, Usage: how many requests a model got on a day.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "12"
+      }
+    }
+  },
+  "settingsAskUsageWeek": "Last 7 days",
+  "@settingsAskUsageWeek": {
+    "description": "Settings › Agents › Ask Pinky, Usage: the total of the last 7 days, today included."
   },
   "settingsCancel": "Cancel",
   "@settingsCancel": {
@@ -8365,6 +9073,54 @@
   "settingsLanguageSystem": "System",
   "@settingsLanguageSystem": {
     "description": "Settings › Advanced › Language: the first choice, which follows the computer's preferred languages. The other choices name each language in itself (English, Simplified Chinese)."
+  },
+  "settingsMemory": "Memory",
+  "@settingsMemory": {
+    "description": "Settings › Agents: the heading of Ask Pinky's memory, and the label of the field that writes a note."
+  },
+  "settingsMemoryAdd": "Add…",
+  "@settingsMemoryAdd": {
+    "description": "Settings › Agents › Memory: the button that writes a new note."
+  },
+  "settingsMemoryDelete": "Delete",
+  "@settingsMemoryDelete": {
+    "description": "Settings › Agents › Memory: the button that deletes a note."
+  },
+  "settingsMemoryDeleteAll": "Delete All",
+  "@settingsMemoryDeleteAll": {
+    "description": "Settings › Agents › Memory: the button that deletes every note, and the confirming button of its dialog."
+  },
+  "settingsMemoryDeleteAllMessage": "Every note on this computer is deleted. The phones keep theirs.",
+  "@settingsMemoryDeleteAllMessage": {
+    "description": "Settings › Agents › Memory: the message of the dialog before Delete All."
+  },
+  "settingsMemoryDeleteAllTitle": "Delete all of Ask Pinky's memory?",
+  "@settingsMemoryDeleteAllTitle": {
+    "description": "Settings › Agents › Memory: the title of the dialog before Delete All."
+  },
+  "settingsMemoryEdit": "Edit",
+  "@settingsMemoryEdit": {
+    "description": "Settings › Agents › Memory: the button that changes a note's words."
+  },
+  "settingsMemoryEmpty": "Nothing yet. After a task, Pinky may suggest something to remember; you decide.",
+  "@settingsMemoryEmpty": {
+    "description": "Settings › Agents › Memory: in place of the list while there are no notes."
+  },
+  "settingsMemoryIntro": "What Ask Pinky remembers for its tasks on this computer: what you told it, and ways of doing things you said yes to after a task. Nothing is kept without your yes, and never passwords, codes, card or ID numbers, or addresses. The Pinky app on each phone keeps its own.",
+  "@settingsMemoryIntro": {
+    "description": "Settings › Agents: what Ask Pinky's memory is, under its heading."
+  },
+  "settingsMemoryOn": "Use memory",
+  "@settingsMemoryOn": {
+    "description": "Settings › Agents › Memory: the switch's title."
+  },
+  "settingsMemoryOnDesc": "Tasks read these notes and may suggest new ones. Turned off, the notes stay until you delete them.",
+  "@settingsMemoryOnDesc": {
+    "description": "Settings › Agents › Memory: the line under settingsMemoryOn."
+  },
+  "settingsMemoryPlaceholder": "For example: Prefers window seats",
+  "@settingsMemoryPlaceholder": {
+    "description": "Settings › Agents › Memory: the placeholder of the field that writes a note."
   },
   "settingsNeedsYou": "Needs you",
   "@settingsNeedsYou": {
@@ -8935,6 +9691,14 @@
   "settingsSafetyHideCodesDesc": "One-time codes on the screen and in notifications are masked before an agent reads them, and covered in screenshots. Recordings show them, so an agent gets one only when you allow it.",
   "@settingsSafetyHideCodesDesc": {
     "description": "Settings › Safety: the line under Hide codes from agents. Screenshots are the ones agents get and the ones Activity keeps; recordings are the screen recordings of tasks, which are not covered."
+  },
+  "settingsSafetyVirtualCredentials": "Allow passwords on virtual phones",
+  "@settingsSafetyVirtualCredentials": {
+    "description": "Settings › Safety: the switch that lets agents type passwords and one-time codes on virtual phones (emulators and Simulators on this computer). Off by default."
+  },
+  "settingsSafetyVirtualCredentialsDesc": "Agents may type passwords and one-time codes on emulators and Simulators on this computer, to test sign-ins with test accounts. On phones they never can.",
+  "@settingsSafetyVirtualCredentialsDesc": {
+    "description": "Settings › Safety: the line under Allow passwords on virtual phones. Phones means real phones, as opposed to virtual ones."
   },
   "settingsSafetyIntro": "Pinky checks every action before it reaches the phone. Agents can't change these settings.",
   "@settingsSafetyIntro": {
@@ -10022,9 +10786,13 @@
   "@updateAgoNow": {
     "description": "Inside updateLineUpToDate: checked less than a minute ago."
   },
-  "updateAvailable": "Pinky {version} is available",
-  "@updateAvailable": {
-    "description": "The update card's title when a newer version is out.",
+  "updateAvailableTitle": "New version available",
+  "@updateAvailableTitle": {
+    "description": "The update card's title in the sidebar when a newer version is out; the version shows on the line under it (updateAvailableVersion). Keep it short: the card is about 190 points wide."
+  },
+  "updateAvailableVersion": "Pinky {version}",
+  "@updateAvailableVersion": {
+    "description": "The line under the update card's title (updateAvailableTitle): the app's name and the new version.",
     "placeholders": {
       "version": {
         "type": "String",

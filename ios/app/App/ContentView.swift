@@ -6,18 +6,27 @@ import SwiftUI
 /// steps and the latest Activity; Activity and Settings in the toolbar.
 struct ContentView: View {
     @EnvironmentObject var m: AppModel
-    // Read here so that the screen follows what Settings changes.
-    @AppStorage("provider") private var provider = TaskSettings.anthropic
-    @AppStorage("model") private var model = ""
-    @AppStorage("baseURL") private var baseURL = ""
+    // Read here so that the screen follows what Settings changes; the
+    // model and address are kept per service, so closing Settings counts
+    // as a change too (settingsRev).
+    @AppStorage("service") private var service = ""
     @AppStorage("maxCost") private var maxCost = 0.0
+    @State private var settingsRev = 0
     @State private var text = ""
+    /// The message for Pinky while a task runs, or to continue it.
+    @State private var message = ""
     @State private var showSettings = false
     @State private var showActivity = false
     /// Keychain is no observable store: the screen reads it again when
     /// Settings closes, which is where the key is typed.
     @State private var hasKey = false
     @FocusState private var typing: Bool
+    @StateObject private var dictation = Dictation()
+    @ObservedObject private var drafts = Drafts.shared
+    /// What a shortcut passed along with the task (NewTaskIntent).
+    @State private var shared = ""
+    /// The box's text when the mic started: what is heard goes after it.
+    @State private var beforeVoice = ""
 
     var body: some View {
         NavigationStack {
@@ -28,6 +37,7 @@ struct ContentView: View {
                     }
                 }
                 statusCard
+                if let a = messagesFor { MessagesSection(agent: a, text: $message) }
                 ForEach(m.state?.needs ?? []) { NeedCard(need: $0) }
                 if ready && setUp && !running { taskBox }
                 if let p = m.problem {
@@ -41,6 +51,7 @@ struct ContentView: View {
                 if !m.recent.isEmpty { activity }
             }
             .navigationTitle(Text(verbatim: "Pinky"))
+            .modifier(TitleWithMark())
             .toolbar {
                 ToolbarItemGroup(placement: .topBarTrailing) {
                     Button { showActivity = true } label: { Label("Activity", systemImage: "clock.arrow.circlepath") }
@@ -48,8 +59,13 @@ struct ContentView: View {
                 }
             }
             .navigationDestination(isPresented: $showActivity) { ActivityView() }
-            .sheet(isPresented: $showSettings, onDismiss: readKey) { SettingsView().environmentObject(m) }
-            .onAppear(perform: readKey)
+            .sheet(isPresented: $showSettings, onDismiss: settingsClosed) { SettingsView().environmentObject(m) }
+            .onAppear {
+                readKey()
+                Task { await m.loadUsage() }
+            }
+            .onAppear(perform: takeDraft)
+            .onChange(of: drafts.pending) { _, _ in takeDraft() }
             .animation(.default, value: m.state)
         }
         .tint(.pinkyAccent)
@@ -62,8 +78,23 @@ struct ContentView: View {
     private var setUp: Bool { hasKey && !TaskSettings.model.isEmpty }
     private var vpnOn: Bool { m.vpn == .on }
 
+    /// The task the person can send messages to: the running one under its
+    /// card, or the one that ended and can go on under the ended card.
+    private var messagesFor: AgentState? {
+        guard m.paired, vpnOn, let st = m.state, st.device.ready, let a = st.agent else { return nil }
+        if a.running { return a }
+        return setUp && st.computer == nil && a.continuable == true ? a : nil
+    }
+
+    private func settingsClosed() {
+        readKey()
+        settingsRev += 1
+    }
+
+    /// Whether the service's key is saved, or the service needs none.
     private func readKey() {
-        hasKey = !(Keychain.get(Keychain.keyAccount(provider)) ?? "").isEmpty
+        _ = service
+        hasKey = TaskSettings.keyReady
         #if DEBUG
         if m.demo { hasKey = Demo.hasKey }
         #endif
@@ -160,18 +191,60 @@ struct ContentView: View {
                 .lineLimit(3...8)
                 .focused($typing)
                 .padding(.vertical, 4)
+            if !shared.isEmpty {
+                HStack(alignment: .top, spacing: 8) {
+                    Image(systemName: "paperclip").foregroundStyle(.secondary)
+                    Text(verbatim: shared).font(.footnote).foregroundStyle(.secondary).lineLimit(3)
+                    Spacer(minLength: 0)
+                    Button { shared = "" } label: { Image(systemName: "xmark.circle.fill").foregroundStyle(.tertiary) }
+                        .buttonStyle(.borderless)
+                        .accessibilityLabel(Text("Remove"))
+                }
+            }
+            if let p = dictation.problem {
+                Text(p).font(.footnote).foregroundStyle(.red)
+            }
             HStack(alignment: .center) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(verbatim: modelLabel).font(.footnote.weight(.medium)).foregroundStyle(.secondary)
                     Text(verbatim: limitLine).font(.footnote).foregroundStyle(.tertiary)
+                    if let today = usageToday {
+                        Text(verbatim: today).font(.footnote.monospacedDigit()).foregroundStyle(.tertiary)
+                    }
                 }
                 Spacer()
+                if Dictation.available || dictation.listening {
+                    Button {
+                        if dictation.listening {
+                            dictation.stop()
+                        } else {
+                            typing = false
+                            beforeVoice = text.trimmingCharacters(in: .whitespacesAndNewlines)
+                            Task {
+                                await dictation.start { heard in
+                                    text = beforeVoice.isEmpty ? heard : beforeVoice + " " + heard
+                                }
+                            }
+                        }
+                    } label: {
+                        Image(systemName: dictation.listening ? "stop.circle.fill" : "mic")
+                            .font(.title3)
+                            .symbolEffect(.pulse, isActive: dictation.listening)
+                    }
+                    .buttonStyle(.borderless)
+                    .accessibilityLabel(dictation.listening ? Text("Stop listening") : Text("Speak"))
+                }
                 Button {
+                    dictation.stop()
                     let t = text
+                    let with = shared
                     typing = false
                     Task {
-                        await m.startTask(t)
-                        if m.problem == nil { text = "" }
+                        await m.startTask(t, shared: with)
+                        if m.problem == nil {
+                            text = ""
+                            shared = ""
+                        }
                     }
                 } label: {
                     Text("Start").frame(minWidth: 56)
@@ -186,15 +259,33 @@ struct ContentView: View {
         }
     }
 
+    /// Puts a shortcut's task into the box (NewTaskIntent). A task the
+    /// person was typing gives way only to a shortcut's own words.
+    private func takeDraft() {
+        guard let d = drafts.pending else { return }
+        drafts.pending = nil
+        if !d.task.isEmpty { text = d.task }
+        shared = d.shared
+        if !d.task.isEmpty || !d.shared.isEmpty { typing = d.task.isEmpty }
+    }
+
     // Read with the stored settings, so that SwiftUI redraws when they change.
     private var modelLabel: String {
-        _ = (provider, model, baseURL)
+        _ = (service, settingsRev)
         return TaskSettings.modelLabel
     }
 
     private var limitLine: String {
-        _ = (provider, model, maxCost)
+        _ = (service, maxCost, settingsRev)
         return TaskSettings.limitLine
+    }
+
+    /// What the model used today, "Today: 41,000 tokens · US$0.012"; nil
+    /// when nothing.
+    private var usageToday: String? {
+        let t = UsageRow.total(m.usage, since: UsageRow.day(back: 0))
+        guard t.tokens > 0 else { return nil }
+        return String(localized: "Today: \(L.amount(t))", comment: "Under the task box: what the model used today")
     }
 
     // MARK: Activity
@@ -267,6 +358,7 @@ struct EndedCard: View {
                 Text(verbatim: L.usage(agent)).font(.footnote.monospacedDigit()).foregroundStyle(.secondary)
             }
             .padding(.vertical, 2)
+            if let s = agent.suggested, !s.isEmpty { SuggestionsView(list: s) }
         }
         .listRowBackground(e.tone.color.opacity(0.08))
     }
@@ -390,8 +482,12 @@ struct StepRow: View {
         }
     }
 
+    /// What the person told Pinky (gateway.PersonSaid).
+    private var said: Bool { step.text.hasPrefix("You said: ") }
+
     private var icon: String {
-        switch step.status {
+        if said { return "text.bubble" }
+        return switch step.status {
         case "approval_pending": "hand.raised"
         case "running", "pending", "": "circle.dotted"
         case "approval_denied", "blocked_by_policy", "failed", "error": "xmark.circle"
@@ -401,7 +497,8 @@ struct StepRow: View {
     }
 
     private var color: Color {
-        switch step.status {
+        if said { return .pinkyAccent }
+        return switch step.status {
         case "approval_pending": .pinkyAmber
         case "approval_denied", "blocked_by_policy", "failed", "error": .red
         case "running", "pending", "", "user": .secondary

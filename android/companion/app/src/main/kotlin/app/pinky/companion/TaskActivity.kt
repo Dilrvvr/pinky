@@ -17,6 +17,7 @@ import android.view.Gravity
 import android.view.KeyEvent
 import android.view.View
 import android.view.ViewGroup
+import android.view.inputmethod.EditorInfo
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -28,7 +29,7 @@ import java.io.Closeable
  * Pinky's own screen on the phone, in a process of its own (":ui"): the
  * person asks Pinky for a task, follows it and stops it, as in desktop
  * Pinky's Ask Pinky (ui/ask.go), and finds the tasks that ended under
- * Activity (PastTasks). Approvals and handoffs are answered on the card
+ * Activity (PastTasks), and schedules tasks (SchedulesActivity). Approvals and handoffs are answered on the card
  * over other apps (Overlays); the model, its key and a task's limits are
  * in SettingsActivity.
  *
@@ -81,10 +82,30 @@ class TaskActivity : Activity() {
     private lateinit var runHint: TextView
     private lateinit var stopButton: TextView
     private lateinit var endCard: EndCard
+    // The person's messages to the running task (steer), and going on with
+    // the task that ended (continue): Steering.
+    private lateinit var steerBox: View
+    private lateinit var steerPending: LinearLayout
+    private lateinit var steerInput: EditText
+    private lateinit var steerSend: TextView
+    private lateinit var steerError: TextView
+    private lateinit var continueBox: View
+    private lateinit var continueUnread: TextView
+    private lateinit var continuePending: LinearLayout
+    private lateinit var continueInput: EditText
+    private lateinit var continueButton: TextView
+    private lateinit var continueError: TextView
+    private var sending = false // a steer on its way
+    private var continuing = false // a continue on its way
+    private var pendingShown: List<Steering.Message>? = null // what steerPending lists
+    private var unreadShown: List<Steering.Message>? = null // what continuePending lists
+    private lateinit var suggestions: Suggestions
     private lateinit var askBox: View
     private lateinit var input: EditText
     private lateinit var modelLine: TextView
     private lateinit var limitLine: TextView
+    private lateinit var todayLine: TextView
+    private var usedToday: String? = null // what the model used today (ModelUsage.today), as last read
     private lateinit var startButton: TextView
     private lateinit var askFooter: TextView
     private lateinit var error: TextView
@@ -105,10 +126,15 @@ class TaskActivity : Activity() {
         secrets = Secrets(this)
         hasCore = Core.available(this)
         val col = look.column()
-        val header = look.header(getString(R.string.app_name))
+        val header = look.header(getString(R.string.app_name), mark = true)
         header.addView(
             look.iconButton(R.drawable.ic_activity, getString(R.string.phone_activity)) {
                 startActivity(Intent(this, HistoryActivity::class.java))
+            },
+        )
+        header.addView(
+            look.iconButton(R.drawable.ic_alarm, getString(R.string.phone_schedules)) {
+                startActivity(Intent(this, SchedulesActivity::class.java))
             },
         )
         header.addView(look.iconButton(R.drawable.ic_settings, getString(R.string.phone_settings)) { openSettings() })
@@ -120,8 +146,12 @@ class TaskActivity : Activity() {
         col.addView(batteryCard(), look.below(12))
         col.addView(computerCard(), look.below(12))
         col.addView(runCard(), look.below(12))
+        col.addView(steerBox(), look.below(12))
         endCard = EndCard(this, look) { dismiss() }
+        suggestions = Suggestions(this, look) { i, keep -> decideNote(i, keep) }
+        endCard.view.addView(suggestions.view, look.matchWrap())
         col.addView(endCard.view, look.below(12))
+        col.addView(continueBox(), look.below(12))
         col.addView(askBox(), look.below(12))
         error = look.text("", Look.SMALL, look.red).apply { setPadding(look.dp(4), look.dp(8), look.dp(4), 0) }
         error.say("")
@@ -141,13 +171,13 @@ class TaskActivity : Activity() {
         super.onStart()
         // Without the core there is nothing to reach, and on-phone mode stays off.
         if (!hasCore) return
-        sub = CoreClient.subscribe({ st -> main.post { onState(st) } }, { why -> main.post { onDown(why) } })
+        sub = CoreClient.subscribe(this, { st -> main.post { onState(st) } }, { why -> main.post { onDown(why) } })
     }
 
     override fun onResume() {
         super.onResume()
         serviceOn = look.serviceOn()
-        hasKey = secrets.has(settings.provider)
+        hasKey = settings.keyOptional() || secrets.has(settings.keyName())
         // The person may come back from Android's battery settings.
         unrestricted = Battery.unrestricted(this)
         update = UpdateCheck.offered(this)
@@ -198,8 +228,8 @@ class TaskActivity : Activity() {
             // A phone the core does not run on: Pinky works there with a
             // computer, and this screen says only that.
             for (v in listOf(
-                updateCard, coreCard, setupCard, batteryCard, computerCard, runCard, endCard.view,
-                askBox, error, stepsHeading, steps.group, historyHeading, historyGroup,
+                updateCard, coreCard, setupCard, batteryCard, computerCard, runCard, steerBox, endCard.view,
+                continueBox, askBox, error, stepsHeading, steps.group, historyHeading, historyGroup,
             )) v.shown(false)
             return
         }
@@ -262,18 +292,47 @@ class TaskActivity : Activity() {
             runTask.say(agent.optString("task"))
             runUsage.say(Words.usage(resources, agent))
             val need = st?.optJSONArray("needs")?.optJSONObject(0)
-            runWaiting.say(need?.let { getString(R.string.phone_waiting_for, it.optString("title")) })
+            runWaiting.say(need?.let { getString(R.string.phone_waiting_for, Words.shown(it, "title")) })
             runHint.shown(need != null)
         } else {
             look.enable(stopButton, true)
         }
 
+        // While it runs, the person's messages that wait for the model, and
+        // a field for another.
+        val pending = Steering.pending(agent)
+        steerBox.shown(running)
+        if (running) {
+            showPending(steerPending, pending, editable = true)
+        } else {
+            steerError.say("")
+        }
+        updateSend()
+
         endCard.view.shown(agent != null && !running)
-        if (agent != null && !running) endCard.show(agent)
+        if (agent != null && !running) {
+            endCard.show(agent)
+            suggestions.show(agent)
+        }
+
+        // Once it ended, it may go on: with the messages it did not read,
+        // and a new one.
+        val continuable = ready && setUp && Steering.continuable(agent)
+        continueBox.shown(continuable)
+        if (continuable) {
+            continueUnread.shown(pending.isNotEmpty())
+            continuePending.shown(pending.isNotEmpty())
+            showPending(continuePending, pending, editable = false)
+        } else {
+            continueError.say("")
+        }
+        updateContinue()
 
         askBox.shown(ready && setUp && !running)
         askFooter.shown(ready && setUp && !running && agent == null)
         modelLine.say(settings.modelLabel())
+        todayLine.say(usedToday)
+        todayLine.shown(usedToday != null)
         limitLine.say(
             getString(R.string.phone_task_limit, Words.limit(resources, settings.priced(), settings.maxCost, settings.tokenLimit)),
         )
@@ -290,7 +349,7 @@ class TaskActivity : Activity() {
         // Why the core cannot be reached is in the log (onDown), in a
         // developer's words; the person gets what to do.
         if (state == null) return getString(R.string.phone_core_failed_hint)
-        return listOf(device?.optString("line").orEmpty(), device?.optString("detail").orEmpty())
+        return listOf(device?.let { Words.shown(it, "line") }.orEmpty(), device?.optString("detail").orEmpty())
             .filter { it.isNotEmpty() }.distinct().joinToString("\n")
     }
 
@@ -308,16 +367,18 @@ class TaskActivity : Activity() {
         starting = true
         error.say("")
         updateStart()
-        val provider = settings.provider
+        val id = settings.service
+        val name = settings.keyName(id)
+        val optional = settings.keyOptional(id)
         CoreClient.background {
             val why = try {
-                val key = secrets.load(provider)
+                val key = secrets.load(name)
                 when {
-                    key != null -> {
-                        CoreClient.call(settings.startRequest(task, key, provider))
+                    key != null || optional && !secrets.has(name) -> {
+                        CoreClient.call(settings.startRequest(task, key.orEmpty(), id))
                         null
                     }
-                    secrets.has(provider) -> getString(R.string.phone_err_key_lost)
+                    secrets.has(name) -> getString(R.string.phone_err_key_lost)
                     else -> getString(R.string.phone_no_key)
                 }
             } catch (e: CoreClient.Refused) {
@@ -343,6 +404,28 @@ class TaskActivity : Activity() {
         render()
     }
 
+    private fun listen() {
+        try {
+            @Suppress("DEPRECATION")
+            startActivityForResult(QuickAccess.voiceIntent(), REQ_VOICE)
+        } catch (e: Exception) {
+            Log.w(TAG, "no speech recognizer", e)
+            error.say(getString(R.string.phone_voice_none))
+        }
+    }
+
+    @Deprecated("Activity's own; Pinky's screens need no AndroidX")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        @Suppress("DEPRECATION")
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode != REQ_VOICE || resultCode != RESULT_OK) return
+        val heard = QuickAccess.heard(data)
+        if (heard.isEmpty()) return
+        val before = input.text.toString().trimEnd()
+        input.setText(if (before.isEmpty()) heard else "$before $heard")
+        input.setSelection(input.text.length)
+    }
+
     private fun startError(e: CoreClient.Refused): String = when (e.code) {
         "no_device" -> getString(R.string.phone_err_no_device)
         "no_key" -> getString(R.string.phone_no_key)
@@ -354,6 +437,191 @@ class TaskActivity : Activity() {
             Log.w(TAG, "the core refused the task [${e.code}]: ${e.message}")
             getString(R.string.phone_err_start)
         }
+    }
+
+    // The person's messages to Pinky (Steering).
+
+    private fun updateSend() {
+        look.enable(steerSend, Steering.canSend(steerInput.text, sending))
+    }
+
+    private fun updateContinue() {
+        val computer = state?.optJSONObject("computer") != null
+        val pending = Steering.pending(state?.optJSONObject("agent")).size
+        look.enable(continueButton, Steering.canContinue(continueInput.text, pending, continuing, computer))
+    }
+
+    /** Sends the field's message to the running task; the model reads it at its next step. */
+    private fun sendSteer() {
+        val text = steerInput.text.toString().trim()
+        if (!Steering.canSend(text, sending)) return
+        sending = true
+        steerError.say("")
+        updateSend()
+        CoreClient.background {
+            val failed = try {
+                CoreClient.call(CoreClient.cmd("steer", "text" to text))
+                null
+            } catch (e: Exception) {
+                e
+            }
+            main.post { sent(text, failed) }
+        }
+    }
+
+    private fun sent(text: String, failed: Exception?) {
+        sending = false
+        when {
+            failed == null -> steerInput.setText("")
+            failed is CoreClient.Refused && Steering.refusal(failed.code) == Steering.Refusal.ENDED -> {
+                // The task ended meanwhile: the words go on with it instead.
+                steerInput.setText("")
+                val moved = Steering.joined(continueInput.text.toString(), text)
+                continueInput.setText(moved)
+                continueInput.setSelection(moved.length)
+            }
+            else -> steerError.say(messageError(failed))
+        }
+        render()
+    }
+
+    /** Changes a message the model has not read; empty text withdraws it. */
+    private fun editMessage(m: Steering.Message) {
+        look.edit(
+            getString(R.string.phone_steer_edit), "", m.text, getString(R.string.phone_steer_hint), Look.Field.TEXT,
+        ) { text ->
+            messageCommand(CoreClient.cmd("steer", "id" to m.id, "text" to text.trim()))
+        }
+    }
+
+    private fun withdrawMessage(m: Steering.Message) {
+        messageCommand(CoreClient.cmd("withdraw", "id" to m.id))
+    }
+
+    private fun messageCommand(req: JSONObject) {
+        steerError.say("")
+        CoreClient.send(req) { err ->
+            if (err != null) main.post { steerError.say(messageError(err)) }
+        }
+    }
+
+    /** What the screen says when steer, an edit or withdraw failed; "" for nothing. */
+    private fun messageError(e: Exception): String {
+        if (e !is CoreClient.Refused) {
+            Log.w(TAG, "could not send the message", e)
+            return getString(R.string.phone_steer_failed, e.message ?: e.toString())
+        }
+        return when (Steering.refusal(e.code)) {
+            Steering.Refusal.READ -> getString(R.string.phone_steer_read)
+            // Withdrawn already, nothing typed, or the task ended: the state
+            // shows what became of it.
+            Steering.Refusal.GONE, Steering.Refusal.EMPTY, Steering.Refusal.ENDED -> ""
+            Steering.Refusal.FAILED -> {
+                Log.w(TAG, "the core refused the message [${e.code}]: ${e.message}")
+                getString(R.string.phone_steer_failed, e.message.orEmpty())
+            }
+        }
+    }
+
+    /**
+     * Goes on with the task that ended, with the field's message and those
+     * it did not read. Like Start, it hands the core the key again.
+     */
+    private fun continueTask() {
+        val text = continueInput.text.toString().trim()
+        val computer = state?.optJSONObject("computer") != null
+        val pending = Steering.pending(state?.optJSONObject("agent")).size
+        if (!Steering.canContinue(text, pending, continuing, computer)) return
+        continuing = true
+        continueError.say("")
+        updateContinue()
+        // The key of the service the task runs on, which Settings may have
+        // changed since: the name it is saved under, or, from a core of
+        // before, the API's, the name keys had then. A local server needs
+        // none.
+        val agent = state?.optJSONObject("agent")
+        val keyName = agent?.optString("key_name").orEmpty()
+            .ifEmpty { agent?.optString("provider").orEmpty() }
+            .ifEmpty { settings.keyName() }
+        val optional = agent?.optBoolean("key_optional") == true
+        CoreClient.background {
+            val why = try {
+                val key = secrets.load(keyName)
+                when {
+                    key != null || optional && !secrets.has(keyName) -> {
+                        CoreClient.call(CoreClient.cmd("continue", "text" to text, "key" to key.orEmpty()))
+                        null
+                    }
+                    secrets.has(keyName) -> getString(R.string.phone_err_key_lost)
+                    else -> getString(R.string.phone_no_key)
+                }
+            } catch (e: CoreClient.Refused) {
+                continueRefused(e)
+            } catch (e: Exception) {
+                Log.w(TAG, "could not continue the task", e)
+                getString(R.string.phone_steer_failed, e.message ?: e.toString())
+            }
+            main.post { continued(why) }
+        }
+    }
+
+    private fun continued(why: String?) {
+        continuing = false
+        if (why == null) {
+            continueInput.setText("")
+            // As after Start: the agent goes on in the app the person was
+            // in, and the Working pill follows it there.
+            moveTaskToBack(true)
+        } else {
+            continueError.say(why)
+        }
+        render()
+    }
+
+    private fun continueRefused(e: CoreClient.Refused): String = when (e.code) {
+        // As Start says them.
+        "no_device", "no_key", "no_model", "busy", "computer" -> startError(e)
+        "empty" -> "" // Continue waits for a message; nothing to say.
+        else -> {
+            Log.w(TAG, "the core refused to continue [${e.code}]: ${e.message}")
+            getString(R.string.phone_steer_failed, e.message.orEmpty())
+        }
+    }
+
+    /**
+     * Lists messages in group, one row each with its text, and while the
+     * task runs the note that the model has not read it yet and Edit and
+     * Withdraw. The rows are made again only when the messages changed.
+     */
+    private fun showPending(group: LinearLayout, messages: List<Steering.Message>, editable: Boolean) {
+        val shown = if (editable) pendingShown else unreadShown
+        if (shown == messages) return
+        if (editable) pendingShown = messages else unreadShown = messages
+        group.removeAllViews()
+        group.shown(messages.isNotEmpty())
+        for (m in messages) look.addRow(group, pendingRow(m, editable))
+    }
+
+    private fun pendingRow(m: Steering.Message, editable: Boolean): View {
+        val v = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(look.dp(16), look.dp(12), look.dp(16), if (editable) look.dp(4) else look.dp(12))
+        }
+        v.addView(look.text(m.text, Look.BODY, look.ink), look.matchWrap())
+        if (editable) {
+            v.addView(
+                look.text(getString(R.string.phone_steer_pending), Look.SMALL, look.ink3).apply { setPadding(0, look.dp(2), 0, 0) },
+                look.matchWrap(),
+            )
+            v.addView(
+                look.buttons(
+                    look.button(getString(R.string.phone_steer_edit), Look.Kind.PLAIN) { editMessage(m) },
+                    look.button(getString(R.string.phone_steer_withdraw), Look.Kind.PLAIN) { withdrawMessage(m) },
+                ).apply { setPadding(0, look.dp(2), 0, 0) },
+                look.matchWrap(),
+            )
+        }
+        return v
     }
 
     private fun stop() {
@@ -373,6 +641,13 @@ class TaskActivity : Activity() {
     private fun dismiss() {
         error.say("")
         CoreClient.send(CoreClient.cmd("dismiss"))
+    }
+
+    // Keep or Drop on a note the task suggested; the state shows the answer.
+    private fun decideNote(i: Int, keep: Boolean) {
+        CoreClient.send(CoreClient.cmd(if (keep) "keep" else "drop", "index" to i)) { err ->
+            if (err != null) main.post { if (!isDestroyed) suggestions.failed((err as? CoreClient.Refused)?.code ?: "") }
+        }
     }
 
     private fun openSettings() {
@@ -428,9 +703,21 @@ class TaskActivity : Activity() {
         historyFor = shown
         val n = ++historyReads
         CoreClient.background {
+            // What the model used today changes as tasks end, as the list does.
+            val today = try {
+                ModelUsage.today(resources, ModelUsage.read())
+            } catch (_: Exception) {
+                usedToday
+            }
+            main.post {
+                if (!isDestroyed && today != usedToday) {
+                    usedToday = today
+                    render()
+                }
+            }
             // A read that fails keeps the list as it was, until the next.
             val page = try {
-                PastTasks.page(0, RECENT + 1)
+                PastTasks.page(this, 0, RECENT + 1)
             } catch (_: Exception) {
                 null
             }
@@ -610,6 +897,97 @@ class TaskActivity : Activity() {
         return c
     }
 
+    // While a task runs: the messages the model has not read, then a line
+    // for another and Send.
+    private fun steerBox(): View {
+        steerPending = look.group()
+        steerPending.shown(false)
+        steerInput = messageField(
+            R.id.steer_input, R.string.phone_steer_label, R.string.phone_steer_hint, EditorInfo.IME_ACTION_SEND,
+            { sendSteer() },
+        ) {
+            steerError.say("")
+            updateSend()
+        }
+        steerSend = look.button(getString(R.string.phone_steer_send), Look.Kind.PRIMARY) { sendSteer() }
+        steerError = look.text("", Look.SMALL, look.red).apply { setPadding(look.dp(4), look.dp(8), look.dp(4), 0) }
+        steerError.say("")
+        val box = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        box.addView(steerPending, look.matchWrap())
+        box.addView(fieldRow(steerInput, steerSend), look.below(8))
+        box.addView(steerError, look.matchWrap())
+        steerBox = box
+        return box
+    }
+
+    // Once a task ended and may go on: the messages it did not read, then a
+    // line for the next and Continue. The task box below still starts a
+    // new task.
+    private fun continueBox(): View {
+        continueUnread = look.text(getString(R.string.phone_continue_unread), Look.SMALL, look.ink2).apply {
+            setPadding(look.dp(4), 0, look.dp(4), look.dp(8))
+        }
+        continuePending = look.group()
+        continuePending.shown(false)
+        continueInput = messageField(
+            R.id.continue_input, R.string.phone_continue_label, R.string.phone_continue_hint, EditorInfo.IME_ACTION_GO,
+            { continueTask() },
+        ) {
+            continueError.say("")
+            updateContinue()
+        }
+        continueButton = look.button(getString(R.string.phone_continue), Look.Kind.PRIMARY) { continueTask() }
+        continueError = look.text("", Look.SMALL, look.red).apply { setPadding(look.dp(4), look.dp(8), look.dp(4), 0) }
+        continueError.say("")
+        val box = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        box.addView(continueUnread, look.matchWrap())
+        box.addView(continuePending, look.matchWrap())
+        box.addView(fieldRow(continueInput, continueButton), look.below(8))
+        box.addView(continueError, look.matchWrap())
+        continueBox = box
+        return box
+    }
+
+    /** A one-line field for a message to Pinky, which sends with the keyboard's action (and Enter) too. */
+    private fun messageField(id: Int, label: Int, hint: Int, action: Int, onSend: () -> Unit, onChange: () -> Unit): EditText =
+        EditText(this).apply {
+            // Keeps what the person typed when the screen is made again.
+            this.id = id
+            contentDescription = getString(label)
+            this.hint = getString(hint)
+            setTextColor(look.ink)
+            setHintTextColor(look.ink3)
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, Look.BODY)
+            isSingleLine = true
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
+            imeOptions = action
+            background = look.rounded(look.groupBg, 14)
+            setPadding(look.dp(14), look.dp(10), look.dp(14), look.dp(10))
+            minHeight = look.dp(44)
+            addTextChangedListener(object : TextWatcher {
+                override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+                override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+                override fun afterTextChanged(s: Editable?) = onChange()
+            })
+            setOnEditorActionListener { _, actionId, ev ->
+                val enter = ev != null && ev.keyCode == KeyEvent.KEYCODE_ENTER
+                if (actionId != action && !enter) return@setOnEditorActionListener false
+                if (!enter || ev?.action == KeyEvent.ACTION_DOWN) onSend()
+                true
+            }
+        }
+
+    private fun fieldRow(field: EditText, button: View): View = LinearLayout(this).apply {
+        orientation = LinearLayout.HORIZONTAL
+        gravity = Gravity.CENTER_VERTICAL
+        addView(field, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+        addView(
+            button,
+            LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+                .apply { marginStart = look.dp(8) },
+        )
+    }
+
     private fun askBox(): View {
         input = EditText(this).apply {
             // Keeps what the person typed when the screen is made again.
@@ -639,10 +1017,12 @@ class TaskActivity : Activity() {
         }
         modelLine = look.text("", Look.SMALL, look.ink2, 500)
         limitLine = look.text("", Look.SMALL, look.ink3)
+        todayLine = look.text("", Look.SMALL, look.ink3)
         val texts = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             addView(modelLine)
             addView(limitLine)
+            addView(todayLine)
         }
         startButton = look.button(getString(R.string.phone_start), Look.Kind.PRIMARY) { startTask() }
         val row = LinearLayout(this).apply {
@@ -650,6 +1030,10 @@ class TaskActivity : Activity() {
             gravity = Gravity.CENTER_VERTICAL
             setPadding(look.dp(4), look.dp(10), 0, 0)
             addView(texts, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+            // Voice input: Android's own speech recognizer.
+            if (QuickAccess.voiceAvailable(this@TaskActivity)) {
+                addView(look.iconButton(R.drawable.ic_mic, getString(R.string.phone_voice)) { listen() })
+            }
             addView(startButton)
         }
         askFooter = look.note(getString(R.string.phone_task_footer))
@@ -665,5 +1049,6 @@ class TaskActivity : Activity() {
         private const val TAG = "PinkyScreens"
         private const val CORE_GRACE_MS = 3_000L
         private const val RECENT = 5 // the tasks Activity lists
+        private const val REQ_VOICE = 1
     }
 }

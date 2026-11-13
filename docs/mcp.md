@@ -265,7 +265,7 @@ Works while the person is in control and while an approval is open.
 
 The policy checks every element under the finger, not only the smallest: tapping a price label inside a Pay button counts as tapping Pay.
 
-A passcode keypad that the app draws where screenshots do not reach (iOS marks its keys `not_in_screenshot`; nine or more of them carry a digit) takes no taps, by `ref` or by `x`,`y`, in `phone_batch` too: every key of it, Face ID and delete included, may enter or spend a passcode attempt while the person sees blank space. Such taps are refused like typing a password (`blocked_by_policy`, rule `credentials`); call `phone_handoff`.
+A passcode keypad that the app draws where screenshots do not reach (iOS marks its keys `not_in_screenshot`; nine or more of them carry a digit) takes no taps, by `ref` or by `x`,`y`, in `phone_batch` too: every key of it, Face ID and delete included, may enter or spend a passcode attempt while the person sees blank space. Such taps are refused like typing a password (`blocked_by_policy`, rule `credentials`), and on a virtual phone go through under the same switch ([below](#phone_type)); call `phone_handoff`.
 
 ### phone_type
 
@@ -276,7 +276,7 @@ A passcode keypad that the app draws where screenshots do not reach (iOS marks i
 | `append` | boolean | Keep the field's text |
 | `submit` | boolean | Press Enter afterwards |
 
-Typing into password and one-time-code fields is always refused (`blocked_by_policy`, rule `credentials`). So is typing without `ref` when no field reports focus and the screen has such a field.
+Typing into password and one-time-code fields is refused (`blocked_by_policy`, rule `credentials`). So is typing without `ref` when no field reports focus and the screen has such a field. The one exception is a virtual phone, an emulator or a Simulator on this computer, while the person has turned on Settings › Safety › **Allow passwords on virtual phones** (`virtual_credentials` in rules.yaml, off by default), for testing sign-ins with test accounts: there these go through, and agents should type only what their task gives them. Phones are refused either way.
 
 Pinky reads the field back after typing. Text that reads otherwise, or that went nowhere (no field has focus, or the field reads as before or empty), returns `uncertain` with the reason, and Return is not pressed for `submit`. When the field cannot be read back (an app that draws its own field), Pinky compares what the app shows before and after: the text showing up counts as typed, and an app that shows exactly what it did before returns `uncertain` without pressing Return. On an iPhone that usually means iOS asked the person to Allow Paste, a prompt Pinky cannot see, because the app reads pasted text itself; the message says to call `phone_handoff` so the person can answer Don't Allow and set Settings › the app › Paste from Other Apps to Allow, then to type again. Otherwise, and for a field that hides its text, the result is `settled` with a note saying so.
 
@@ -547,6 +547,93 @@ Returns `settled` with `decision: allow`, or `approval_denied`, with the person'
 | `reason` | string, required | What the person should do |
 
 Shows a Needs you card and waits until the person hands control back; returns `settled` with their `note` and the whole screen. If they already handed back before the call, it returns at once. A handoff opened while the phone waits for a step (`device_needs_setup`) ends by itself once Pinky has opened the phone, with `note: "The phone is ready."`; if the person hands back before that, the result is `device_needs_setup` again, with their note. A handoff opened while the phone is locked ends by itself when the person unlocks from the computer, if unlocking is all its `reason` asks for ("Please unlock the phone"); one that asks for more ("Unlock the phone, then sign in to Wise") stays open until the person hands back, and so does any handoff after an unlock on the phone itself. The person may decline (`approval_denied`); with no answer it ends after 15 minutes. Blocks up to 45 s at a time, then `approval_pending`.
+
+### phone_task_run
+
+| Argument | Type | Meaning |
+| --- | --- | --- |
+| `task` | string, required | The whole task in words, as you would give it to a person: what to do and what to report back |
+| `device` | string | The phone, by id or name; optional with one phone online |
+| `apps` | string array | As in `phone_connect` |
+| `read_only` | bool | As in `phone_connect` |
+
+Hands the task to Pinky's own agent ([Ask Pinky](notes/builtin-agent.md)), which does it on the phone by itself with the model, key and limits the person set in Settings › Agents › Ask Pinky. Returns at once: `running · task_id: t3f9c… · Pixel 9 · steps: 0`, then the model and the limits. Follow it with `phone_task_wait`.
+
+The task works as the agent that handed it over, not as Pinky: its gateway session carries that agent's name, so the agent's first connection asks the person (rule `New agent`, shown as `waiting_for_person` with `waiting: approval`), the agent's scope and read-only mode apply, and a Stop keeps that agent off the phone as it would after its own task. The calling agent cannot answer the task's approvals or handoffs; the person does, in Pinky. Activity shows the task under the agent's name; the box at the top of Tasks shows Pinky working, "Asked by" the agent, with Stop.
+
+Errors: `unsupported` while Pinky's window is closed (`pinky daemon`), while Ask Pinky is off, or without a model or API key; `device_busy` while Pinky's agent does another task on that phone; `invalid_argument` and `device_offline` as for `phone_connect`. A phone another session holds, yours included, ends the task at once as `error` with `lease_held`'s message: release it first.
+
+### phone_task_status
+
+| Argument | Type | Meaning |
+| --- | --- | --- |
+| `task_id` | string, required | From `phone_task_run` |
+| `since_step` | int | Only the steps after this one; default the last 10 |
+
+The first line is the status, `task_id`, the phone and `steps`:
+
+| Status | Meaning |
+| --- | --- |
+| `running` | Pinky's agent is working |
+| `waiting_for_person` | It waits for the person: `waiting: approval` (an approval, or the agent's first connection) or `waiting: handoff` (it handed them the phone). Nothing for you to do but wait or tell them |
+| `done` / `failed` | The model finished; the message has its summary |
+| `stopped` | The person stopped it in Pinky. Do not start it again unless they ask |
+| `cancelled` | You cancelled it |
+| `limit_reached` | It reached Ask Pinky's `limit: steps`, `time` or `cost` |
+| `refused`, `no_key`, `bad_key`, `error` | The model declined, Pinky has no key or the API refused it, or something failed; the message says what |
+
+Then what it means, the task's words and how far it got (`claude-opus-5-5: 12 of 100 steps, 3 of 20 minutes, US$0.21 of US$2.00`), and its steps, numbered from 1: `4. phone_tap settled — Open Alarms (Opening the alarm list.)`, the tool, its status, the model's `intent` and what the model wrote before the call. An agent sees only the tasks it handed Pinky (by its name), for a day after they end.
+
+### phone_task_wait
+
+| Argument | Type | Meaning |
+| --- | --- | --- |
+| `task_id` | string, required | From `phone_task_run` |
+| `timeout_ms` | int | 1000 to 45000; default 30000 |
+| `since_step` | int | As in `phone_task_status` |
+
+Waits until the task ends or starts waiting for the person, then returns as `phone_task_status`; at the timeout it returns `running`: call it again. With a progress token it sends a notification for each step.
+
+### phone_task_steer
+
+| Argument | Type | Meaning |
+| --- | --- | --- |
+| `task_id` | string, required | From `phone_task_run` |
+| `message` | string, required | A correction, or what to do next |
+
+While the task runs, Pinky's agent reads the message before its next step. Once it ended (`done`, `failed`, `cancelled`, `limit_reached`, …), the message carries the same task on under the same `task_id`: the same phone, the same conversation, its steps added to the task's, and the limits counting anew. Returns as `phone_task_status`; follow it with `phone_task_wait`.
+
+The model gets your message marked as the agent's, apart from the person's, and is told the person's words win where they differ. Activity shows it as "Claude Code said: “…”", and your task's steps as `your message: “…”`. It approves nothing: risky steps still wait for the person.
+
+The person can write to the task and continue it in Pinky too, as their own. Either way it stays your task: it carries on as your session, with your scope and their rules, never as Pinky's.
+
+Errors: `unsupported` for a task the person stopped (their Stop is theirs; tell them instead), for one Pinky can no longer carry on (the phone had another task of Pinky's since, or the app restarted), and while Ask Pinky is off; `device_busy` while Pinky's agent works on another task on that phone; `invalid_argument` for an empty message.
+
+### phone_task_cancel
+
+| Argument | Type | Meaning |
+| --- | --- | --- |
+| `task_id` | string, required | From `phone_task_run` |
+
+Stops the task at once, cancelling a model request in flight, and releases the phone with outcome `cancelled`; what it did stays done. Cancelling an ended task returns its status.
+
+### phone_task_list
+
+No arguments. Lists the tasks this agent handed Pinky in the last day, the newest first: `t3f9c… · done · Pixel 9 · steps: 7 · started 14:02 · “Set an alarm for 7:00”`.
+
+### From a shell: pinkyctl task
+
+`pinkyctl task run|status|steer|cancel|list` calls these tools for scripts, as an MCP client over the same connection `pinkyctl mcp` uses (starting Pinky when it does not run). It is an agent like any other, named "Pinky CLI", or the name `-as` gives, so each script can show up and be scoped on its own in Settings › Agents: the first task under a name asks the person (`New agent`), and its scope and the person's rules apply. A script calling itself Pinky shows as "Pinky (external)".
+
+```sh
+pinkyctl task run [-device phone] [-apps a,b] [-read-only] [-detach] [-as name] "<task>"
+pinkyctl task status <task_id>
+pinkyctl task steer <task_id> "<message>"
+pinkyctl task cancel <task_id>
+pinkyctl task list
+```
+
+`run` and `steer` wait for the task to end: its steps and a line when it waits for the person go to stderr, and only the final status line and summary to stdout (`run -detach` prints only the `task_id`). `status`, `cancel` and `list` print the tool's answer. Ctrl-C cancels the task and exits 130. Otherwise the exit status is 0 when the task was done (or the call worked, for `status`, `cancel` and `list`), 1 when it ended otherwise (`failed`, `refused`, `limit_reached`, `cancelled`, `stopped`), and 2 for usage errors, a call Pinky refused (such as `unsupported` while Pinky's window is closed) and a task that could not run (`no_key`, `bad_key`, `error`).
 
 ## Saving screenshots and reports
 

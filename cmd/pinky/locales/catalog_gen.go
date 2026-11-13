@@ -37,6 +37,1016 @@ type Messages struct{ locale string }
 // source language.
 func In(locale string) Messages { return Messages{locale} }
 
+// SchedButton says "Schedule…"
+// in the language the app shows.
+//
+// Ask Pinky: the button beside Start that opens the dialog to run the typed
+// task at set times instead of now.
+func SchedButton() string { return In(i18n.Locale()).SchedButton() }
+
+// SchedButton says "Schedule…"
+// in the language of msgs.
+//
+// Ask Pinky: the button beside Start that opens the dialog to run the typed
+// task at set times instead of now.
+func (msgs Messages) SchedButton() string {
+	return Catalog.Format(msgs.locale, "schedButton", nil)
+}
+
+// SchedCondition says "Tell me only if"
+// in the language the app shows.
+//
+// Scheduled task dialog: the label of the optional condition, in the
+// person's words, under which they want to hear of a run ("it will rain").
+func SchedCondition() string { return In(i18n.Locale()).SchedCondition() }
+
+// SchedCondition says "Tell me only if"
+// in the language of msgs.
+//
+// Scheduled task dialog: the label of the optional condition, in the
+// person's words, under which they want to hear of a run ("it will rain").
+func (msgs Messages) SchedCondition() string {
+	return Catalog.Format(msgs.locale, "schedCondition", nil)
+}
+
+// SchedConditionDesc says "Leave it empty to hear of every run. Otherwise Pinky checks it each time and tells you only when it holds."
+// in the language the app shows.
+//
+// Scheduled task dialog: the note under the condition field.
+func SchedConditionDesc() string { return In(i18n.Locale()).SchedConditionDesc() }
+
+// SchedConditionDesc says "Leave it empty to hear of every run. Otherwise Pinky checks it each time and tells you only when it holds."
+// in the language of msgs.
+//
+// Scheduled task dialog: the note under the condition field.
+func (msgs Messages) SchedConditionDesc() string {
+	return Catalog.Format(msgs.locale, "schedConditionDesc", nil)
+}
+
+// SchedConditionHint says "it will rain (optional)"
+// in the language the app shows.
+//
+// Scheduled task dialog: the hint in the empty condition field, an example
+// that completes "Tell me only if".
+func SchedConditionHint() string { return In(i18n.Locale()).SchedConditionHint() }
+
+// SchedConditionHint says "it will rain (optional)"
+// in the language of msgs.
+//
+// Scheduled task dialog: the hint in the empty condition field, an example
+// that completes "Tell me only if".
+func (msgs Messages) SchedConditionHint() string {
+	return Catalog.Format(msgs.locale, "schedConditionHint", nil)
+}
+
+// SchedCooldown says "Tell me"
+// in the language the app shows.
+//
+// Scheduled task dialog: the label of how often a condition that holds
+// again tells the person.
+func SchedCooldown() string { return In(i18n.Locale()).SchedCooldown() }
+
+// SchedCooldown says "Tell me"
+// in the language of msgs.
+//
+// Scheduled task dialog: the label of how often a condition that holds
+// again tells the person.
+func (msgs Messages) SchedCooldown() string {
+	return Catalog.Format(msgs.locale, "schedCooldown", nil)
+}
+
+// SchedCooldownAlways says "Each time it holds"
+// in the language the app shows.
+//
+// Scheduled task dialog, Tell me: every run whose condition holds tells the
+// person.
+func SchedCooldownAlways() string { return In(i18n.Locale()).SchedCooldownAlways() }
+
+// SchedCooldownAlways says "Each time it holds"
+// in the language of msgs.
+//
+// Scheduled task dialog, Tell me: every run whose condition holds tells the
+// person.
+func (msgs Messages) SchedCooldownAlways() string {
+	return Catalog.Format(msgs.locale, "schedCooldownAlways", nil)
+}
+
+// SchedCooldownDay says "At most once a day"
+// in the language the app shows.
+//
+// Scheduled task dialog, Tell me: a condition that holds tells the person
+// at most once a day.
+func SchedCooldownDay() string { return In(i18n.Locale()).SchedCooldownDay() }
+
+// SchedCooldownDay says "At most once a day"
+// in the language of msgs.
+//
+// Scheduled task dialog, Tell me: a condition that holds tells the person
+// at most once a day.
+func (msgs Messages) SchedCooldownDay() string {
+	return Catalog.Format(msgs.locale, "schedCooldownDay", nil)
+}
+
+// SchedCooldownHour says "At most once an hour"
+// in the language the app shows.
+//
+// Scheduled task dialog, Tell me: a condition that holds tells the person
+// at most once an hour.
+func SchedCooldownHour() string { return In(i18n.Locale()).SchedCooldownHour() }
+
+// SchedCooldownHour says "At most once an hour"
+// in the language of msgs.
+//
+// Scheduled task dialog, Tell me: a condition that holds tells the person
+// at most once an hour.
+func (msgs Messages) SchedCooldownHour() string {
+	return Catalog.Format(msgs.locale, "schedCooldownHour", nil)
+}
+
+// SchedDate says "Date"
+// in the language the app shows.
+//
+// Scheduled task dialog: the label of the date of a task that runs once.
+func SchedDate() string { return In(i18n.Locale()).SchedDate() }
+
+// SchedDate says "Date"
+// in the language of msgs.
+//
+// Scheduled task dialog: the label of the date of a task that runs once.
+func (msgs Messages) SchedDate() string {
+	return Catalog.Format(msgs.locale, "schedDate", nil)
+}
+
+// SchedDay says "{day, date, ::EEE}"
+// in the language the app shows.
+//
+// Scheduled task dialog: a day of the week the person can pick, short.
+func SchedDay(day time.Time) string { return In(i18n.Locale()).SchedDay(day) }
+
+// SchedDay says "{day, date, ::EEE}"
+// in the language of msgs.
+//
+// Scheduled task dialog: a day of the week the person can pick, short.
+func (msgs Messages) SchedDay(day time.Time) string {
+	return Catalog.Format(msgs.locale, "schedDay", map[string]any{"day": day})
+}
+
+// SchedDays says "Days"
+// in the language the app shows.
+//
+// Scheduled task dialog: the label of the days of the week the task runs
+// on.
+func SchedDays() string { return In(i18n.Locale()).SchedDays() }
+
+// SchedDays says "Days"
+// in the language of msgs.
+//
+// Scheduled task dialog: the label of the days of the week the task runs
+// on.
+func (msgs Messages) SchedDays() string {
+	return Catalog.Format(msgs.locale, "schedDays", nil)
+}
+
+// SchedDelete says "Delete"
+// in the language the app shows.
+//
+// Scheduled task dialog: deletes the scheduled task.
+func SchedDelete() string { return In(i18n.Locale()).SchedDelete() }
+
+// SchedDelete says "Delete"
+// in the language of msgs.
+//
+// Scheduled task dialog: deletes the scheduled task.
+func (msgs Messages) SchedDelete() string {
+	return Catalog.Format(msgs.locale, "schedDelete", nil)
+}
+
+// SchedDesktopNote says "Scheduled tasks run while Pinky is open on this computer, also with its window closed. A time missed while Pinky is q…"
+// in the language the app shows.
+//
+// Scheduled task dialog: the note at the bottom on when scheduled tasks run
+// on this computer and what Pinky does in a run nobody watches.
+func SchedDesktopNote() string { return In(i18n.Locale()).SchedDesktopNote() }
+
+// SchedDesktopNote says "Scheduled tasks run while Pinky is open on this computer, also with its window closed. A time missed while Pinky is q…"
+// in the language of msgs.
+//
+// Scheduled task dialog: the note at the bottom on when scheduled tasks run
+// on this computer and what Pinky does in a run nobody watches.
+func (msgs Messages) SchedDesktopNote() string {
+	return Catalog.Format(msgs.locale, "schedDesktopNote", nil)
+}
+
+// SchedErrDate says "Write the date as year-month-day, like 2026-11-20."
+// in the language the app shows.
+//
+// Scheduled task dialog: why it cannot be saved: the date of a task that
+// runs once is not year-month-day.
+func SchedErrDate() string { return In(i18n.Locale()).SchedErrDate() }
+
+// SchedErrDate says "Write the date as year-month-day, like 2026-11-20."
+// in the language of msgs.
+//
+// Scheduled task dialog: why it cannot be saved: the date of a task that
+// runs once is not year-month-day.
+func (msgs Messages) SchedErrDate() string {
+	return Catalog.Format(msgs.locale, "schedErrDate", nil)
+}
+
+// SchedErrLong says "The task is too long."
+// in the language the app shows.
+//
+// Scheduled task dialog: why it cannot be saved: the task or the condition
+// is too long.
+func SchedErrLong() string { return In(i18n.Locale()).SchedErrLong() }
+
+// SchedErrLong says "The task is too long."
+// in the language of msgs.
+//
+// Scheduled task dialog: why it cannot be saved: the task or the condition
+// is too long.
+func (msgs Messages) SchedErrLong() string {
+	return Catalog.Format(msgs.locale, "schedErrLong", nil)
+}
+
+// SchedErrNoDays says "Choose at least one day."
+// in the language the app shows.
+//
+// Scheduled task dialog: why it cannot be saved: On certain days without a
+// day.
+func SchedErrNoDays() string { return In(i18n.Locale()).SchedErrNoDays() }
+
+// SchedErrNoDays says "Choose at least one day."
+// in the language of msgs.
+//
+// Scheduled task dialog: why it cannot be saved: On certain days without a
+// day.
+func (msgs Messages) SchedErrNoDays() string {
+	return Catalog.Format(msgs.locale, "schedErrNoDays", nil)
+}
+
+// SchedErrNoPhone says "Choose a phone."
+// in the language the app shows.
+//
+// Scheduled task dialog: why it cannot be saved: no phone.
+func SchedErrNoPhone() string { return In(i18n.Locale()).SchedErrNoPhone() }
+
+// SchedErrNoPhone says "Choose a phone."
+// in the language of msgs.
+//
+// Scheduled task dialog: why it cannot be saved: no phone.
+func (msgs Messages) SchedErrNoPhone() string {
+	return Catalog.Format(msgs.locale, "schedErrNoPhone", nil)
+}
+
+// SchedErrNoTask says "Type a task."
+// in the language the app shows.
+//
+// Scheduled task dialog: why it cannot be saved: no task.
+func SchedErrNoTask() string { return In(i18n.Locale()).SchedErrNoTask() }
+
+// SchedErrNoTask says "Type a task."
+// in the language of msgs.
+//
+// Scheduled task dialog: why it cannot be saved: no task.
+func (msgs Messages) SchedErrNoTask() string {
+	return Catalog.Format(msgs.locale, "schedErrNoTask", nil)
+}
+
+// SchedErrNoTime says "Add a time."
+// in the language the app shows.
+//
+// Scheduled task dialog: why it cannot be saved: no time of day.
+func SchedErrNoTime() string { return In(i18n.Locale()).SchedErrNoTime() }
+
+// SchedErrNoTime says "Add a time."
+// in the language of msgs.
+//
+// Scheduled task dialog: why it cannot be saved: no time of day.
+func (msgs Messages) SchedErrNoTime() string {
+	return Catalog.Format(msgs.locale, "schedErrNoTime", nil)
+}
+
+// SchedErrOther says "Couldn't save the schedule: {detail}"
+// in the language the app shows.
+//
+// Scheduled task dialog: saving failed; detail is the error, in English.
+func SchedErrOther(detail string) string { return In(i18n.Locale()).SchedErrOther(detail) }
+
+// SchedErrOther says "Couldn't save the schedule: {detail}"
+// in the language of msgs.
+//
+// Scheduled task dialog: saving failed; detail is the error, in English.
+func (msgs Messages) SchedErrOther(detail string) string {
+	return Catalog.Format(msgs.locale, "schedErrOther", map[string]any{"detail": detail})
+}
+
+// SchedErrPast says "That time has passed."
+// in the language the app shows.
+//
+// Scheduled task dialog: why it cannot be saved: the time of a task that
+// runs once has passed.
+func SchedErrPast() string { return In(i18n.Locale()).SchedErrPast() }
+
+// SchedErrPast says "That time has passed."
+// in the language of msgs.
+//
+// Scheduled task dialog: why it cannot be saved: the time of a task that
+// runs once has passed.
+func (msgs Messages) SchedErrPast() string {
+	return Catalog.Format(msgs.locale, "schedErrPast", nil)
+}
+
+// SchedErrRunning says "A scheduled task is already running. Try again when it ends."
+// in the language the app shows.
+//
+// Scheduled task dialog, Run now: another scheduled task runs.
+func SchedErrRunning() string { return In(i18n.Locale()).SchedErrRunning() }
+
+// SchedErrRunning says "A scheduled task is already running. Try again when it ends."
+// in the language of msgs.
+//
+// Scheduled task dialog, Run now: another scheduled task runs.
+func (msgs Messages) SchedErrRunning() string {
+	return Catalog.Format(msgs.locale, "schedErrRunning", nil)
+}
+
+// SchedErrTime says "Write times as hours and minutes, like 08:00 or 20:30."
+// in the language the app shows.
+//
+// Scheduled task dialog: why it cannot be saved: a time is not hours and
+// minutes.
+func SchedErrTime() string { return In(i18n.Locale()).SchedErrTime() }
+
+// SchedErrTime says "Write times as hours and minutes, like 08:00 or 20:30."
+// in the language of msgs.
+//
+// Scheduled task dialog: why it cannot be saved: a time is not hours and
+// minutes.
+func (msgs Messages) SchedErrTime() string {
+	return Catalog.Format(msgs.locale, "schedErrTime", nil)
+}
+
+// SchedErrTooMany says "{count, plural, one {# time a day at most.} other {# times a day at most.}}"
+// in the language the app shows.
+//
+// Scheduled task dialog: why it cannot be saved: too many times a day.
+func SchedErrTooMany(count int) string { return In(i18n.Locale()).SchedErrTooMany(count) }
+
+// SchedErrTooMany says "{count, plural, one {# time a day at most.} other {# times a day at most.}}"
+// in the language of msgs.
+//
+// Scheduled task dialog: why it cannot be saved: too many times a day.
+func (msgs Messages) SchedErrTooMany(count int) string {
+	return Catalog.Format(msgs.locale, "schedErrTooMany", map[string]any{"count": count})
+}
+
+// SchedErrZone says "Pinky doesn't know this time zone. Use a name like Asia/Shanghai, or leave it empty."
+// in the language the app shows.
+//
+// Scheduled task dialog: why it cannot be saved: an unknown time zone.
+// Asia/Shanghai is an example of an IANA name and stays as it is (a
+// Japanese one may give Asia/Tokyo).
+func SchedErrZone() string { return In(i18n.Locale()).SchedErrZone() }
+
+// SchedErrZone says "Pinky doesn't know this time zone. Use a name like Asia/Shanghai, or leave it empty."
+// in the language of msgs.
+//
+// Scheduled task dialog: why it cannot be saved: an unknown time zone.
+// Asia/Shanghai is an example of an IANA name and stays as it is (a
+// Japanese one may give Asia/Tokyo).
+func (msgs Messages) SchedErrZone() string {
+	return Catalog.Format(msgs.locale, "schedErrZone", nil)
+}
+
+// SchedEvery says "Every"
+// in the language the app shows.
+//
+// Scheduled task dialog, Every few hours: the label of the choice of how
+// many hours apart.
+func SchedEvery() string { return In(i18n.Locale()).SchedEvery() }
+
+// SchedEvery says "Every"
+// in the language of msgs.
+//
+// Scheduled task dialog, Every few hours: the label of the choice of how
+// many hours apart.
+func (msgs Messages) SchedEvery() string {
+	return Catalog.Format(msgs.locale, "schedEvery", nil)
+}
+
+// SchedHours says "{count, plural, one {Every hour} other {Every # hours}}"
+// in the language the app shows.
+//
+// Scheduled task dialog, Every few hours: a choice of how many hours apart
+// the task runs.
+func SchedHours(count int) string { return In(i18n.Locale()).SchedHours(count) }
+
+// SchedHours says "{count, plural, one {Every hour} other {Every # hours}}"
+// in the language of msgs.
+//
+// Scheduled task dialog, Every few hours: a choice of how many hours apart
+// the task runs.
+func (msgs Messages) SchedHours(count int) string {
+	return Catalog.Format(msgs.locale, "schedHours", map[string]any{"count": count})
+}
+
+// SchedInterrupted says "Pinky quit before the task ended."
+// in the language the app shows.
+//
+// A scheduled task's run that never ended: Pinky quit while it ran.
+func SchedInterrupted() string { return In(i18n.Locale()).SchedInterrupted() }
+
+// SchedInterrupted says "Pinky quit before the task ended."
+// in the language of msgs.
+//
+// A scheduled task's run that never ended: Pinky quit while it ran.
+func (msgs Messages) SchedInterrupted() string {
+	return Catalog.Format(msgs.locale, "schedInterrupted", nil)
+}
+
+// SchedMet says "condition met"
+// in the language the app shows.
+//
+// After how a scheduled task's run went: its condition held, so the person
+// was told.
+func SchedMet() string { return In(i18n.Locale()).SchedMet() }
+
+// SchedMet says "condition met"
+// in the language of msgs.
+//
+// After how a scheduled task's run went: its condition held, so the person
+// was told.
+func (msgs Messages) SchedMet() string {
+	return Catalog.Format(msgs.locale, "schedMet", nil)
+}
+
+// SchedNew says "New schedule…"
+// in the language the app shows.
+//
+// The right panel, under the list of scheduled tasks: opens the dialog for
+// a new one.
+func SchedNew() string { return In(i18n.Locale()).SchedNew() }
+
+// SchedNew says "New schedule…"
+// in the language of msgs.
+//
+// The right panel, under the list of scheduled tasks: opens the dialog for
+// a new one.
+func (msgs Messages) SchedNew() string {
+	return Catalog.Format(msgs.locale, "schedNew", nil)
+}
+
+// SchedNext says "Next runs"
+// in the language the app shows.
+//
+// Scheduled task dialog: the heading of the next three times the task runs,
+// or why it cannot be saved.
+func SchedNext() string { return In(i18n.Locale()).SchedNext() }
+
+// SchedNext says "Next runs"
+// in the language of msgs.
+//
+// Scheduled task dialog: the heading of the next three times the task runs,
+// or why it cannot be saved.
+func (msgs Messages) SchedNext() string {
+	return Catalog.Format(msgs.locale, "schedNext", nil)
+}
+
+// SchedNextAt says "Next {when, date, ::MMMEEEdjmm}"
+// in the language the app shows.
+//
+// A scheduled task's row in the right panel: when it runs next.
+func SchedNextAt(when time.Time) string { return In(i18n.Locale()).SchedNextAt(when) }
+
+// SchedNextAt says "Next {when, date, ::MMMEEEdjmm}"
+// in the language of msgs.
+//
+// A scheduled task's row in the right panel: when it runs next.
+func (msgs Messages) SchedNextAt(when time.Time) string {
+	return Catalog.Format(msgs.locale, "schedNextAt", map[string]any{"when": when})
+}
+
+// SchedNoNext says "It won't run again."
+// in the language the app shows.
+//
+// A scheduled task that runs no more: one that ran once.
+func SchedNoNext() string { return In(i18n.Locale()).SchedNoNext() }
+
+// SchedNoNext says "It won't run again."
+// in the language of msgs.
+//
+// A scheduled task that runs no more: one that ran once.
+func (msgs Messages) SchedNoNext() string {
+	return Catalog.Format(msgs.locale, "schedNoNext", nil)
+}
+
+// SchedNoRuns says "It hasn't run yet."
+// in the language the app shows.
+//
+// Scheduled task dialog, Last runs: none yet.
+func SchedNoRuns() string { return In(i18n.Locale()).SchedNoRuns() }
+
+// SchedNoRuns says "It hasn't run yet."
+// in the language of msgs.
+//
+// Scheduled task dialog, Last runs: none yet.
+func (msgs Messages) SchedNoRuns() string {
+	return Catalog.Format(msgs.locale, "schedNoRuns", nil)
+}
+
+// SchedNotMet says "condition not met"
+// in the language the app shows.
+//
+// After how a scheduled task's run went: its condition did not hold.
+func SchedNotMet() string { return In(i18n.Locale()).SchedNotMet() }
+
+// SchedNotMet says "condition not met"
+// in the language of msgs.
+//
+// After how a scheduled task's run went: its condition did not hold.
+func (msgs Messages) SchedNotMet() string {
+	return Catalog.Format(msgs.locale, "schedNotMet", nil)
+}
+
+// SchedNotifyTitle says "Scheduled: {task}"
+// in the language the app shows.
+//
+// The title of the notification, or the toast, of how a scheduled task
+// went. task is the task's words, shortened.
+func SchedNotifyTitle(task string) string { return In(i18n.Locale()).SchedNotifyTitle(task) }
+
+// SchedNotifyTitle says "Scheduled: {task}"
+// in the language of msgs.
+//
+// The title of the notification, or the toast, of how a scheduled task
+// went. task is the task's words, shortened.
+func (msgs Messages) SchedNotifyTitle(task string) string {
+	return Catalog.Format(msgs.locale, "schedNotifyTitle", map[string]any{"task": task})
+}
+
+// SchedOpen says "Open the schedule “{task}”"
+// in the language the app shows.
+//
+// Accessible name of a scheduled task's row in the right panel, which opens
+// its dialog. task is the task's words, shortened.
+func SchedOpen(task string) string { return In(i18n.Locale()).SchedOpen(task) }
+
+// SchedOpen says "Open the schedule “{task}”"
+// in the language of msgs.
+//
+// Accessible name of a scheduled task's row in the right panel, which opens
+// its dialog. task is the task's words, shortened.
+func (msgs Messages) SchedOpen(task string) string {
+	return Catalog.Format(msgs.locale, "schedOpen", map[string]any{"task": task})
+}
+
+// SchedPause says "Pause"
+// in the language the app shows.
+//
+// Scheduled task dialog: stops the task from running at its times until
+// Resume.
+func SchedPause() string { return In(i18n.Locale()).SchedPause() }
+
+// SchedPause says "Pause"
+// in the language of msgs.
+//
+// Scheduled task dialog: stops the task from running at its times until
+// Resume.
+func (msgs Messages) SchedPause() string {
+	return Catalog.Format(msgs.locale, "schedPause", nil)
+}
+
+// SchedPaused says "Paused"
+// in the language the app shows.
+//
+// A scheduled task's row in the right panel: the person paused it, so it
+// does not run.
+func SchedPaused() string { return In(i18n.Locale()).SchedPaused() }
+
+// SchedPaused says "Paused"
+// in the language of msgs.
+//
+// A scheduled task's row in the right panel: the person paused it, so it
+// does not run.
+func (msgs Messages) SchedPaused() string {
+	return Catalog.Format(msgs.locale, "schedPaused", nil)
+}
+
+// SchedPaymentDenied says "A scheduled task never pays: Pinky denied this step by itself."
+// in the language the app shows.
+//
+// The note of an approval Pinky denied by itself: a payment step in a
+// scheduled task nobody watched.
+func SchedPaymentDenied() string { return In(i18n.Locale()).SchedPaymentDenied() }
+
+// SchedPaymentDenied says "A scheduled task never pays: Pinky denied this step by itself."
+// in the language of msgs.
+//
+// The note of an approval Pinky denied by itself: a payment step in a
+// scheduled task nobody watched.
+func (msgs Messages) SchedPaymentDenied() string {
+	return Catalog.Format(msgs.locale, "schedPaymentDenied", nil)
+}
+
+// SchedRepeat says "Repeat"
+// in the language the app shows.
+//
+// Scheduled task dialog: the label of the choice of how the task repeats.
+func SchedRepeat() string { return In(i18n.Locale()).SchedRepeat() }
+
+// SchedRepeat says "Repeat"
+// in the language of msgs.
+//
+// Scheduled task dialog: the label of the choice of how the task repeats.
+func (msgs Messages) SchedRepeat() string {
+	return Catalog.Format(msgs.locale, "schedRepeat", nil)
+}
+
+// SchedRepeatDaily says "Every day"
+// in the language the app shows.
+//
+// Scheduled task dialog, Repeat: every day, at one or more times.
+func SchedRepeatDaily() string { return In(i18n.Locale()).SchedRepeatDaily() }
+
+// SchedRepeatDaily says "Every day"
+// in the language of msgs.
+//
+// Scheduled task dialog, Repeat: every day, at one or more times.
+func (msgs Messages) SchedRepeatDaily() string {
+	return Catalog.Format(msgs.locale, "schedRepeatDaily", nil)
+}
+
+// SchedRepeatInterval says "Every few hours"
+// in the language the app shows.
+//
+// Scheduled task dialog, Repeat: every few hours, from a time of day to
+// midnight.
+func SchedRepeatInterval() string { return In(i18n.Locale()).SchedRepeatInterval() }
+
+// SchedRepeatInterval says "Every few hours"
+// in the language of msgs.
+//
+// Scheduled task dialog, Repeat: every few hours, from a time of day to
+// midnight.
+func (msgs Messages) SchedRepeatInterval() string {
+	return Catalog.Format(msgs.locale, "schedRepeatInterval", nil)
+}
+
+// SchedRepeatOnce says "Once"
+// in the language the app shows.
+//
+// Scheduled task dialog, Repeat: run once, on a date at a time.
+func SchedRepeatOnce() string { return In(i18n.Locale()).SchedRepeatOnce() }
+
+// SchedRepeatOnce says "Once"
+// in the language of msgs.
+//
+// Scheduled task dialog, Repeat: run once, on a date at a time.
+func (msgs Messages) SchedRepeatOnce() string {
+	return Catalog.Format(msgs.locale, "schedRepeatOnce", nil)
+}
+
+// SchedRepeatWeekdays says "Weekdays"
+// in the language the app shows.
+//
+// Scheduled task dialog, Repeat: Monday to Friday, at one or more times.
+func SchedRepeatWeekdays() string { return In(i18n.Locale()).SchedRepeatWeekdays() }
+
+// SchedRepeatWeekdays says "Weekdays"
+// in the language of msgs.
+//
+// Scheduled task dialog, Repeat: Monday to Friday, at one or more times.
+func (msgs Messages) SchedRepeatWeekdays() string {
+	return Catalog.Format(msgs.locale, "schedRepeatWeekdays", nil)
+}
+
+// SchedRepeatWeekly says "On certain days"
+// in the language the app shows.
+//
+// Scheduled task dialog, Repeat: on the days of the week the person picks,
+// at one or more times.
+func SchedRepeatWeekly() string { return In(i18n.Locale()).SchedRepeatWeekly() }
+
+// SchedRepeatWeekly says "On certain days"
+// in the language of msgs.
+//
+// Scheduled task dialog, Repeat: on the days of the week the person picks,
+// at one or more times.
+func (msgs Messages) SchedRepeatWeekly() string {
+	return Catalog.Format(msgs.locale, "schedRepeatWeekly", nil)
+}
+
+// SchedResume says "Resume"
+// in the language the app shows.
+//
+// Scheduled task dialog: runs a paused task at its times again, from now
+// on.
+func SchedResume() string { return In(i18n.Locale()).SchedResume() }
+
+// SchedResume says "Resume"
+// in the language of msgs.
+//
+// Scheduled task dialog: runs a paused task at its times again, from now
+// on.
+func (msgs Messages) SchedResume() string {
+	return Catalog.Format(msgs.locale, "schedResume", nil)
+}
+
+// SchedRunNow says "Run now"
+// in the language the app shows.
+//
+// Scheduled task dialog: runs the task at once, with the person there; also
+// marks such a run in Last runs.
+func SchedRunNow() string { return In(i18n.Locale()).SchedRunNow() }
+
+// SchedRunNow says "Run now"
+// in the language of msgs.
+//
+// Scheduled task dialog: runs the task at once, with the person there; also
+// marks such a run in Last runs.
+func (msgs Messages) SchedRunNow() string {
+	return Catalog.Format(msgs.locale, "schedRunNow", nil)
+}
+
+// SchedRuns says "Last runs"
+// in the language the app shows.
+//
+// Scheduled task dialog: the heading of the task's last ten runs.
+func SchedRuns() string { return In(i18n.Locale()).SchedRuns() }
+
+// SchedRuns says "Last runs"
+// in the language of msgs.
+//
+// Scheduled task dialog: the heading of the task's last ten runs.
+func (msgs Messages) SchedRuns() string {
+	return Catalog.Format(msgs.locale, "schedRuns", nil)
+}
+
+// SchedSection says "Scheduled"
+// in the language the app shows.
+//
+// The right panel: the heading of the list of scheduled tasks (Ask Pinky
+// tasks set to run at set times), under Tasks.
+func SchedSection() string { return In(i18n.Locale()).SchedSection() }
+
+// SchedSection says "Scheduled"
+// in the language of msgs.
+//
+// The right panel: the heading of the list of scheduled tasks (Ask Pinky
+// tasks set to run at set times), under Tasks.
+func (msgs Messages) SchedSection() string {
+	return Catalog.Format(msgs.locale, "schedSection", nil)
+}
+
+// SchedSkipBusy says "{phone} was busy with another task."
+// in the language the app shows.
+//
+// A scheduled task's skipped run: another task had the phone for 15 minutes
+// after its time.
+func SchedSkipBusy(phone string) string { return In(i18n.Locale()).SchedSkipBusy(phone) }
+
+// SchedSkipBusy says "{phone} was busy with another task."
+// in the language of msgs.
+//
+// A scheduled task's skipped run: another task had the phone for 15 minutes
+// after its time.
+func (msgs Messages) SchedSkipBusy(phone string) string {
+	return Catalog.Format(msgs.locale, "schedSkipBusy", map[string]any{"phone": phone})
+}
+
+// SchedSkipInUse says "You were using {phone}."
+// in the language the app shows.
+//
+// A scheduled task's skipped run: the person had taken over the phone for
+// 15 minutes after its time.
+func SchedSkipInUse(phone string) string { return In(i18n.Locale()).SchedSkipInUse(phone) }
+
+// SchedSkipInUse says "You were using {phone}."
+// in the language of msgs.
+//
+// A scheduled task's skipped run: the person had taken over the phone for
+// 15 minutes after its time.
+func (msgs Messages) SchedSkipInUse(phone string) string {
+	return Catalog.Format(msgs.locale, "schedSkipInUse", map[string]any{"phone": phone})
+}
+
+// SchedSkipLocked says "{phone} was locked."
+// in the language the app shows.
+//
+// A scheduled task's skipped run: the phone was locked, and Pinky never
+// unlocks it for a scheduled task.
+func SchedSkipLocked(phone string) string { return In(i18n.Locale()).SchedSkipLocked(phone) }
+
+// SchedSkipLocked says "{phone} was locked."
+// in the language of msgs.
+//
+// A scheduled task's skipped run: the phone was locked, and Pinky never
+// unlocks it for a scheduled task.
+func (msgs Messages) SchedSkipLocked(phone string) string {
+	return Catalog.Format(msgs.locale, "schedSkipLocked", map[string]any{"phone": phone})
+}
+
+// SchedSkipNoPhone says "The phone is no longer in Pinky."
+// in the language the app shows.
+//
+// A scheduled task's skipped run: its phone was removed from Pinky.
+func SchedSkipNoPhone() string { return In(i18n.Locale()).SchedSkipNoPhone() }
+
+// SchedSkipNoPhone says "The phone is no longer in Pinky."
+// in the language of msgs.
+//
+// A scheduled task's skipped run: its phone was removed from Pinky.
+func (msgs Messages) SchedSkipNoPhone() string {
+	return Catalog.Format(msgs.locale, "schedSkipNoPhone", nil)
+}
+
+// SchedSkipNotRunning says "{count, plural, one {Pinky wasn't running at that time.} other {Pinky wasn't running: # times were missed.}}"
+// in the language the app shows.
+//
+// A scheduled task's skipped run: Pinky was quit or the computer asleep at
+// its times. count is how many times were missed.
+func SchedSkipNotRunning(count int) string { return In(i18n.Locale()).SchedSkipNotRunning(count) }
+
+// SchedSkipNotRunning says "{count, plural, one {Pinky wasn't running at that time.} other {Pinky wasn't running: # times were missed.}}"
+// in the language of msgs.
+//
+// A scheduled task's skipped run: Pinky was quit or the computer asleep at
+// its times. count is how many times were missed.
+func (msgs Messages) SchedSkipNotRunning(count int) string {
+	return Catalog.Format(msgs.locale, "schedSkipNotRunning", map[string]any{"count": count})
+}
+
+// SchedSkipOff says "Ask Pinky was turned off."
+// in the language the app shows.
+//
+// A scheduled task's skipped run: the person turned Ask Pinky off in
+// Settings › Agents.
+func SchedSkipOff() string { return In(i18n.Locale()).SchedSkipOff() }
+
+// SchedSkipOff says "Ask Pinky was turned off."
+// in the language of msgs.
+//
+// A scheduled task's skipped run: the person turned Ask Pinky off in
+// Settings › Agents.
+func (msgs Messages) SchedSkipOff() string {
+	return Catalog.Format(msgs.locale, "schedSkipOff", nil)
+}
+
+// SchedSkipOffline says "{phone} wasn't connected."
+// in the language the app shows.
+//
+// A scheduled task's skipped run: the phone was not connected to Pinky, or
+// not ready.
+func SchedSkipOffline(phone string) string { return In(i18n.Locale()).SchedSkipOffline(phone) }
+
+// SchedSkipOffline says "{phone} wasn't connected."
+// in the language of msgs.
+//
+// A scheduled task's skipped run: the phone was not connected to Pinky, or
+// not ready.
+func (msgs Messages) SchedSkipOffline(phone string) string {
+	return Catalog.Format(msgs.locale, "schedSkipOffline", map[string]any{"phone": phone})
+}
+
+// SchedSkipped says "Skipped"
+// in the language the app shows.
+//
+// How a scheduled task's run went: it did not run at its time, for the
+// reason below.
+func SchedSkipped() string { return In(i18n.Locale()).SchedSkipped() }
+
+// SchedSkipped says "Skipped"
+// in the language of msgs.
+//
+// How a scheduled task's run went: it did not run at its time, for the
+// reason below.
+func (msgs Messages) SchedSkipped() string {
+	return Catalog.Format(msgs.locale, "schedSkipped", nil)
+}
+
+// SchedStartAt says "Starting at"
+// in the language the app shows.
+//
+// Scheduled task dialog, Every few hours: the label of the first time of
+// each day.
+func SchedStartAt() string { return In(i18n.Locale()).SchedStartAt() }
+
+// SchedStartAt says "Starting at"
+// in the language of msgs.
+//
+// Scheduled task dialog, Every few hours: the label of the first time of
+// each day.
+func (msgs Messages) SchedStartAt() string {
+	return Catalog.Format(msgs.locale, "schedStartAt", nil)
+}
+
+// SchedTask says "Task"
+// in the language the app shows.
+//
+// Scheduled task dialog: the label of the field with the task, in the
+// person's words, as they would type it into Ask Pinky.
+func SchedTask() string { return In(i18n.Locale()).SchedTask() }
+
+// SchedTask says "Task"
+// in the language of msgs.
+//
+// Scheduled task dialog: the label of the field with the task, in the
+// person's words, as they would type it into Ask Pinky.
+func (msgs Messages) SchedTask() string {
+	return Catalog.Format(msgs.locale, "schedTask", nil)
+}
+
+// SchedTime says "Time"
+// in the language the app shows.
+//
+// Scheduled task dialog: the label of the time of day of a task that runs
+// once.
+func SchedTime() string { return In(i18n.Locale()).SchedTime() }
+
+// SchedTime says "Time"
+// in the language of msgs.
+//
+// Scheduled task dialog: the label of the time of day of a task that runs
+// once.
+func (msgs Messages) SchedTime() string {
+	return Catalog.Format(msgs.locale, "schedTime", nil)
+}
+
+// SchedTimes says "Times"
+// in the language the app shows.
+//
+// Scheduled task dialog: the label of the times of day the task runs at,
+// one or more, separated by commas.
+func SchedTimes() string { return In(i18n.Locale()).SchedTimes() }
+
+// SchedTimes says "Times"
+// in the language of msgs.
+//
+// Scheduled task dialog: the label of the times of day the task runs at,
+// one or more, separated by commas.
+func (msgs Messages) SchedTimes() string {
+	return Catalog.Format(msgs.locale, "schedTimes", nil)
+}
+
+// SchedTitleEdit says "Scheduled task"
+// in the language the app shows.
+//
+// The title of the dialog that shows and edits a scheduled task.
+func SchedTitleEdit() string { return In(i18n.Locale()).SchedTitleEdit() }
+
+// SchedTitleEdit says "Scheduled task"
+// in the language of msgs.
+//
+// The title of the dialog that shows and edits a scheduled task.
+func (msgs Messages) SchedTitleEdit() string {
+	return Catalog.Format(msgs.locale, "schedTitleEdit", nil)
+}
+
+// SchedTitleNew says "Schedule a task"
+// in the language the app shows.
+//
+// The title of the dialog that makes a scheduled task.
+func SchedTitleNew() string { return In(i18n.Locale()).SchedTitleNew() }
+
+// SchedTitleNew says "Schedule a task"
+// in the language of msgs.
+//
+// The title of the dialog that makes a scheduled task.
+func (msgs Messages) SchedTitleNew() string {
+	return Catalog.Format(msgs.locale, "schedTitleNew", nil)
+}
+
+// SchedWhen says "{when, date, ::MMMEEEdjmm}"
+// in the language the app shows.
+//
+// A time a scheduled task runs or ran: the weekday, the day and the time.
+func SchedWhen(when time.Time) string { return In(i18n.Locale()).SchedWhen(when) }
+
+// SchedWhen says "{when, date, ::MMMEEEdjmm}"
+// in the language of msgs.
+//
+// A time a scheduled task runs or ran: the weekday, the day and the time.
+func (msgs Messages) SchedWhen(when time.Time) string {
+	return Catalog.Format(msgs.locale, "schedWhen", map[string]any{"when": when})
+}
+
+// SchedZone says "Time zone"
+// in the language the app shows.
+//
+// Scheduled task dialog: the label of the time zone the times are in; empty
+// is this computer's, which the hint shows.
+func SchedZone() string { return In(i18n.Locale()).SchedZone() }
+
+// SchedZone says "Time zone"
+// in the language of msgs.
+//
+// Scheduled task dialog: the label of the time zone the times are in; empty
+// is this computer's, which the hint shows.
+func (msgs Messages) SchedZone() string {
+	return Catalog.Format(msgs.locale, "schedZone", nil)
+}
+
 // ActivityAnsweredIn says "Answered in {duration}"
 // in the language the app shows.
 //
@@ -2909,6 +3919,98 @@ func (msgs Messages) AskBusy(agent string, phone string) string {
 	return Catalog.Format(msgs.locale, "askBusy", map[string]any{"agent": agent, "phone": phone})
 }
 
+// AskCancel says "Cancel"
+// in the language the app shows.
+//
+// Ask Pinky: leaves the message as it was.
+func AskCancel() string { return In(i18n.Locale()).AskCancel() }
+
+// AskCancel says "Cancel"
+// in the language of msgs.
+//
+// Ask Pinky: leaves the message as it was.
+func (msgs Messages) AskCancel() string {
+	return Catalog.Format(msgs.locale, "askCancel", nil)
+}
+
+// AskContinue says "Continue"
+// in the language the app shows.
+//
+// Ask Pinky once its task ended: the button that continues the same task,
+// with the message typed. The limits count anew.
+func AskContinue() string { return In(i18n.Locale()).AskContinue() }
+
+// AskContinue says "Continue"
+// in the language of msgs.
+//
+// Ask Pinky once its task ended: the button that continues the same task,
+// with the message typed. The limits count anew.
+func (msgs Messages) AskContinue() string {
+	return Catalog.Format(msgs.locale, "askContinue", nil)
+}
+
+// AskContinueField says "Next message for Pinky"
+// in the language the app shows.
+//
+// Ask Pinky once its task ended: the accessible name of the field that
+// continues the same task with a new message.
+func AskContinueField() string { return In(i18n.Locale()).AskContinueField() }
+
+// AskContinueField says "Next message for Pinky"
+// in the language of msgs.
+//
+// Ask Pinky once its task ended: the accessible name of the field that
+// continues the same task with a new message.
+func (msgs Messages) AskContinueField() string {
+	return Catalog.Format(msgs.locale, "askContinueField", nil)
+}
+
+// AskContinuePlaceholder says "Tell Pinky what to do next…"
+// in the language the app shows.
+//
+// Ask Pinky once its task ended: the placeholder of askContinueField.
+func AskContinuePlaceholder() string { return In(i18n.Locale()).AskContinuePlaceholder() }
+
+// AskContinuePlaceholder says "Tell Pinky what to do next…"
+// in the language of msgs.
+//
+// Ask Pinky once its task ended: the placeholder of askContinueField.
+func (msgs Messages) AskContinuePlaceholder() string {
+	return Catalog.Format(msgs.locale, "askContinuePlaceholder", nil)
+}
+
+// AskByAgent says "Asked by {agent}"
+// in the language the app shows.
+//
+// Ask Pinky, under the box's state: an agent on the computer handed Pinky
+// this task (phone_task_run).
+func AskByAgent(agent string) string { return In(i18n.Locale()).AskByAgent(agent) }
+
+// AskByAgent says "Asked by {agent}"
+// in the language of msgs.
+//
+// Ask Pinky, under the box's state: an agent on the computer handed Pinky
+// this task (phone_task_run).
+func (msgs Messages) AskByAgent(agent string) string {
+	return Catalog.Format(msgs.locale, "askByAgent", map[string]any{"agent": agent})
+}
+
+// AskCancelled says "{agent} cancelled the task."
+// in the language the app shows.
+//
+// Why an Ask Pinky task ended: the agent that handed Pinky the task
+// cancelled it (phone_task_cancel).
+func AskCancelled(agent string) string { return In(i18n.Locale()).AskCancelled(agent) }
+
+// AskCancelled says "{agent} cancelled the task."
+// in the language of msgs.
+//
+// Why an Ask Pinky task ended: the agent that handed Pinky the task
+// cancelled it (phone_task_cancel).
+func (msgs Messages) AskCancelled(agent string) string {
+	return Catalog.Format(msgs.locale, "askCancelled", map[string]any{"agent": agent})
+}
+
 // AskDismiss says "Dismiss"
 // in the language the app shows.
 //
@@ -2937,6 +4039,20 @@ func AskDollars(amount string) string { return In(i18n.Locale()).AskDollars(amou
 // Pinky cost, or its limit.
 func (msgs Messages) AskDollars(amount string) string {
 	return Catalog.Format(msgs.locale, "askDollars", map[string]any{"amount": amount})
+}
+
+// AskEdit says "Edit"
+// in the language the app shows.
+//
+// Ask Pinky: the button that edits a message Pinky has not read yet.
+func AskEdit() string { return In(i18n.Locale()).AskEdit() }
+
+// AskEdit says "Edit"
+// in the language of msgs.
+//
+// Ask Pinky: the button that edits a message Pinky has not read yet.
+func (msgs Messages) AskEdit() string {
+	return Catalog.Format(msgs.locale, "askEdit", nil)
 }
 
 // AskEndDone says "Done"
@@ -3015,6 +4131,20 @@ func AskEndStopped() string { return In(i18n.Locale()).AskEndStopped() }
 // (then why follows).
 func (msgs Messages) AskEndStopped() string {
 	return Catalog.Format(msgs.locale, "askEndStopped", nil)
+}
+
+// AskErrSend says "Couldn't send: {detail}"
+// in the language the app shows.
+//
+// Ask Pinky, in red: a message to Pinky or Continue failed.
+func AskErrSend(detail string) string { return In(i18n.Locale()).AskErrSend(detail) }
+
+// AskErrSend says "Couldn't send: {detail}"
+// in the language of msgs.
+//
+// Ask Pinky, in red: a message to Pinky or Continue failed.
+func (msgs Messages) AskErrSend(detail string) string {
+	return Catalog.Format(msgs.locale, "askErrSend", map[string]any{"detail": detail})
 }
 
 // AskErrStart says "Couldn't start: {detail}"
@@ -3107,6 +4237,76 @@ func (msgs Messages) AskLimitTokens(count int) string {
 	return Catalog.Format(msgs.locale, "askLimitTokens", map[string]any{"count": count})
 }
 
+// AskMemoryDrop says "Don't"
+// in the language the app shows.
+//
+// Ask Pinky: the button that does not keep a suggested note.
+func AskMemoryDrop() string { return In(i18n.Locale()).AskMemoryDrop() }
+
+// AskMemoryDrop says "Don't"
+// in the language of msgs.
+//
+// Ask Pinky: the button that does not keep a suggested note.
+func (msgs Messages) AskMemoryDrop() string {
+	return Catalog.Format(msgs.locale, "askMemoryDrop", nil)
+}
+
+// AskMemoryDropped says "Not remembered"
+// in the language the app shows.
+//
+// Ask Pinky: a suggested note the person did not keep.
+func AskMemoryDropped() string { return In(i18n.Locale()).AskMemoryDropped() }
+
+// AskMemoryDropped says "Not remembered"
+// in the language of msgs.
+//
+// Ask Pinky: a suggested note the person did not keep.
+func (msgs Messages) AskMemoryDropped() string {
+	return Catalog.Format(msgs.locale, "askMemoryDropped", nil)
+}
+
+// AskMemoryKeep says "Remember"
+// in the language the app shows.
+//
+// Ask Pinky: the button that keeps a suggested note.
+func AskMemoryKeep() string { return In(i18n.Locale()).AskMemoryKeep() }
+
+// AskMemoryKeep says "Remember"
+// in the language of msgs.
+//
+// Ask Pinky: the button that keeps a suggested note.
+func (msgs Messages) AskMemoryKeep() string {
+	return Catalog.Format(msgs.locale, "askMemoryKeep", nil)
+}
+
+// AskMemoryKept says "Remembered"
+// in the language the app shows.
+//
+// Ask Pinky: a suggested note the person kept.
+func AskMemoryKept() string { return In(i18n.Locale()).AskMemoryKept() }
+
+// AskMemoryKept says "Remembered"
+// in the language of msgs.
+//
+// Ask Pinky: a suggested note the person kept.
+func (msgs Messages) AskMemoryKept() string {
+	return Catalog.Format(msgs.locale, "askMemoryKept", nil)
+}
+
+// AskMemoryTitle says "Remember for later tasks?"
+// in the language the app shows.
+//
+// Ask Pinky: over the notes a finished task suggests keeping.
+func AskMemoryTitle() string { return In(i18n.Locale()).AskMemoryTitle() }
+
+// AskMemoryTitle says "Remember for later tasks?"
+// in the language of msgs.
+//
+// Ask Pinky: over the notes a finished task suggests keeping.
+func (msgs Messages) AskMemoryTitle() string {
+	return Catalog.Format(msgs.locale, "askMemoryTitle", nil)
+}
+
 // AskTaskLimit says "Up to {limit} a task"
 // in the language the app shows.
 //
@@ -3151,6 +4351,22 @@ func (msgs Messages) AskNoKey() string {
 	return Catalog.Format(msgs.locale, "askNoKey", nil)
 }
 
+// AskPendingNote says "Pinky reads this at its next step"
+// in the language the app shows.
+//
+// Ask Pinky: under a message the person sent that Pinky has not read yet;
+// it can still be edited or withdrawn.
+func AskPendingNote() string { return In(i18n.Locale()).AskPendingNote() }
+
+// AskPendingNote says "Pinky reads this at its next step"
+// in the language of msgs.
+//
+// Ask Pinky: under a message the person sent that Pinky has not read yet;
+// it can still be edited or withdrawn.
+func (msgs Messages) AskPendingNote() string {
+	return Catalog.Format(msgs.locale, "askPendingNote", nil)
+}
+
 // AskPhone says "Phone"
 // in the language the app shows.
 //
@@ -3181,6 +4397,22 @@ func (msgs Messages) AskPlaceholder(phone string) string {
 	return Catalog.Format(msgs.locale, "askPlaceholder", map[string]any{"phone": phone})
 }
 
+// AskRead says "Pinky has already read it."
+// in the language the app shows.
+//
+// Ask Pinky, in red: the person tried to edit or withdraw a message that
+// Pinky read in the meantime.
+func AskRead() string { return In(i18n.Locale()).AskRead() }
+
+// AskRead says "Pinky has already read it."
+// in the language of msgs.
+//
+// Ask Pinky, in red: the person tried to edit or withdraw a message that
+// Pinky read in the meantime.
+func (msgs Messages) AskRead() string {
+	return Catalog.Format(msgs.locale, "askRead", nil)
+}
+
 // AskRefused says "The model declined this task."
 // in the language the app shows.
 //
@@ -3193,6 +4425,36 @@ func AskRefused() string { return In(i18n.Locale()).AskRefused() }
 // Why Ask Pinky could not finish a task.
 func (msgs Messages) AskRefused() string {
 	return Catalog.Format(msgs.locale, "askRefused", nil)
+}
+
+// AskSave says "Save"
+// in the language the app shows.
+//
+// Ask Pinky: saves the edited message.
+func AskSave() string { return In(i18n.Locale()).AskSave() }
+
+// AskSave says "Save"
+// in the language of msgs.
+//
+// Ask Pinky: saves the edited message.
+func (msgs Messages) AskSave() string {
+	return Catalog.Format(msgs.locale, "askSave", nil)
+}
+
+// AskSend says "Send"
+// in the language the app shows.
+//
+// Ask Pinky while its task runs: the button that sends the message in
+// askSteerField.
+func AskSend() string { return In(i18n.Locale()).AskSend() }
+
+// AskSend says "Send"
+// in the language of msgs.
+//
+// Ask Pinky while its task runs: the button that sends the message in
+// askSteerField.
+func (msgs Messages) AskSend() string {
+	return Catalog.Format(msgs.locale, "askSend", nil)
 }
 
 // AskSetup says "Pinky can do simple tasks on your phone by itself, with an AI model you choose."
@@ -3255,6 +4517,84 @@ func (msgs Messages) AskStart() string {
 	return Catalog.Format(msgs.locale, "askStart", nil)
 }
 
+// AskSteerField says "Message for Pinky"
+// in the language the app shows.
+//
+// Ask Pinky while its task runs: the accessible name of the field where the
+// person writes to Pinky as it works.
+func AskSteerField() string { return In(i18n.Locale()).AskSteerField() }
+
+// AskSteerField says "Message for Pinky"
+// in the language of msgs.
+//
+// Ask Pinky while its task runs: the accessible name of the field where the
+// person writes to Pinky as it works.
+func (msgs Messages) AskSteerField() string {
+	return Catalog.Format(msgs.locale, "askSteerField", nil)
+}
+
+// AskSteerPlaceholder says "Add or change instructions…"
+// in the language the app shows.
+//
+// Ask Pinky while its task runs: the placeholder of askSteerField. Pinky
+// reads the message at its next step.
+func AskSteerPlaceholder() string { return In(i18n.Locale()).AskSteerPlaceholder() }
+
+// AskSteerPlaceholder says "Add or change instructions…"
+// in the language of msgs.
+//
+// Ask Pinky while its task runs: the placeholder of askSteerField. Pinky
+// reads the message at its next step.
+func (msgs Messages) AskSteerPlaceholder() string {
+	return Catalog.Format(msgs.locale, "askSteerPlaceholder", nil)
+}
+
+// AskScreen says "About the screen"
+// in the language the app shows.
+//
+// Ask Pinky: the button that starts a question about what the phone shows
+// now; the field may be empty.
+func AskScreen() string { return In(i18n.Locale()).AskScreen() }
+
+// AskScreen says "About the screen"
+// in the language of msgs.
+//
+// Ask Pinky: the button that starts a question about what the phone shows
+// now; the field may be empty.
+func (msgs Messages) AskScreen() string {
+	return Catalog.Format(msgs.locale, "askScreen", nil)
+}
+
+// AskScreenTooltip says "Ask Pinky about what the phone shows now, or have it explained when the field is empty. Blocked apps and hidden codes…"
+// in the language the app shows.
+//
+// Ask Pinky: the tooltip of the button that asks about the phone's screen.
+func AskScreenTooltip() string { return In(i18n.Locale()).AskScreenTooltip() }
+
+// AskScreenTooltip says "Ask Pinky about what the phone shows now, or have it explained when the field is empty. Blocked apps and hidden codes…"
+// in the language of msgs.
+//
+// Ask Pinky: the tooltip of the button that asks about the phone's screen.
+func (msgs Messages) AskScreenTooltip() string {
+	return Catalog.Format(msgs.locale, "askScreenTooltip", nil)
+}
+
+// AskScreenDefault says "Explain what the phone shows."
+// in the language the app shows.
+//
+// Ask Pinky: the task sent when the person asks about the screen with an
+// empty field.
+func AskScreenDefault() string { return In(i18n.Locale()).AskScreenDefault() }
+
+// AskScreenDefault says "Explain what the phone shows."
+// in the language of msgs.
+//
+// Ask Pinky: the task sent when the person asks about the screen with an
+// empty field.
+func (msgs Messages) AskScreenDefault() string {
+	return Catalog.Format(msgs.locale, "askScreenDefault", nil)
+}
+
 // AskSteps says "{count, plural, one {# step} other {# steps}}"
 // in the language the app shows.
 //
@@ -3305,6 +4645,22 @@ func (msgs Messages) AskTitle() string {
 	return Catalog.Format(msgs.locale, "askTitle", nil)
 }
 
+// AskToday says "Today: {amount}"
+// in the language the app shows.
+//
+// Ask Pinky, under the model's name next to Start: what Pinky's own agent
+// used today (askTokens, then askDollars when known).
+func AskToday(amount string) string { return In(i18n.Locale()).AskToday(amount) }
+
+// AskToday says "Today: {amount}"
+// in the language of msgs.
+//
+// Ask Pinky, under the model's name next to Start: what Pinky's own agent
+// used today (askTokens, then askDollars when known).
+func (msgs Messages) AskToday(amount string) string {
+	return Catalog.Format(msgs.locale, "askToday", map[string]any{"amount": amount})
+}
+
 // AskTokens says "{count, plural, one {# token} other {# tokens}}"
 // in the language the app shows.
 //
@@ -3319,6 +4675,36 @@ func AskTokens(count int) string { return In(i18n.Locale()).AskTokens(count) }
 // prices Pinky does not know.
 func (msgs Messages) AskTokens(count int) string {
 	return Catalog.Format(msgs.locale, "askTokens", map[string]any{"count": count})
+}
+
+// AskUnread says "Pinky didn't read these before the task ended. Continue to send them."
+// in the language the app shows.
+//
+// Ask Pinky once its task ended: above the messages the person sent that
+// Pinky never read; Continue sends them.
+func AskUnread() string { return In(i18n.Locale()).AskUnread() }
+
+// AskUnread says "Pinky didn't read these before the task ended. Continue to send them."
+// in the language of msgs.
+//
+// Ask Pinky once its task ended: above the messages the person sent that
+// Pinky never read; Continue sends them.
+func (msgs Messages) AskUnread() string {
+	return Catalog.Format(msgs.locale, "askUnread", nil)
+}
+
+// AskWithdraw says "Withdraw"
+// in the language the app shows.
+//
+// Ask Pinky: the button that takes back a message Pinky has not read yet.
+func AskWithdraw() string { return In(i18n.Locale()).AskWithdraw() }
+
+// AskWithdraw says "Withdraw"
+// in the language of msgs.
+//
+// Ask Pinky: the button that takes back a message Pinky has not read yet.
+func (msgs Messages) AskWithdraw() string {
+	return Catalog.Format(msgs.locale, "askWithdraw", nil)
 }
 
 // AskWorking says "Pinky is working on it"
@@ -4353,6 +5739,48 @@ func CheckBackgroundUnlocked() string { return In(i18n.Locale()).CheckBackground
 // while the phone is unlocked.
 func (msgs Messages) CheckBackgroundUnlocked() string {
 	return Catalog.Format(msgs.locale, "checkBackgroundUnlocked", nil)
+}
+
+// CheckBadAnswer says "The address answered, but not as an API Pinky knows. Check the API address."
+// in the language the app shows.
+//
+// A check of the model: an answer that is not the API's.
+func CheckBadAnswer() string { return In(i18n.Locale()).CheckBadAnswer() }
+
+// CheckBadAnswer says "The address answered, but not as an API Pinky knows. Check the API address."
+// in the language of msgs.
+//
+// A check of the model: an answer that is not the API's.
+func (msgs Messages) CheckBadAnswer() string {
+	return Catalog.Format(msgs.locale, "checkBadAnswer", nil)
+}
+
+// CheckBadKey says "The service didn't accept the API key. Check that it is a key of this service."
+// in the language the app shows.
+//
+// A check of the model: the service refused the key (HTTP 401 or 403).
+func CheckBadKey() string { return In(i18n.Locale()).CheckBadKey() }
+
+// CheckBadKey says "The service didn't accept the API key. Check that it is a key of this service."
+// in the language of msgs.
+//
+// A check of the model: the service refused the key (HTTP 401 or 403).
+func (msgs Messages) CheckBadKey() string {
+	return Catalog.Format(msgs.locale, "checkBadKey", nil)
+}
+
+// CheckBusy says "The service is busy or limited the request. Try again in a moment."
+// in the language the app shows.
+//
+// A check of the model: HTTP 429 or the service's own error (5xx).
+func CheckBusy() string { return In(i18n.Locale()).CheckBusy() }
+
+// CheckBusy says "The service is busy or limited the request. Try again in a moment."
+// in the language of msgs.
+//
+// A check of the model: HTTP 429 or the service's own error (5xx).
+func (msgs Messages) CheckBusy() string {
+	return Catalog.Format(msgs.locale, "checkBusy", nil)
 }
 
 // CheckCompanionManual says "Installed, but this phone doesn't let Pinky turn on its accessibility service over USB debugging. Turn on Pinky in th…"
@@ -5569,6 +6997,96 @@ func (msgs Messages) CheckLocalNetworkUnknown() string {
 	return Catalog.Format(msgs.locale, "checkLocalNetworkUnknown", nil)
 }
 
+// CheckNoCredit says "The service says the account has no credit left. Top it up on the service's site."
+// in the language the app shows.
+//
+// A check of the model: HTTP 402.
+func CheckNoCredit() string { return In(i18n.Locale()).CheckNoCredit() }
+
+// CheckNoCredit says "The service says the account has no credit left. Top it up on the service's site."
+// in the language of msgs.
+//
+// A check of the model: HTTP 402.
+func (msgs Messages) CheckNoCredit() string {
+	return Catalog.Format(msgs.locale, "checkNoCredit", nil)
+}
+
+// CheckNoKey says "Add an API key first."
+// in the language the app shows.
+//
+// A check of the model: no API key is saved for the service.
+func CheckNoKey() string { return In(i18n.Locale()).CheckNoKey() }
+
+// CheckNoKey says "Add an API key first."
+// in the language of msgs.
+//
+// A check of the model: no API key is saved for the service.
+func (msgs Messages) CheckNoKey() string {
+	return Catalog.Format(msgs.locale, "checkNoKey", nil)
+}
+
+// CheckNoModel says "Choose a model first."
+// in the language the app shows.
+//
+// A check of the model in Settings › Agents › Ask Pinky: no model is
+// chosen.
+func CheckNoModel() string { return In(i18n.Locale()).CheckNoModel() }
+
+// CheckNoModel says "Choose a model first."
+// in the language of msgs.
+//
+// A check of the model in Settings › Agents › Ask Pinky: no model is
+// chosen.
+func (msgs Messages) CheckNoModel() string {
+	return Catalog.Format(msgs.locale, "checkNoModel", nil)
+}
+
+// CheckNoTools says "The model answered but didn't use a tool. Pinky works through tools, so choose a model that uses them."
+// in the language the app shows.
+//
+// A check of the model: it answered without calling the tool, or the
+// service said it does not support tools.
+func CheckNoTools() string { return In(i18n.Locale()).CheckNoTools() }
+
+// CheckNoTools says "The model answered but didn't use a tool. Pinky works through tools, so choose a model that uses them."
+// in the language of msgs.
+//
+// A check of the model: it answered without calling the tool, or the
+// service said it does not support tools.
+func (msgs Messages) CheckNoTools() string {
+	return Catalog.Format(msgs.locale, "checkNoTools", nil)
+}
+
+// CheckNotFound says "The service doesn't know this model or address. Check the model's name and the API address."
+// in the language the app shows.
+//
+// A check of the model: HTTP 404.
+func CheckNotFound() string { return In(i18n.Locale()).CheckNotFound() }
+
+// CheckNotFound says "The service doesn't know this model or address. Check the model's name and the API address."
+// in the language of msgs.
+//
+// A check of the model: HTTP 404.
+func (msgs Messages) CheckNotFound() string {
+	return Catalog.Format(msgs.locale, "checkNotFound", nil)
+}
+
+// CheckRejected says "The service refused the request."
+// in the language the app shows.
+//
+// A check of the model: another error of the service;
+// settingsAskCheckDetail follows with its words.
+func CheckRejected() string { return In(i18n.Locale()).CheckRejected() }
+
+// CheckRejected says "The service refused the request."
+// in the language of msgs.
+//
+// A check of the model: another error of the service;
+// settingsAskCheckDetail follows with its words.
+func (msgs Messages) CheckRejected() string {
+	return Catalog.Format(msgs.locale, "checkRejected", nil)
+}
+
 // CheckScreenFail says "The phone sends no screenshots, so agents can't see the screen. Restart the phone, then check again."
 // in the language the app shows.
 //
@@ -5789,6 +7307,20 @@ func CheckUSBPermissionNote() string { return In(i18n.Locale()).CheckUSBPermissi
 // keep them as they are.
 func (msgs Messages) CheckUSBPermissionNote() string {
 	return Catalog.Format(msgs.locale, "checkUSBPermissionNote", nil)
+}
+
+// CheckUnreachable says "Pinky couldn't reach the API address. Check it, and that the service or server is running."
+// in the language the app shows.
+//
+// A check of the model: no answer from the address.
+func CheckUnreachable() string { return In(i18n.Locale()).CheckUnreachable() }
+
+// CheckUnreachable says "Pinky couldn't reach the API address. Check it, and that the service or server is running."
+// in the language of msgs.
+//
+// A check of the model: no answer from the address.
+func (msgs Messages) CheckUnreachable() string {
+	return Catalog.Format(msgs.locale, "checkUnreachable", nil)
 }
 
 // CheckWiFiFail says "Pinky can't use this phone over Wi-Fi."
@@ -6883,6 +8415,116 @@ func CompanionNotNow() string { return In(i18n.Locale()).CompanionNotNow() }
 // this phone.
 func (msgs Messages) CompanionNotNow() string {
 	return Catalog.Format(msgs.locale, "companionNotNow", nil)
+}
+
+// MemoryErrFull says "{count, plural, one {Memory keeps at most # note. Delete one first.} other {Memory keeps at most # notes. Delete one …"
+// in the language the app shows.
+//
+// Why a note of Ask Pinky's memory was not saved: there are as many as it
+// keeps.
+func MemoryErrFull(count int) string { return In(i18n.Locale()).MemoryErrFull(count) }
+
+// MemoryErrFull says "{count, plural, one {Memory keeps at most # note. Delete one first.} other {Memory keeps at most # notes. Delete one …"
+// in the language of msgs.
+//
+// Why a note of Ask Pinky's memory was not saved: there are as many as it
+// keeps.
+func (msgs Messages) MemoryErrFull(count int) string {
+	return Catalog.Format(msgs.locale, "memoryErrFull", map[string]any{"count": count})
+}
+
+// MemoryErrLong says "{count, plural, one {A note has at most # character.} other {A note has at most # characters.}}"
+// in the language the app shows.
+//
+// Why a note of Ask Pinky's memory was not saved: it is too long.
+func MemoryErrLong(count int) string { return In(i18n.Locale()).MemoryErrLong(count) }
+
+// MemoryErrLong says "{count, plural, one {A note has at most # character.} other {A note has at most # characters.}}"
+// in the language of msgs.
+//
+// Why a note of Ask Pinky's memory was not saved: it is too long.
+func (msgs Messages) MemoryErrLong(count int) string {
+	return Catalog.Format(msgs.locale, "memoryErrLong", map[string]any{"count": count})
+}
+
+// MemoryErrSave says "Couldn't save: {error}"
+// in the language the app shows.
+//
+// Why a note of Ask Pinky's memory was not saved: the file could not be
+// written.
+func MemoryErrSave(error string) string { return In(i18n.Locale()).MemoryErrSave(error) }
+
+// MemoryErrSave says "Couldn't save: {error}"
+// in the language of msgs.
+//
+// Why a note of Ask Pinky's memory was not saved: the file could not be
+// written.
+func (msgs Messages) MemoryErrSave(error string) string {
+	return Catalog.Format(msgs.locale, "memoryErrSave", map[string]any{"error": error})
+}
+
+// MemoryErrSensitive says "Memory never keeps passwords, codes, card, account, ID or phone numbers, email or street addresses."
+// in the language the app shows.
+//
+// Why a note of Ask Pinky's memory was not saved: it holds something memory
+// never keeps.
+func MemoryErrSensitive() string { return In(i18n.Locale()).MemoryErrSensitive() }
+
+// MemoryErrSensitive says "Memory never keeps passwords, codes, card, account, ID or phone numbers, email or street addresses."
+// in the language of msgs.
+//
+// Why a note of Ask Pinky's memory was not saved: it holds something memory
+// never keeps.
+func (msgs Messages) MemoryErrSensitive() string {
+	return Catalog.Format(msgs.locale, "memoryErrSensitive", nil)
+}
+
+// MemoryFromYou says "From you"
+// in the language the app shows.
+//
+// Under a note of Ask Pinky's memory: the person said it in a task, or
+// wrote it.
+func MemoryFromYou() string { return In(i18n.Locale()).MemoryFromYou() }
+
+// MemoryFromYou says "From you"
+// in the language of msgs.
+//
+// Under a note of Ask Pinky's memory: the person said it in a task, or
+// wrote it.
+func (msgs Messages) MemoryFromYou() string {
+	return Catalog.Format(msgs.locale, "memoryFromYou", nil)
+}
+
+// MemoryLearned says "Learned on a task"
+// in the language the app shows.
+//
+// Under a note of Ask Pinky's memory: a way of doing something Pinky found
+// on a task.
+func MemoryLearned() string { return In(i18n.Locale()).MemoryLearned() }
+
+// MemoryLearned says "Learned on a task"
+// in the language of msgs.
+//
+// Under a note of Ask Pinky's memory: a way of doing something Pinky found
+// on a task.
+func (msgs Messages) MemoryLearned() string {
+	return Catalog.Format(msgs.locale, "memoryLearned", nil)
+}
+
+// MemoryLearnedIn says "Learned in {app}"
+// in the language the app shows.
+//
+// Under a note of Ask Pinky's memory: a way of doing something in an app
+// that Pinky found on a task.
+func MemoryLearnedIn(app string) string { return In(i18n.Locale()).MemoryLearnedIn(app) }
+
+// MemoryLearnedIn says "Learned in {app}"
+// in the language of msgs.
+//
+// Under a note of Ask Pinky's memory: a way of doing something in an app
+// that Pinky found on a task.
+func (msgs Messages) MemoryLearnedIn(app string) string {
+	return Catalog.Format(msgs.locale, "memoryLearnedIn", map[string]any{"app": app})
 }
 
 // PhoneTasksTitle says "Pinky on the phone can work by itself"
@@ -13837,6 +15479,44 @@ func GwStepYouDenied(action string) string { return In(i18n.Locale()).GwStepYouD
 // only in other languages; in English the gateway's own words show.
 func (msgs Messages) GwStepYouDenied(action string) string {
 	return Catalog.Format(msgs.locale, "gwStepYouDenied", map[string]any{"action": action})
+}
+
+// GwStepAgentSaid says "{agent} said: “{message}”"
+// in the language the app shows.
+//
+// A step: a message to Pinky's own agent from the agent on the computer
+// that handed it the task (phone_task_steer), which Pinky's agent read.
+// Shown only in other languages; in English the gateway's own words show.
+func GwStepAgentSaid(agent string, message string) string {
+	return In(i18n.Locale()).GwStepAgentSaid(agent, message)
+}
+
+// GwStepAgentSaid says "{agent} said: “{message}”"
+// in the language of msgs.
+//
+// A step: a message to Pinky's own agent from the agent on the computer
+// that handed it the task (phone_task_steer), which Pinky's agent read.
+// Shown only in other languages; in English the gateway's own words show.
+func (msgs Messages) GwStepAgentSaid(agent string, message string) string {
+	return Catalog.Format(msgs.locale, "gwStepAgentSaid", map[string]any{"agent": agent, "message": message})
+}
+
+// GwStepYouSaid says "You said: “{message}”"
+// in the language the app shows.
+//
+// A step: the person's message to Pinky's own agent while it worked, which
+// the agent read. Shown only in other languages; in English the gateway's
+// own words show.
+func GwStepYouSaid(message string) string { return In(i18n.Locale()).GwStepYouSaid(message) }
+
+// GwStepYouSaid says "You said: “{message}”"
+// in the language of msgs.
+//
+// A step: the person's message to Pinky's own agent while it worked, which
+// the agent read. Shown only in other languages; in English the gateway's
+// own words show.
+func (msgs Messages) GwStepYouSaid(message string) string {
+	return Catalog.Format(msgs.locale, "gwStepYouSaid", map[string]any{"message": message})
 }
 
 // GwStepYouStopped says "You stopped the task"
@@ -21685,6 +23365,130 @@ func (msgs Messages) SettingsAgentsWorking() string {
 	return Catalog.Format(msgs.locale, "settingsAgentsWorking", nil)
 }
 
+// SettingsAskCheck says "Check"
+// in the language the app shows.
+//
+// Settings › Agents › Ask Pinky: the title of the row that checks the
+// model.
+func SettingsAskCheck() string { return In(i18n.Locale()).SettingsAskCheck() }
+
+// SettingsAskCheck says "Check"
+// in the language of msgs.
+//
+// Settings › Agents › Ask Pinky: the title of the row that checks the
+// model.
+func (msgs Messages) SettingsAskCheck() string {
+	return Catalog.Format(msgs.locale, "settingsAskCheck", nil)
+}
+
+// SettingsAskCheckAgain says "Check Again"
+// in the language the app shows.
+//
+// Settings › Agents › Ask Pinky: the button that checks the model again
+// after a check.
+func SettingsAskCheckAgain() string { return In(i18n.Locale()).SettingsAskCheckAgain() }
+
+// SettingsAskCheckAgain says "Check Again"
+// in the language of msgs.
+//
+// Settings › Agents › Ask Pinky: the button that checks the model again
+// after a check.
+func (msgs Messages) SettingsAskCheckAgain() string {
+	return Catalog.Format(msgs.locale, "settingsAskCheckAgain", nil)
+}
+
+// SettingsAskCheckDesc says "Sends the model one tiny request to see that it answers and uses tools. Pinky does it when you save a key, model or a…"
+// in the language the app shows.
+//
+// Settings › Agents › Ask Pinky: under Check.
+func SettingsAskCheckDesc() string { return In(i18n.Locale()).SettingsAskCheckDesc() }
+
+// SettingsAskCheckDesc says "Sends the model one tiny request to see that it answers and uses tools. Pinky does it when you save a key, model or a…"
+// in the language of msgs.
+//
+// Settings › Agents › Ask Pinky: under Check.
+func (msgs Messages) SettingsAskCheckDesc() string {
+	return Catalog.Format(msgs.locale, "settingsAskCheckDesc", nil)
+}
+
+// SettingsAskCheckDetail says "The service said: {detail}"
+// in the language the app shows.
+//
+// Settings › Agents › Ask Pinky: under a failed check, the service's
+// own words, in its language.
+func SettingsAskCheckDetail(detail string) string {
+	return In(i18n.Locale()).SettingsAskCheckDetail(detail)
+}
+
+// SettingsAskCheckDetail says "The service said: {detail}"
+// in the language of msgs.
+//
+// Settings › Agents › Ask Pinky: under a failed check, the service's
+// own words, in its language.
+func (msgs Messages) SettingsAskCheckDetail(detail string) string {
+	return Catalog.Format(msgs.locale, "settingsAskCheckDetail", map[string]any{"detail": detail})
+}
+
+// SettingsAskCheckLabel says "Check the model now"
+// in the language the app shows.
+//
+// Settings › Agents › Ask Pinky: what screen readers say for the Check
+// and Check Again button.
+func SettingsAskCheckLabel() string { return In(i18n.Locale()).SettingsAskCheckLabel() }
+
+// SettingsAskCheckLabel says "Check the model now"
+// in the language of msgs.
+//
+// Settings › Agents › Ask Pinky: what screen readers say for the Check
+// and Check Again button.
+func (msgs Messages) SettingsAskCheckLabel() string {
+	return Catalog.Format(msgs.locale, "settingsAskCheckLabel", nil)
+}
+
+// SettingsAskCheckNow says "Check"
+// in the language the app shows.
+//
+// Settings › Agents › Ask Pinky: the button that checks the model now.
+func SettingsAskCheckNow() string { return In(i18n.Locale()).SettingsAskCheckNow() }
+
+// SettingsAskCheckNow says "Check"
+// in the language of msgs.
+//
+// Settings › Agents › Ask Pinky: the button that checks the model now.
+func (msgs Messages) SettingsAskCheckNow() string {
+	return Catalog.Format(msgs.locale, "settingsAskCheckNow", nil)
+}
+
+// SettingsAskCheckOK says "The model answered and used a tool, in {seconds} s."
+// in the language the app shows.
+//
+// Settings › Agents › Ask Pinky: a check that went well; seconds has
+// one decimal.
+func SettingsAskCheckOK(seconds string) string { return In(i18n.Locale()).SettingsAskCheckOK(seconds) }
+
+// SettingsAskCheckOK says "The model answered and used a tool, in {seconds} s."
+// in the language of msgs.
+//
+// Settings › Agents › Ask Pinky: a check that went well; seconds has
+// one decimal.
+func (msgs Messages) SettingsAskCheckOK(seconds string) string {
+	return Catalog.Format(msgs.locale, "settingsAskCheckOK", map[string]any{"seconds": seconds})
+}
+
+// SettingsAskChecking says "Checking…"
+// in the language the app shows.
+//
+// Settings › Agents › Ask Pinky: while the check runs.
+func SettingsAskChecking() string { return In(i18n.Locale()).SettingsAskChecking() }
+
+// SettingsAskChecking says "Checking…"
+// in the language of msgs.
+//
+// Settings › Agents › Ask Pinky: while the check runs.
+func (msgs Messages) SettingsAskChecking() string {
+	return Catalog.Format(msgs.locale, "settingsAskChecking", nil)
+}
+
 // SettingsAskCost says "Cost per task"
 // in the language the app shows.
 //
@@ -21699,14 +23503,14 @@ func (msgs Messages) SettingsAskCost() string {
 	return Catalog.Format(msgs.locale, "settingsAskCost", nil)
 }
 
-// SettingsAskCostDesc says "Counted from what the service reports, at Anthropic's prices."
+// SettingsAskCostDesc says "Counted from what the service reports, at the prices it publishes."
 // in the language the app shows.
 //
 // Settings › Agents › Ask Pinky with a Claude model whose prices Pinky
 // knows: the line under settingsAskCost.
 func SettingsAskCostDesc() string { return In(i18n.Locale()).SettingsAskCostDesc() }
 
-// SettingsAskCostDesc says "Counted from what the service reports, at Anthropic's prices."
+// SettingsAskCostDesc says "Counted from what the service reports, at the prices it publishes."
 // in the language of msgs.
 //
 // Settings › Agents › Ask Pinky with a Claude model whose prices Pinky
@@ -21891,6 +23695,26 @@ func (msgs Messages) SettingsAskKeyKeepWindows() string {
 	return Catalog.Format(msgs.locale, "settingsAskKeyKeepWindows", nil)
 }
 
+// SettingsAskKeyOptional says "Only if you set one up on the server. {keep}"
+// in the language the app shows.
+//
+// Settings › Agents › Ask Pinky: under API key, for a server on the
+// person's own computer, which needs no key by default; keep says where a
+// key stays (settingsAskKeyKeepMac and the others).
+func SettingsAskKeyOptional(keep string) string {
+	return In(i18n.Locale()).SettingsAskKeyOptional(keep)
+}
+
+// SettingsAskKeyOptional says "Only if you set one up on the server. {keep}"
+// in the language of msgs.
+//
+// Settings › Agents › Ask Pinky: under API key, for a server on the
+// person's own computer, which needs no key by default; keep says where a
+// key stays (settingsAskKeyKeepMac and the others).
+func (msgs Messages) SettingsAskKeyOptional(keep string) string {
+	return Catalog.Format(msgs.locale, "settingsAskKeyOptional", map[string]any{"keep": keep})
+}
+
 // SettingsAskKeyPlaceholder says "Paste the API key"
 // in the language the app shows.
 //
@@ -22057,6 +23881,22 @@ func (msgs Messages) SettingsAskModelDesc() string {
 	return Catalog.Format(msgs.locale, "settingsAskModelDesc", nil)
 }
 
+// SettingsAskModelLocal says "The name of a model the server runs. It must read images and use tools."
+// in the language the app shows.
+//
+// Settings › Agents › Ask Pinky: under Model, for a server on the
+// person's own computer, such as Ollama.
+func SettingsAskModelLocal() string { return In(i18n.Locale()).SettingsAskModelLocal() }
+
+// SettingsAskModelLocal says "The name of a model the server runs. It must read images and use tools."
+// in the language of msgs.
+//
+// Settings › Agents › Ask Pinky: under Model, for a server on the
+// person's own computer, such as Ollama.
+func (msgs Messages) SettingsAskModelLocal() string {
+	return Catalog.Format(msgs.locale, "settingsAskModelLocal", nil)
+}
+
 // SettingsAskModelNone says "None"
 // in the language the app shows.
 //
@@ -22071,6 +23911,22 @@ func (msgs Messages) SettingsAskModelNone() string {
 	return Catalog.Format(msgs.locale, "settingsAskModelNone", nil)
 }
 
+// SettingsAskModelOther says "Other…"
+// in the language the app shows.
+//
+// Settings › Agents › Ask Pinky, the Model menu: the entry that lets
+// the person type another model's name.
+func SettingsAskModelOther() string { return In(i18n.Locale()).SettingsAskModelOther() }
+
+// SettingsAskModelOther says "Other…"
+// in the language of msgs.
+//
+// Settings › Agents › Ask Pinky, the Model menu: the entry that lets
+// the person type another model's name.
+func (msgs Messages) SettingsAskModelOther() string {
+	return Catalog.Format(msgs.locale, "settingsAskModelOther", nil)
+}
+
 // SettingsAskModelPlaceholder says "Model name"
 // in the language the app shows.
 //
@@ -22083,6 +23939,22 @@ func SettingsAskModelPlaceholder() string { return In(i18n.Locale()).SettingsAsk
 // Settings › Agents › Ask Pinky: the hint in the empty model field.
 func (msgs Messages) SettingsAskModelPlaceholder() string {
 	return Catalog.Format(msgs.locale, "settingsAskModelPlaceholder", nil)
+}
+
+// SettingsAskModelSuggested says "Models that read images and use tools, as Pinky needs. Choose Other… for another model of the service."
+// in the language the app shows.
+//
+// Settings › Agents › Ask Pinky: under Model, for a service whose
+// models Pinky suggests.
+func SettingsAskModelSuggested() string { return In(i18n.Locale()).SettingsAskModelSuggested() }
+
+// SettingsAskModelSuggested says "Models that read images and use tools, as Pinky needs. Choose Other… for another model of the service."
+// in the language of msgs.
+//
+// Settings › Agents › Ask Pinky: under Model, for a service whose
+// models Pinky suggests.
+func (msgs Messages) SettingsAskModelSuggested() string {
+	return Catalog.Format(msgs.locale, "settingsAskModelSuggested", nil)
 }
 
 // SettingsAskOn says "Show Ask Pinky"
@@ -22111,6 +23983,38 @@ func SettingsAskOnDesc() string { return In(i18n.Locale()).SettingsAskOnDesc() }
 // Settings › Agents › Ask Pinky: the line under settingsAskOn.
 func (msgs Messages) SettingsAskOnDesc() string {
 	return Catalog.Format(msgs.locale, "settingsAskOnDesc", nil)
+}
+
+// SettingsAskRegionChina says "China"
+// in the language the app shows.
+//
+// settingsAskServiceRegion: the entry of a service for its mainland China
+// address.
+func SettingsAskRegionChina() string { return In(i18n.Locale()).SettingsAskRegionChina() }
+
+// SettingsAskRegionChina says "China"
+// in the language of msgs.
+//
+// settingsAskServiceRegion: the entry of a service for its mainland China
+// address.
+func (msgs Messages) SettingsAskRegionChina() string {
+	return Catalog.Format(msgs.locale, "settingsAskRegionChina", nil)
+}
+
+// SettingsAskRegionGlobal says "International"
+// in the language the app shows.
+//
+// settingsAskServiceRegion: the entry of a service for its address outside
+// mainland China.
+func SettingsAskRegionGlobal() string { return In(i18n.Locale()).SettingsAskRegionGlobal() }
+
+// SettingsAskRegionGlobal says "International"
+// in the language of msgs.
+//
+// settingsAskServiceRegion: the entry of a service for its address outside
+// mainland China.
+func (msgs Messages) SettingsAskRegionGlobal() string {
+	return Catalog.Format(msgs.locale, "settingsAskRegionGlobal", nil)
 }
 
 // SettingsAskService says "Service"
@@ -22145,16 +24049,16 @@ func (msgs Messages) SettingsAskServiceAnthropic() string {
 	return Catalog.Format(msgs.locale, "settingsAskServiceAnthropic", nil)
 }
 
-// SettingsAskServiceDesc says "Claude through Anthropic's API, or another model through a service compatible with OpenAI's. Each has its own key."
+// SettingsAskServiceDesc says "Who runs the model. Each service keeps its own API key, model and address."
 // in the language the app shows.
 //
-// Settings › Agents › Ask Pinky: the line under settingsAskService.
+// Settings › Agents › Ask Pinky: under Service, what the choice is.
 func SettingsAskServiceDesc() string { return In(i18n.Locale()).SettingsAskServiceDesc() }
 
-// SettingsAskServiceDesc says "Claude through Anthropic's API, or another model through a service compatible with OpenAI's. Each has its own key."
+// SettingsAskServiceDesc says "Who runs the model. Each service keeps its own API key, model and address."
 // in the language of msgs.
 //
-// Settings › Agents › Ask Pinky: the line under settingsAskService.
+// Settings › Agents › Ask Pinky: under Service, what the choice is.
 func (msgs Messages) SettingsAskServiceDesc() string {
 	return Catalog.Format(msgs.locale, "settingsAskServiceDesc", nil)
 }
@@ -22173,6 +24077,24 @@ func SettingsAskServiceOpenAI() string { return In(i18n.Locale()).SettingsAskSer
 // Completions API, or a service that speaks it.
 func (msgs Messages) SettingsAskServiceOpenAI() string {
 	return Catalog.Format(msgs.locale, "settingsAskServiceOpenAI", nil)
+}
+
+// SettingsAskServiceRegion says "{service} ({region})"
+// in the language the app shows.
+//
+// Settings › Agents › Ask Pinky, the Service menu: a service that has
+// one entry for mainland China and one for elsewhere, such as Qwen (China).
+func SettingsAskServiceRegion(service string, region string) string {
+	return In(i18n.Locale()).SettingsAskServiceRegion(service, region)
+}
+
+// SettingsAskServiceRegion says "{service} ({region})"
+// in the language of msgs.
+//
+// Settings › Agents › Ask Pinky, the Service menu: a service that has
+// one entry for mainland China and one for elsewhere, such as Qwen (China).
+func (msgs Messages) SettingsAskServiceRegion(service string, region string) string {
+	return Catalog.Format(msgs.locale, "settingsAskServiceRegion", map[string]any{"service": service, "region": region})
 }
 
 // SettingsAskSteps says "Steps per task"
@@ -22295,6 +24217,22 @@ func (msgs Messages) SettingsAskURLDescAnthropic() string {
 	return Catalog.Format(msgs.locale, "settingsAskURLDescAnthropic", nil)
 }
 
+// SettingsAskURLDescLocal says "The server on this computer by default. Change it when the server runs on another computer or port."
+// in the language the app shows.
+//
+// Settings › Agents › Ask Pinky: under API address, for a server on the
+// person's own computer, such as Ollama.
+func SettingsAskURLDescLocal() string { return In(i18n.Locale()).SettingsAskURLDescLocal() }
+
+// SettingsAskURLDescLocal says "The server on this computer by default. Change it when the server runs on another computer or port."
+// in the language of msgs.
+//
+// Settings › Agents › Ask Pinky: under API address, for a server on the
+// person's own computer, such as Ollama.
+func (msgs Messages) SettingsAskURLDescLocal() string {
+	return Catalog.Format(msgs.locale, "settingsAskURLDescLocal", nil)
+}
+
 // SettingsAskURLDescOpenAI says "The address of the service's OpenAI-compatible API, such as https://…/v1. OpenAI's own by default."
 // in the language the app shows.
 //
@@ -22311,6 +24249,22 @@ func (msgs Messages) SettingsAskURLDescOpenAI() string {
 	return Catalog.Format(msgs.locale, "settingsAskURLDescOpenAI", nil)
 }
 
+// SettingsAskURLDescService says "The service's own address by default. Change it only to go through another address, such as a proxy."
+// in the language the app shows.
+//
+// Settings › Agents › Ask Pinky: under API address, for a service Pinky
+// knows.
+func SettingsAskURLDescService() string { return In(i18n.Locale()).SettingsAskURLDescService() }
+
+// SettingsAskURLDescService says "The service's own address by default. Change it only to go through another address, such as a proxy."
+// in the language of msgs.
+//
+// Settings › Agents › Ask Pinky: under API address, for a service Pinky
+// knows.
+func (msgs Messages) SettingsAskURLDescService() string {
+	return Catalog.Format(msgs.locale, "settingsAskURLDescService", nil)
+}
+
 // SettingsAskURLErr says "Enter an address that starts with https:// or http://."
 // in the language the app shows.
 //
@@ -22323,6 +24277,100 @@ func SettingsAskURLErr() string { return In(i18n.Locale()).SettingsAskURLErr() }
 // Settings › Agents › Ask Pinky, in red, under the API address field.
 func (msgs Messages) SettingsAskURLErr() string {
 	return Catalog.Format(msgs.locale, "settingsAskURLErr", nil)
+}
+
+// SettingsAskUsage says "Usage"
+// in the language the app shows.
+//
+// Settings › Agents › Ask Pinky: the heading of the tokens Pinky's own
+// agent used.
+func SettingsAskUsage() string { return In(i18n.Locale()).SettingsAskUsage() }
+
+// SettingsAskUsage says "Usage"
+// in the language of msgs.
+//
+// Settings › Agents › Ask Pinky: the heading of the tokens Pinky's own
+// agent used.
+func (msgs Messages) SettingsAskUsage() string {
+	return Catalog.Format(msgs.locale, "settingsAskUsage", nil)
+}
+
+// SettingsAskUsageDesc says "The tokens Pinky's own agent used, as the services reported them, and what they cost where Pinky knows the prices. Ke…"
+// in the language the app shows.
+//
+// Settings › Agents › Ask Pinky: under Usage.
+func SettingsAskUsageDesc() string { return In(i18n.Locale()).SettingsAskUsageDesc() }
+
+// SettingsAskUsageDesc says "The tokens Pinky's own agent used, as the services reported them, and what they cost where Pinky knows the prices. Ke…"
+// in the language of msgs.
+//
+// Settings › Agents › Ask Pinky: under Usage.
+func (msgs Messages) SettingsAskUsageDesc() string {
+	return Catalog.Format(msgs.locale, "settingsAskUsageDesc", nil)
+}
+
+// SettingsAskUsageMonth says "Last 30 days"
+// in the language the app shows.
+//
+// Settings › Agents › Ask Pinky, Usage: the total of the last 30 days,
+// today included.
+func SettingsAskUsageMonth() string { return In(i18n.Locale()).SettingsAskUsageMonth() }
+
+// SettingsAskUsageMonth says "Last 30 days"
+// in the language of msgs.
+//
+// Settings › Agents › Ask Pinky, Usage: the total of the last 30 days,
+// today included.
+func (msgs Messages) SettingsAskUsageMonth() string {
+	return Catalog.Format(msgs.locale, "settingsAskUsageMonth", nil)
+}
+
+// SettingsAskUsageNone says "Nothing yet."
+// in the language the app shows.
+//
+// Settings › Agents › Ask Pinky, Usage: no tokens used in the period.
+func SettingsAskUsageNone() string { return In(i18n.Locale()).SettingsAskUsageNone() }
+
+// SettingsAskUsageNone says "Nothing yet."
+// in the language of msgs.
+//
+// Settings › Agents › Ask Pinky, Usage: no tokens used in the period.
+func (msgs Messages) SettingsAskUsageNone() string {
+	return Catalog.Format(msgs.locale, "settingsAskUsageNone", nil)
+}
+
+// SettingsAskUsageRequests says "{count, plural, one {# request} other {# requests}}"
+// in the language the app shows.
+//
+// Settings › Agents › Ask Pinky, Usage: how many requests a model got
+// on a day.
+func SettingsAskUsageRequests(count int) string {
+	return In(i18n.Locale()).SettingsAskUsageRequests(count)
+}
+
+// SettingsAskUsageRequests says "{count, plural, one {# request} other {# requests}}"
+// in the language of msgs.
+//
+// Settings › Agents › Ask Pinky, Usage: how many requests a model got
+// on a day.
+func (msgs Messages) SettingsAskUsageRequests(count int) string {
+	return Catalog.Format(msgs.locale, "settingsAskUsageRequests", map[string]any{"count": count})
+}
+
+// SettingsAskUsageWeek says "Last 7 days"
+// in the language the app shows.
+//
+// Settings › Agents › Ask Pinky, Usage: the total of the last 7 days,
+// today included.
+func SettingsAskUsageWeek() string { return In(i18n.Locale()).SettingsAskUsageWeek() }
+
+// SettingsAskUsageWeek says "Last 7 days"
+// in the language of msgs.
+//
+// Settings › Agents › Ask Pinky, Usage: the total of the last 7 days,
+// today included.
+func (msgs Messages) SettingsAskUsageWeek() string {
+	return Catalog.Format(msgs.locale, "settingsAskUsageWeek", nil)
 }
 
 // SettingsCancel says "Cancel"
@@ -22521,6 +24569,188 @@ func SettingsLanguageSystem() string { return In(i18n.Locale()).SettingsLanguage
 // itself (English, Simplified Chinese).
 func (msgs Messages) SettingsLanguageSystem() string {
 	return Catalog.Format(msgs.locale, "settingsLanguageSystem", nil)
+}
+
+// SettingsMemory says "Memory"
+// in the language the app shows.
+//
+// Settings › Agents: the heading of Ask Pinky's memory, and the label of
+// the field that writes a note.
+func SettingsMemory() string { return In(i18n.Locale()).SettingsMemory() }
+
+// SettingsMemory says "Memory"
+// in the language of msgs.
+//
+// Settings › Agents: the heading of Ask Pinky's memory, and the label of
+// the field that writes a note.
+func (msgs Messages) SettingsMemory() string {
+	return Catalog.Format(msgs.locale, "settingsMemory", nil)
+}
+
+// SettingsMemoryAdd says "Add…"
+// in the language the app shows.
+//
+// Settings › Agents › Memory: the button that writes a new note.
+func SettingsMemoryAdd() string { return In(i18n.Locale()).SettingsMemoryAdd() }
+
+// SettingsMemoryAdd says "Add…"
+// in the language of msgs.
+//
+// Settings › Agents › Memory: the button that writes a new note.
+func (msgs Messages) SettingsMemoryAdd() string {
+	return Catalog.Format(msgs.locale, "settingsMemoryAdd", nil)
+}
+
+// SettingsMemoryDelete says "Delete"
+// in the language the app shows.
+//
+// Settings › Agents › Memory: the button that deletes a note.
+func SettingsMemoryDelete() string { return In(i18n.Locale()).SettingsMemoryDelete() }
+
+// SettingsMemoryDelete says "Delete"
+// in the language of msgs.
+//
+// Settings › Agents › Memory: the button that deletes a note.
+func (msgs Messages) SettingsMemoryDelete() string {
+	return Catalog.Format(msgs.locale, "settingsMemoryDelete", nil)
+}
+
+// SettingsMemoryDeleteAll says "Delete All"
+// in the language the app shows.
+//
+// Settings › Agents › Memory: the button that deletes every note, and
+// the confirming button of its dialog.
+func SettingsMemoryDeleteAll() string { return In(i18n.Locale()).SettingsMemoryDeleteAll() }
+
+// SettingsMemoryDeleteAll says "Delete All"
+// in the language of msgs.
+//
+// Settings › Agents › Memory: the button that deletes every note, and
+// the confirming button of its dialog.
+func (msgs Messages) SettingsMemoryDeleteAll() string {
+	return Catalog.Format(msgs.locale, "settingsMemoryDeleteAll", nil)
+}
+
+// SettingsMemoryDeleteAllMessage says "Every note on this computer is deleted. The phones keep theirs."
+// in the language the app shows.
+//
+// Settings › Agents › Memory: the message of the dialog before Delete
+// All.
+func SettingsMemoryDeleteAllMessage() string {
+	return In(i18n.Locale()).SettingsMemoryDeleteAllMessage()
+}
+
+// SettingsMemoryDeleteAllMessage says "Every note on this computer is deleted. The phones keep theirs."
+// in the language of msgs.
+//
+// Settings › Agents › Memory: the message of the dialog before Delete
+// All.
+func (msgs Messages) SettingsMemoryDeleteAllMessage() string {
+	return Catalog.Format(msgs.locale, "settingsMemoryDeleteAllMessage", nil)
+}
+
+// SettingsMemoryDeleteAllTitle says "Delete all of Ask Pinky's memory?"
+// in the language the app shows.
+//
+// Settings › Agents › Memory: the title of the dialog before Delete
+// All.
+func SettingsMemoryDeleteAllTitle() string { return In(i18n.Locale()).SettingsMemoryDeleteAllTitle() }
+
+// SettingsMemoryDeleteAllTitle says "Delete all of Ask Pinky's memory?"
+// in the language of msgs.
+//
+// Settings › Agents › Memory: the title of the dialog before Delete
+// All.
+func (msgs Messages) SettingsMemoryDeleteAllTitle() string {
+	return Catalog.Format(msgs.locale, "settingsMemoryDeleteAllTitle", nil)
+}
+
+// SettingsMemoryEdit says "Edit"
+// in the language the app shows.
+//
+// Settings › Agents › Memory: the button that changes a note's words.
+func SettingsMemoryEdit() string { return In(i18n.Locale()).SettingsMemoryEdit() }
+
+// SettingsMemoryEdit says "Edit"
+// in the language of msgs.
+//
+// Settings › Agents › Memory: the button that changes a note's words.
+func (msgs Messages) SettingsMemoryEdit() string {
+	return Catalog.Format(msgs.locale, "settingsMemoryEdit", nil)
+}
+
+// SettingsMemoryEmpty says "Nothing yet. After a task, Pinky may suggest something to remember; you decide."
+// in the language the app shows.
+//
+// Settings › Agents › Memory: in place of the list while there are no
+// notes.
+func SettingsMemoryEmpty() string { return In(i18n.Locale()).SettingsMemoryEmpty() }
+
+// SettingsMemoryEmpty says "Nothing yet. After a task, Pinky may suggest something to remember; you decide."
+// in the language of msgs.
+//
+// Settings › Agents › Memory: in place of the list while there are no
+// notes.
+func (msgs Messages) SettingsMemoryEmpty() string {
+	return Catalog.Format(msgs.locale, "settingsMemoryEmpty", nil)
+}
+
+// SettingsMemoryIntro says "What Ask Pinky remembers for its tasks on this computer: what you told it, and ways of doing things you said yes to a…"
+// in the language the app shows.
+//
+// Settings › Agents: what Ask Pinky's memory is, under its heading.
+func SettingsMemoryIntro() string { return In(i18n.Locale()).SettingsMemoryIntro() }
+
+// SettingsMemoryIntro says "What Ask Pinky remembers for its tasks on this computer: what you told it, and ways of doing things you said yes to a…"
+// in the language of msgs.
+//
+// Settings › Agents: what Ask Pinky's memory is, under its heading.
+func (msgs Messages) SettingsMemoryIntro() string {
+	return Catalog.Format(msgs.locale, "settingsMemoryIntro", nil)
+}
+
+// SettingsMemoryOn says "Use memory"
+// in the language the app shows.
+//
+// Settings › Agents › Memory: the switch's title.
+func SettingsMemoryOn() string { return In(i18n.Locale()).SettingsMemoryOn() }
+
+// SettingsMemoryOn says "Use memory"
+// in the language of msgs.
+//
+// Settings › Agents › Memory: the switch's title.
+func (msgs Messages) SettingsMemoryOn() string {
+	return Catalog.Format(msgs.locale, "settingsMemoryOn", nil)
+}
+
+// SettingsMemoryOnDesc says "Tasks read these notes and may suggest new ones. Turned off, the notes stay until you delete them."
+// in the language the app shows.
+//
+// Settings › Agents › Memory: the line under settingsMemoryOn.
+func SettingsMemoryOnDesc() string { return In(i18n.Locale()).SettingsMemoryOnDesc() }
+
+// SettingsMemoryOnDesc says "Tasks read these notes and may suggest new ones. Turned off, the notes stay until you delete them."
+// in the language of msgs.
+//
+// Settings › Agents › Memory: the line under settingsMemoryOn.
+func (msgs Messages) SettingsMemoryOnDesc() string {
+	return Catalog.Format(msgs.locale, "settingsMemoryOnDesc", nil)
+}
+
+// SettingsMemoryPlaceholder says "For example: Prefers window seats"
+// in the language the app shows.
+//
+// Settings › Agents › Memory: the placeholder of the field that writes
+// a note.
+func SettingsMemoryPlaceholder() string { return In(i18n.Locale()).SettingsMemoryPlaceholder() }
+
+// SettingsMemoryPlaceholder says "For example: Prefers window seats"
+// in the language of msgs.
+//
+// Settings › Agents › Memory: the placeholder of the field that writes
+// a note.
+func (msgs Messages) SettingsMemoryPlaceholder() string {
+	return Catalog.Format(msgs.locale, "settingsMemoryPlaceholder", nil)
 }
 
 // SettingsNeedsYou says "Needs you"
@@ -24259,6 +26489,44 @@ func SettingsSafetyHideCodesDesc() string { return In(i18n.Locale()).SettingsSaf
 // screen recordings of tasks, which are not covered.
 func (msgs Messages) SettingsSafetyHideCodesDesc() string {
 	return Catalog.Format(msgs.locale, "settingsSafetyHideCodesDesc", nil)
+}
+
+// SettingsSafetyVirtualCredentials says "Allow passwords on virtual phones"
+// in the language the app shows.
+//
+// Settings › Safety: the switch that lets agents type passwords and
+// one-time codes on virtual phones (emulators and Simulators on this
+// computer). Off by default.
+func SettingsSafetyVirtualCredentials() string {
+	return In(i18n.Locale()).SettingsSafetyVirtualCredentials()
+}
+
+// SettingsSafetyVirtualCredentials says "Allow passwords on virtual phones"
+// in the language of msgs.
+//
+// Settings › Safety: the switch that lets agents type passwords and
+// one-time codes on virtual phones (emulators and Simulators on this
+// computer). Off by default.
+func (msgs Messages) SettingsSafetyVirtualCredentials() string {
+	return Catalog.Format(msgs.locale, "settingsSafetyVirtualCredentials", nil)
+}
+
+// SettingsSafetyVirtualCredentialsDesc says "Agents may type passwords and one-time codes on emulators and Simulators on this computer, to test sign-ins with test…"
+// in the language the app shows.
+//
+// Settings › Safety: the line under Allow passwords on virtual phones.
+// Phones means real phones, as opposed to virtual ones.
+func SettingsSafetyVirtualCredentialsDesc() string {
+	return In(i18n.Locale()).SettingsSafetyVirtualCredentialsDesc()
+}
+
+// SettingsSafetyVirtualCredentialsDesc says "Agents may type passwords and one-time codes on emulators and Simulators on this computer, to test sign-ins with test…"
+// in the language of msgs.
+//
+// Settings › Safety: the line under Allow passwords on virtual phones.
+// Phones means real phones, as opposed to virtual ones.
+func (msgs Messages) SettingsSafetyVirtualCredentialsDesc() string {
+	return Catalog.Format(msgs.locale, "settingsSafetyVirtualCredentialsDesc", nil)
 }
 
 // SettingsSafetyIntro says "Pinky checks every action before it reaches the phone. Agents can't change these settings."
@@ -27265,18 +29533,40 @@ func (msgs Messages) UpdateAgoNow() string {
 	return Catalog.Format(msgs.locale, "updateAgoNow", nil)
 }
 
-// UpdateAvailable says "Pinky {version} is available"
+// UpdateAvailableTitle says "New version available"
 // in the language the app shows.
 //
-// The update card's title when a newer version is out.
-func UpdateAvailable(version string) string { return In(i18n.Locale()).UpdateAvailable(version) }
+// The update card's title in the sidebar when a newer version is out; the
+// version shows on the line under it (updateAvailableVersion). Keep it
+// short: the card is about 190 points wide.
+func UpdateAvailableTitle() string { return In(i18n.Locale()).UpdateAvailableTitle() }
 
-// UpdateAvailable says "Pinky {version} is available"
+// UpdateAvailableTitle says "New version available"
 // in the language of msgs.
 //
-// The update card's title when a newer version is out.
-func (msgs Messages) UpdateAvailable(version string) string {
-	return Catalog.Format(msgs.locale, "updateAvailable", map[string]any{"version": version})
+// The update card's title in the sidebar when a newer version is out; the
+// version shows on the line under it (updateAvailableVersion). Keep it
+// short: the card is about 190 points wide.
+func (msgs Messages) UpdateAvailableTitle() string {
+	return Catalog.Format(msgs.locale, "updateAvailableTitle", nil)
+}
+
+// UpdateAvailableVersion says "Pinky {version}"
+// in the language the app shows.
+//
+// The line under the update card's title (updateAvailableTitle): the app's
+// name and the new version.
+func UpdateAvailableVersion(version string) string {
+	return In(i18n.Locale()).UpdateAvailableVersion(version)
+}
+
+// UpdateAvailableVersion says "Pinky {version}"
+// in the language of msgs.
+//
+// The line under the update card's title (updateAvailableTitle): the app's
+// name and the new version.
+func (msgs Messages) UpdateAvailableVersion(version string) string {
+	return Catalog.Format(msgs.locale, "updateAvailableVersion", map[string]any{"version": version})
 }
 
 // UpdateBusyControl says "you control {phone}"

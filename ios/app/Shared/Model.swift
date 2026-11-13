@@ -10,6 +10,10 @@ struct CoreReply: Decodable {
     var reason: String?
     var history: [PastTask]?
     var more: Bool?
+    /// steer: the new message's id.
+    var id: String?
+    /// The notes' commands answer with the notes as they are now.
+    var memories: [Memory]?
 }
 
 /// What Pinky's screens show (internal/standalone.State).
@@ -40,6 +44,13 @@ struct DeviceState: Decodable, Equatable {
 struct AgentState: Decodable, Equatable {
     var task: String
     var model: String
+    /// The service the task's model is at; continue needs its key.
+    var provider: String?
+    /// The task's model service, the name its key is saved under
+    /// (pilot.KeyName) and whether it needs one: the key continue sends.
+    var service: String?
+    var key_name: String?
+    var key_optional: Bool?
     var running: Bool
     var end: String?
     var summary: String?
@@ -55,6 +66,46 @@ struct AgentState: Decodable, Equatable {
     var max_minutes: Int?
     var max_cost: Double?
     var token_limit: Int?
+    /// The person's messages the model has not read yet, oldest first:
+    /// while the task runs they can still be edited or withdrawn; once it
+    /// ended they wait for continue.
+    var pending: [PendingMessage]?
+    /// The task that ended can go on (continue), and how often it did.
+    var continuable: Bool?
+    var continues: Int?
+    /// Notes the task suggested, for the person to keep or drop.
+    var suggested: [Suggestion]?
+}
+
+/// A message of the person's to Pinky that the model has not read yet
+/// (standalone.Message).
+struct PendingMessage: Decodable, Equatable, Identifiable {
+    var id: String
+    var text: String
+    var ms: Int64
+}
+
+/// A note Pinky keeps on this iPhone, never shared with a computer or
+/// another phone (standalone.MemoryState).
+struct Memory: Decodable, Equatable, Identifiable {
+    var id: String
+    /// said: the person's own; learned: how to do something in an app.
+    var kind: String
+    var text: String
+    var app: String?
+
+    // pilot.MaxMemories and pilot.MaxMemoryChars.
+    static let most = 50
+    static let maxChars = 200
+}
+
+/// A note a task suggested, until the person decides (standalone.SuggestionState).
+struct Suggestion: Decodable, Equatable, Hashable {
+    var kind: String
+    var text: String
+    var app: String?
+    var kept: Bool?
+    var dropped: Bool?
 }
 
 struct TaskState: Decodable, Equatable {

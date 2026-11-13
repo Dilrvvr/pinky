@@ -20,6 +20,9 @@ final class AppModel: ObservableObject {
     @Published var problem: String?
     /// The five latest tasks that ended, for the task screen's Activity.
     @Published private(set) var recent: [PastTask] = []
+    /// What the model used in the last 30 days, newest first, as the core
+    /// last said (pilot.UsageRow).
+    @Published private(set) var usage: [UsageRow] = []
     @Published private(set) var paired = Pairing.load() != nil
     /// Pairing from this iPhone itself (iOS 27), while it runs.
     @Published private(set) var pairStep = PhonePairing.Step.idle
@@ -272,27 +275,29 @@ final class AppModel: ObservableObject {
         #if DEBUG
         if demo { return Demo.reply(req) }
         #endif
-        let data = try! JSONSerialization.data(withJSONObject: req)
-        let out: Data
-        if inApp {
-            out = await Task.detached { PinkyCore.call(data: data) }.value
-        } else {
-            #if NO_TUNNEL
-            out = Data()
-            #else
-            guard vpn == .on, let session = manager?.connection as? NETunnelProviderSession else {
-                return CoreReply(ok: false, error: L.reason("vpn_off"), code: "no_device")
-            }
-            out = await withCheckedContinuation { cont in
-                do {
-                    try session.sendProviderMessage(data) { cont.resume(returning: $0 ?? Data()) }
-                } catch {
-                    cont.resume(returning: Data())
-                }
-            }
-            #endif
-        }
+        guard let out = await send(req) else { return CoreReply(ok: false, error: L.reason("vpn_off"), code: "no_device") }
         return (try? JSONDecoder().decode(CoreReply.self, from: out)) ?? CoreReply(ok: false, error: "no reply from Pinky's core")
+    }
+
+    /// A request's answer as the core wrote it; nil when the VPN that
+    /// holds the core is off.
+    private func send(_ req: [String: Any]) async -> Data? {
+        let data = try! JSONSerialization.data(withJSONObject: req)
+        if inApp {
+            return await Task.detached { PinkyCore.call(data: data) }.value
+        }
+        #if NO_TUNNEL
+        return Data()
+        #else
+        guard vpn == .on, let session = manager?.connection as? NETunnelProviderSession else { return nil }
+        return await withCheckedContinuation { cont in
+            do {
+                try session.sendProviderMessage(data) { cont.resume(returning: $0 ?? Data()) }
+            } catch {
+                cont.resume(returning: Data())
+            }
+        }
+        #endif
     }
 
     // MARK: State
@@ -321,7 +326,12 @@ final class AppModel: ObservableObject {
         self.reason = reason
         keepAlive(isBusy)
         updateActivity(st)
-        if was == nil || (was?.agent?.running == true && st.agent?.running != true) { Task { await loadRecent() } }
+        if was == nil || (was?.agent?.running == true && st.agent?.running != true) {
+            Task {
+                await loadRecent()
+                await loadUsage()
+            }
+        }
         #if DEBUG
         debugRun(st)
         #endif
@@ -329,9 +339,10 @@ final class AppModel: ObservableObject {
 
     #if DEBUG
     /// A debug build starts a task from launch arguments once the phone is
-    /// ready (README.md): -pinkyTask, and -provider, -model and -baseURL,
-    /// which override the settings for this run only; the key comes in the
-    /// launch environment (PINKY_MODEL_KEY) and stays in memory.
+    /// ready (README.md): -pinkyTask, and -service (or -provider), -model
+    /// and -baseURL, which override the settings for this run only
+    /// (TaskSettings); the key comes in the launch environment
+    /// (PINKY_MODEL_KEY) and stays in memory.
     private var debugTask = UserDefaults.standard.string(forKey: "pinkyTask")
 
     private func debugRun(_ st: CoreState) {
@@ -383,22 +394,87 @@ final class AppModel: ObservableObject {
 
     // MARK: Tasks
 
-    func startTask(_ text: String, key: String? = nil) async {
+    /// Starts a task; `shared` is text or a link to go with it (a
+    /// shortcut's, NewTaskIntent).
+    func startTask(_ text: String, shared: String = "", key: String? = nil) async {
         problem = nil
-        let provider = TaskSettings.provider
-        let key = key ?? Keychain.get(Keychain.keyAccount(provider)) ?? ""
+        let key = key ?? TaskSettings.key(TaskSettings.service) ?? ""
         // iOS starts a Live Activity only for the app in front, and the core
         // takes Pinky off the screen before the agent's first step.
         startActivity(text)
-        let r = await call([
-            "cmd": "start", "task": text, "key": key, "provider": provider,
-            "model": TaskSettings.model, "base_url": TaskSettings.baseURL,
-            "max_steps": TaskSettings.maxSteps, "max_minutes": TaskSettings.maxMinutes, "max_cost": TaskSettings.maxCost,
-        ])
+        var req = TaskSettings.request
+        req["cmd"] = "start"
+        req["task"] = text
+        req["key"] = key
+        req["max_steps"] = TaskSettings.maxSteps
+        req["max_minutes"] = TaskSettings.maxMinutes
+        req["max_cost"] = TaskSettings.maxCost
+        if !shared.isEmpty { req["shared"] = shared }
+        let r = await call(req)
         if !r.ok {
             endActivities(nil)
             problem = L.refused(r.code, r.error)
         }
+    }
+
+    /// What became of a message to Pinky, for the task screen.
+    enum Sent: Equatable {
+        case ok
+        /// The task ended meanwhile: the text belongs in Continue.
+        case ended
+        /// The model read it already: it can no longer change.
+        case read
+        /// Withdrawn already.
+        case gone
+        /// In words, for the screen.
+        case failed(String)
+    }
+
+    /// Sends the person's message to the running task: the model reads it
+    /// at its next step.
+    func steer(_ text: String) async -> Sent {
+        sent(await call(["cmd": "steer", "text": text]))
+    }
+
+    /// Changes a message the model has not read yet; empty text withdraws it.
+    func editMessage(_ id: String, _ text: String) async -> Sent {
+        sent(await call(["cmd": "steer", "id": id, "text": text]))
+    }
+
+    func withdraw(_ id: String) async -> Sent {
+        sent(await call(["cmd": "withdraw", "id": id]))
+    }
+
+    private func sent(_ r: CoreReply) -> Sent {
+        if r.ok { return .ok }
+        switch r.code {
+        case "not_running": return .ended
+        case "read": return .read
+        case "no_message": return .gone
+        default: return .failed(L.notSent(r.error))
+        }
+    }
+
+    /// Continues the task that ended with the person's new message (empty
+    /// sends the messages left unread); its limits count anew. The key goes
+    /// with it as with start. nil when the core took it, else why not.
+    func continueTask(_ text: String) async -> String? {
+        problem = nil
+        // The key of the service the task runs on, which Settings may have
+        // changed since.
+        // A core of before names only the API, the name keys had then.
+        let a = state?.agent
+        let name = a?.key_name ?? a?.provider ?? TaskSettings.service.keyName
+        var key = Keychain.get(Keychain.keyAccount(name)) ?? ""
+        #if DEBUG
+        // A task a debug build started from launch arguments has its key there.
+        if key.isEmpty { key = ProcessInfo.processInfo.environment["PINKY_MODEL_KEY"] ?? "" }
+        #endif
+        startActivity(state?.agent?.task ?? text)
+        let r = await call(["cmd": "continue", "text": text, "key": key])
+        if r.ok { return nil }
+        endActivities(nil)
+        return L.continueRefused(r.code, r.error)
     }
 
     func stop() async {
@@ -428,6 +504,75 @@ final class AppModel: ObservableObject {
     func setPreset(_ p: Preset) async {
         let r = await call(["cmd": "preset", "preset": p.rawValue])
         if !r.ok { problem = L.refused(r.code, r.error) }
+    }
+
+    // MARK: The model
+
+    /// What a check came to: the model's answer, or why the core could
+    /// not check (the VPN is off, say).
+    enum CheckOutcome: Equatable { case result(CheckResult), failed(String) }
+
+    private struct CheckReply: Decodable {
+        var ok: Bool
+        var error: String?
+        var code: String?
+        var check: CheckResult?
+    }
+
+    private struct UsageReply: Decodable {
+        var ok: Bool
+        var usage: [UsageRow]?
+    }
+
+    /// Checks the model of the settings with one tiny request
+    /// (pilot.Check), with the service's key; the core does not keep it.
+    /// Takes up to a minute.
+    func check() async -> CheckOutcome {
+        var req = TaskSettings.request
+        req["cmd"] = "check"
+        req["key"] = TaskSettings.key(TaskSettings.service) ?? ""
+        #if DEBUG
+        if demo {
+            try? await Task.sleep(for: .seconds(1))
+            return .result(CheckResult(ok: true, ms: 1240))
+        }
+        #endif
+        guard let out = await send(req) else { return .failed(L.reason("vpn_off")) }
+        guard let r = try? JSONDecoder().decode(CheckReply.self, from: out) else { return .failed("no reply from Pinky's core") }
+        if r.ok, let c = r.check { return .result(c) }
+        return .failed(L.refused(r.code, r.error))
+    }
+
+    /// Reads what the model used in the last 30 days.
+    func loadUsage() async {
+        #if DEBUG
+        if demo {
+            usage = Demo.usage
+            return
+        }
+        #endif
+        guard let out = await send(["cmd": "usage", "since": UsageRow.day(back: 29)]),
+              let r = try? JSONDecoder().decode(UsageReply.self, from: out), r.ok
+        else { return }
+        usage = r.usage ?? []
+    }
+
+    // MARK: Memory
+
+    /// A notes command: the notes after it, or why the core said no.
+    func memory(_ req: [String: Any]) async -> Result<[Memory], MemoryRefusal> {
+        let r = await call(req)
+        if r.ok { return .success(r.memories ?? []) }
+        return .failure(MemoryRefusal(code: r.code))
+    }
+
+    struct MemoryRefusal: Error { var code: String? }
+
+    /// Keeps or drops the note the task suggested at index i; nil when it
+    /// went through, else why not.
+    func decideNote(_ i: Int, keep: Bool) async -> String? {
+        let r = await call(["cmd": keep ? "keep" : "drop", "index": i])
+        return r.ok ? nil : L.memoryError(r.code)
     }
 
     // MARK: Activity

@@ -356,7 +356,7 @@ always_allow:
 - Read-only mode, per device or for everything.
 - A per-task app allow-list (M1), such as "this task may only use Dinely"; typing into any other app is Ask.
 - Emergency stop: a global shortcut (Option-Command-Period on macOS, Ctrl+Alt+Period elsewhere) and Stop all in the menu bar. It ends every lease and cancels every pending action.
-- Credentials never reach the model. The gateway refuses `phone_type` into password and one-time-code fields (`blocked_by_policy`, rule: credentials) and tells the agent to call `phone_handoff` (M1). From M2 the client can fill the value from the OS keychain, and the agent only learns that it was filled.
+- Credentials never reach the model. The gateway refuses `phone_type` into password and one-time-code fields (`blocked_by_policy`, rule: credentials) and tells the agent to call `phone_handoff` (M1). The person may lift this for virtual phones only (Settings › Safety › Allow passwords on virtual phones, off by default), to test sign-ins with test accounts. From M2 the client can fill the value from the OS keychain, and the agent only learns that it was filled.
 - Notifications from blocked apps are never listed, matched by the app's id or name. Where another screen shows a blocked app (its notification in the shade, on the lock screen or as a heads-up banner, its card in recent apps), the agent gets one hidden element in its place, covered in screenshots. One-time codes are masked by default, on the screen (elements and OCR lines) and in notifications, and covered in the screenshots agents get and history keeps; recordings are not covered, so an agent gets one only when the person allows it on a card each time it exports a task's report.
 - `phone_files` reaches only the phone's `Pinky/` folder. Writing to the phone is Ask, and read-only mode turns it off.
 - `phone_app` installs only from the phone's folder on the computer, and installing and uninstalling ask, whatever the preset; Allow for this task covers the same app from the same signer, and for installs Always allow does too, for one agent on one phone (above). Uninstalling has no Always allow. It never touches Pinky's own apps, system apps, finance apps, password managers or blocked apps ([notes/apps.md](notes/apps.md)).
@@ -531,6 +531,7 @@ Pinky is Go end to end, with Kotlin only inside the Android companion; every dep
 | --- | --- | --- | --- |
 | Language | Go 1.27 | BSD-3-Clause | One language for gateway, drivers and UI; cross-compiles without cgo |
 | Desktop UI | [MyGo](https://github.com/egoist/mygo) native UI | MIT | Light, native, cgo-free; tray, panels and updates built in |
+| Icons | [MingCute](https://github.com/Richard9394/MingCute), the free set and a few of MingCute Icons System Pro, bundled in `ui/icons/mingcute` | Apache-2.0; Pro under the owner's purchased license | One family of line and filled icons on a 24 grid |
 | MCP | [MCP Go SDK](https://github.com/modelcontextprotocol/go-sdk) | Apache-2.0 (older parts MIT) | Official SDK, version 1.8 |
 | Android transport | adb server protocol (own code) and `adb` | Apache-2.0 | Shares the SDK's adb server with Android Studio |
 | Android screen and input | [scrcpy](https://github.com/Genymobile/scrcpy) server, one pinned version | Apache-2.0 | Fast H.264 stream, control channel, virtual displays |

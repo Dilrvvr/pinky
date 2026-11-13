@@ -5,7 +5,9 @@ import Foundation
 /// no packet tunnel and so never gets a core of its own: a debug build
 /// launched with -pinkyDemo <scenario> shows that scenario and talks to no
 /// core (ios/README.md). Scenarios: setup (unpaired), model (the last setup
-/// step), ready, running, asks, ended, computer.
+/// step), ready, running, asks, ended, computer, steer (running, with a
+/// message the model read and one it has not), continue (stopped at a
+/// limit with a message left unread, so it can go on).
 enum Demo {
     static let scenario = UserDefaults.standard.string(forKey: "pinkyDemo")
 
@@ -35,10 +37,25 @@ enum Demo {
         var agent = AgentState(task: task, model: "claude-opus-5-5", running: true, end: nil, summary: nil,
                                steps: 5, cost: 0.06, tokens: 41_000, seconds: 23, priced: true,
                                max_steps: 100, max_minutes: 20, max_cost: 2, token_limit: 0)
+        let said = Step(text: w("You said: “Use the calculator's history too”", "You said: “也看看计算器的历史记录”"),
+                        status: "settled", ms: 0)
+        let unread = PendingMessage(id: "m2", text: w("Then copy the result", "然后把结果复制下来"), ms: now - 5000)
         switch s {
         case "running":
             st.agent = agent
             st.task = TaskState(title: task, state: "working", steps: steps)
+        case "steer":
+            agent.pending = [unread]
+            st.agent = agent
+            st.task = TaskState(title: task, state: "working", steps: Array(steps.prefix(2)) + [said] + steps.dropFirst(2))
+        case "continue":
+            agent.running = false
+            agent.end = "steps"
+            agent.max_steps = 5
+            agent.pending = [unread]
+            agent.continuable = true
+            st.agent = agent
+            st.task = TaskState(title: task, state: "stopped", steps: Array(steps.prefix(2)) + [said] + steps.dropFirst(2))
         case "asks":
             let pay = w("Send the message to Mom", "给妈妈发送这条消息")
             agent.task = w("Tell Mom I'll be home by seven", "告诉妈妈我七点前到家")
@@ -60,6 +77,9 @@ enum Demo {
             agent.steps = 6
             agent.seconds = 31
             agent.summary = w("128 × 46 = 5,888. Calculator shows the result.", "128 × 46 = 5888，计算器上显示了结果。")
+            agent.suggested = [
+                Suggestion(kind: "learned", text: w("Clear with AC before a new sum", "新算式前先按 AC 清零"), app: w("Calculator", "计算器")),
+            ]
             st.agent = agent
             st.task = TaskState(title: task, state: "done", steps: steps)
         case "computer":
@@ -86,9 +106,32 @@ enum Demo {
             let limit = req["limit"] as? Int ?? 20
             let list = history.filter { before == 0 || $0.started_ms < before }
             return CoreReply(ok: true, history: Array(list.prefix(limit)), more: list.count > limit)
+        case "steer" where req["id"] == nil:
+            // The canned state does not change: the message shows nowhere.
+            return CoreReply(ok: true, id: "demo-m")
+        case "memories":
+            return CoreReply(ok: true, memories: [
+                Memory(id: "1", kind: "said", text: w("Prefers window seats", "喜欢靠窗的座位")),
+                Memory(id: "2", kind: "learned", text: w("Orders are under 「我的」, then 「全部订单」", "订单在「我的」›「全部订单」"), app: w("Meituan", "美团")),
+            ])
         default:
             return CoreReply(ok: true)
         }
+    }
+
+    /// What the model used: today, yesterday and five days ago.
+    static var usage: [UsageRow] {
+        guard hasKey else { return [] }
+        return [
+            UsageRow(day: UsageRow.day(back: 0), service: "anthropic", model: "claude-opus-5-5", requests: 9,
+                     input: 36_500, output: 1_900, cache_read: 2_600, cost: 0.2153),
+            UsageRow(day: UsageRow.day(back: 1), service: "anthropic", model: "claude-opus-5-5", requests: 14,
+                     input: 58_200, output: 3_100, cost: 0.3685),
+            UsageRow(day: UsageRow.day(back: 1), service: "deepseek", model: "deepseek-flash", requests: 6,
+                     input: 22_400, output: 900, cost: 0.0068),
+            UsageRow(day: UsageRow.day(back: 5), service: "ollama", model: "qwen3-vl", requests: 3,
+                     input: 9_800, output: 400, unpriced: 10_200),
+        ]
     }
 
     private static var history: [PastTask] {

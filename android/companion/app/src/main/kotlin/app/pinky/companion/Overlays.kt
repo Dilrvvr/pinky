@@ -35,7 +35,11 @@ import java.io.Closeable
  * screen; and the views are accessibilityDataSensitive, so on Android 15
  * and later they also drop touches an accessibility service injects.
  */
-class Overlays(private val service: PinkyAccessibilityService) {
+class Overlays(
+    private val service: PinkyAccessibilityService,
+    // Gets each state too, on the subscription's thread (ScheduleNotices).
+    private val onState: (JSONObject) -> Unit = {},
+) {
 
     private val wm = service.getSystemService(WindowManager::class.java)
     private val main = Handler(Looper.getMainLooper())
@@ -54,6 +58,17 @@ class Overlays(private val service: PinkyAccessibilityService) {
     private var ownScreen = false
     private val checkOwnScreen = Runnable { updateOwnScreen() }
 
+    // A task on the background screen shows in its floating window.
+    private val agentWindow = AgentWindow(service, this) { reportRects() }
+
+    // While the background screen is on, the port Wireless debugging
+    // listens on, which the core needs and which changes each time it is
+    // turned on (AdbServices). -1 while discovery has said nothing yet.
+    private var adb: AdbServices? = null
+    private var foundPort = -1
+    private var corePort = 0
+    private val noPort = Runnable { if (foundPort < 0) tellPort(0) }
+
     /** What the pill is about, and so which button it has. */
     private enum class Pill {
         TASK, // the task runs: Stop
@@ -69,7 +84,10 @@ class Overlays(private val service: PinkyAccessibilityService) {
     }
 
     fun start() {
-        sub = CoreClient.subscribe({ st -> main.post { render(st) } }, { main.post { render(JSONObject()) } })
+        sub = CoreClient.subscribe(service, { st ->
+            onState(st)
+            main.post { render(st) }
+        }, { main.post { render(JSONObject()) } })
     }
 
     /** Windows came, went or changed: the service calls it for their events. */
@@ -111,6 +129,8 @@ class Overlays(private val service: PinkyAccessibilityService) {
         sub?.close()
         sub = null
         main.post {
+            stopLooking()
+            agentWindow.close()
             remove(pill)
             remove(card)
             pill = null
@@ -160,6 +180,49 @@ class Overlays(private val service: PinkyAccessibilityService) {
             }
         }
         if (need != null) showCard(need) else hideCard()
+        val task = st.optJSONObject("task")
+        agentWindow.update(
+            st.optBoolean("background") && agent?.optBoolean("running") == true,
+            task?.optString("id")?.ifEmpty { null } ?: agent?.optString("task"),
+            task?.optString("state") == "paused",
+        )
+        followShell(st.optJSONObject("shell"))
+    }
+
+    // Wireless debugging's port, for the background screen.
+
+    private fun followShell(shell: JSONObject?) {
+        if (shell?.optBoolean("on") != true) {
+            stopLooking()
+            return
+        }
+        corePort = shell.optInt("port")
+        if (adb?.running == true) return
+        adb?.stop()
+        foundPort = -1
+        adb = AdbServices(service, AdbServices.CONNECT) { p ->
+            foundPort = p
+            tellPort(p)
+        }.also { it.start() }
+        // Not found in a while: Wireless debugging is off, whatever port
+        // the core had from before.
+        main.removeCallbacks(noPort)
+        main.postDelayed(noPort, NO_PORT_MS)
+    }
+
+    private fun stopLooking() {
+        main.removeCallbacks(noPort)
+        adb?.stop()
+        adb = null
+        foundPort = -1
+    }
+
+    private fun tellPort(p: Int) {
+        if (p == corePort || adb == null) return
+        corePort = p
+        CoreClient.send(CoreClient.cmd("shell", "op" to "port", "port" to p)) { err ->
+            if (err != null) Log.w(TAG, "could not give the core the port", err)
+        }
     }
 
     private fun endKey(agent: JSONObject) = agent.optString("task") + agent.optLong("seconds")
@@ -262,8 +325,8 @@ class Overlays(private val service: PinkyAccessibilityService) {
             val width = service.resources.displayMetrics.widthPixels - px(24)
             add(it, Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL, width, bottomInset() + px(12))
         }
-        w.text.text = need.optString("title")
-        val detail = listOf(need.optString("detail"), need.optString("app"), need.optString("rule").let {
+        w.text.text = Words.shown(need, "title")
+        val detail = listOf(Words.shown(need, "detail"), need.optString("app"), Words.shown(need, "rule").let {
             if (it.isEmpty()) "" else service.getString(R.string.phone_rule, it)
         }).filter { it.isNotEmpty() }.joinToString(" · ")
         w.extra?.text = detail
@@ -424,8 +487,7 @@ class Overlays(private val service: PinkyAccessibilityService) {
     /** Tells OwnUI where Pinky's controls are, so gestures on them are refused. */
     private fun reportRects() {
         val rects = ArrayList<Rect>()
-        for (w in listOfNotNull(pill, card)) {
-            val v = w.root
+        for (v in listOfNotNull(pill?.root, card?.root, agentWindow.view)) {
             if (!v.isAttachedToWindow || v.width == 0 || v.visibility != View.VISIBLE) continue
             val loc = IntArray(2)
             v.getLocationOnScreen(loc)
@@ -445,7 +507,7 @@ class Overlays(private val service: PinkyAccessibilityService) {
 
     // Views.
 
-    private fun button(
+    fun button(
         text: String,
         primary: Boolean = false,
         danger: Boolean = false,
@@ -492,7 +554,7 @@ class Overlays(private val service: PinkyAccessibilityService) {
      * and later. Touches that come through another app's window are
      * dropped too.
      */
-    private fun sensitive(v: View) {
+    fun sensitive(v: View) {
         v.filterTouchesWhenObscured = true
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             v.setAccessibilityDataSensitive(View.ACCESSIBILITY_DATA_SENSITIVE_YES)
@@ -500,14 +562,14 @@ class Overlays(private val service: PinkyAccessibilityService) {
         if (v is ViewGroup) for (i in 0 until v.childCount) sensitive(v.getChildAt(i))
     }
 
-    private fun rounded(color: Int, radiusDp: Float) = GradientDrawable().apply {
+    fun rounded(color: Int, radiusDp: Float) = GradientDrawable().apply {
         setColor(color)
         cornerRadius = radiusDp * dp
     }
 
-    private fun px(d: Int) = (d * dp).toInt()
+    fun px(d: Int) = (d * dp).toInt()
 
-    private fun topInset(): Int = dimen("status_bar_height")
+    fun topInset(): Int = dimen("status_bar_height")
 
     private fun bottomInset(): Int = dimen("navigation_bar_height")
 
@@ -519,10 +581,11 @@ class Overlays(private val service: PinkyAccessibilityService) {
     companion object {
         private const val TAG = "PinkyOverlays"
         private const val ENDED_SHOWN_MS = 8_000L
-        private val SURFACE = Color.rgb(28, 28, 30)
+        private const val NO_PORT_MS = 5_000L
+        val SURFACE = Color.rgb(28, 28, 30)
         private val BUTTON = Color.argb(255, 58, 58, 62)
-        private val MUTED = Color.argb(255, 174, 174, 178)
-        private val ACCENT = Color.rgb(255, 196, 0)
+        val MUTED = Color.argb(255, 174, 174, 178)
+        val ACCENT = Color.rgb(255, 196, 0)
         private val DANGER = Color.rgb(255, 105, 97)
     }
 }
