@@ -33186,3 +33186,73 @@ func WiFiUseAgain() string { return In(i18n.Locale()).WiFiUseAgain() }
 func (msgs Messages) WiFiUseAgain() string {
 	return Catalog.Format(msgs.locale, "wiFiUseAgain", nil)
 }
+
+// PhoneOpenWindow says "Open in a window"
+// in the language the app shows.
+//
+// Item of a phone's ⋯ menu under its mirror and of its right-click menu
+// in the sidebar: opens a window that shows only the phone's live screen
+// and its keys, to use the phone from there. Opened again, the window comes
+// to the front.
+func PhoneOpenWindow() string { return In(i18n.Locale()).PhoneOpenWindow() }
+
+// PhoneOpenWindow says "Open in a window"
+// in the language of msgs.
+//
+// Item of a phone's ⋯ menu under its mirror and of its right-click menu
+// in the sidebar: opens a window that shows only the phone's live screen
+// and its keys, to use the phone from there. Opened again, the window comes
+// to the front.
+func (msgs Messages) PhoneOpenWindow() string {
+	return Catalog.Format(msgs.locale, "phoneOpenWindow", nil)
+}
+
+// PhoneWindowOnTop says "Keep on top"
+// in the language the app shows.
+//
+// Tooltip and label of the pin button in a phone's own window: keeps the
+// window above other apps' windows.
+func PhoneWindowOnTop() string { return In(i18n.Locale()).PhoneWindowOnTop() }
+
+// PhoneWindowOnTop says "Keep on top"
+// in the language of msgs.
+//
+// Tooltip and label of the pin button in a phone's own window: keeps the
+// window above other apps' windows.
+func (msgs Messages) PhoneWindowOnTop() string {
+	return Catalog.Format(msgs.locale, "phoneWindowOnTop", nil)
+}
+
+// PhoneWindowOnTopOff says "Stop keeping on top"
+// in the language the app shows.
+//
+// The same button while the window stays on top: lets it go behind other
+// apps' windows again.
+func PhoneWindowOnTopOff() string { return In(i18n.Locale()).PhoneWindowOnTopOff() }
+
+// PhoneWindowOnTopOff says "Stop keeping on top"
+// in the language of msgs.
+//
+// The same button while the window stays on top: lets it go behind other
+// apps' windows again.
+func (msgs Messages) PhoneWindowOnTopOff() string {
+	return Catalog.Format(msgs.locale, "phoneWindowOnTopOff", nil)
+}
+
+// PhoneWindowShowInPinky says "Show in Pinky"
+// in the language the app shows.
+//
+// Button in a phone's own window while the phone shows no live screen
+// (offline, paused, connecting, waiting for a step): opens the phone's page
+// in Pinky's main window.
+func PhoneWindowShowInPinky() string { return In(i18n.Locale()).PhoneWindowShowInPinky() }
+
+// PhoneWindowShowInPinky says "Show in Pinky"
+// in the language of msgs.
+//
+// Button in a phone's own window while the phone shows no live screen
+// (offline, paused, connecting, waiting for a step): opens the phone's page
+// in Pinky's main window.
+func (msgs Messages) PhoneWindowShowInPinky() string {
+	return Catalog.Format(msgs.locale, "phoneWindowShowInPinky", nil)
+}

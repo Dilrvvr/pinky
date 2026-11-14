@@ -439,6 +439,11 @@ type app struct {
 	// changes between the person's gestures on the mirror (phone.go).
 	control map[string]controlText
 
+	// phoneWins are the phones' own windows, by phone, and winTop the
+	// phones whose window stays on top of other apps' (phonewindow.go).
+	phoneWins map[string]*phoneWin
+	winTop    map[string]bool
+
 	quitting  bool
 	focused   bool // the main window has the keyboard
 	shortcut  string
@@ -549,6 +554,7 @@ func newApp(api gateway.API, opt Options) *app {
 	a.bg = bgState{on: map[string]bool{}, busy: map[string]bool{}, phone: map[string]string{}}
 	a.rec = recState{views: map[string]*recEntry{}}
 	a.control = map[string]controlText{}
+	a.phoneWins, a.winTop = map[string]*phoneWin{}, map[string]bool{}
 	if opt.Settings != nil {
 		a.settings = opt.Settings.clone()
 	} else {
@@ -689,6 +695,11 @@ func (a *app) post(fn func()) {
 func (a *app) invalidate() {
 	for _, w := range []*mygo.Window{a.panel, a.flyout, a.viewer} {
 		if w != nil && !w.IsDestroyed() {
+			w.Invalidate()
+		}
+	}
+	for _, pw := range a.phoneWins {
+		if w := pw.win; w != nil && !w.IsDestroyed() {
 			w.Invalidate()
 		}
 	}

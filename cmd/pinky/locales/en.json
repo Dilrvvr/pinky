@@ -12077,5 +12077,21 @@
   "wiFiUseAgain": "Use Wi-Fi again",
   "@wiFiUseAgain": {
     "description": "The same, for a phone whose Wi-Fi connection stopped when it restarted, now plugged in again: moves it to Wi-Fi at once."
+  },
+  "phoneOpenWindow": "Open in a window",
+  "@phoneOpenWindow": {
+    "description": "Item of a phone's ⋯ menu under its mirror and of its right-click menu in the sidebar: opens a window that shows only the phone's live screen and its keys, to use the phone from there. Opened again, the window comes to the front."
+  },
+  "phoneWindowOnTop": "Keep on top",
+  "@phoneWindowOnTop": {
+    "description": "Tooltip and label of the pin button in a phone's own window: keeps the window above other apps' windows."
+  },
+  "phoneWindowOnTopOff": "Stop keeping on top",
+  "@phoneWindowOnTopOff": {
+    "description": "The same button while the window stays on top: lets it go behind other apps' windows again."
+  },
+  "phoneWindowShowInPinky": "Show in Pinky",
+  "@phoneWindowShowInPinky": {
+    "description": "Button in a phone's own window while the phone shows no live screen (offline, paused, connecting, waiting for a step): opens the phone's page in Pinky's main window."
   }
 }
