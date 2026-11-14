@@ -2,6 +2,10 @@
 
 Pinky 每个版本给用户带来了哪些变化，最新的在最前面。版本号是发布当天的日期（Asia/Shanghai 时区）加上当天的序号：2026.1107.2 是 2026 年 11 月 7 日的第二个版本。还没发布的说明先放在“Unreleased”下面，由下一个版本带走。英文版见 [CHANGELOG.md](CHANGELOG.md)；发布流程见 [docs/RELEASING.md](docs/RELEASING.md)。
 
+## Unreleased
+
+- 现在可以在「活动」里删除单个任务：在「更多操作」菜单中选择「删除」，这个任务的步骤、审批、截图和录屏会从这台电脑上移除。正在运行的任务要等结束后才能删除。
+
 ## 2026.1114.2 (2026-11-14)
 
 - 「交给 Pinky」现在可以使用 OpenAI 的 GPT-6 系列模型，比如 GPT-6.1 Terra。这些模型只能通过 OpenAI 的 Responses API 调用工具；其他兼容 OpenAI 的服务遇到需要它的模型时，也会自动改用。
