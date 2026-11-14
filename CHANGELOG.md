@@ -2,7 +2,7 @@
 
 What changed for people in each release of Pinky, newest first. A version is the release's date in Asia/Shanghai and that day's count: 2026.1107.2 is the second release of 7 November 2026. Notes wait under "Unreleased" until the next release takes them; see [docs/RELEASING.md](docs/RELEASING.md).
 
-## Unreleased
+## 2026.1114.5 (2026-11-14)
 
 - A phone can now have a window of its own: choose Open in a window in its ⋯ menu or right-click menu. The window shows only the phone's live screen and keys and works like the phone's page: a click takes over and Hand back gives it back. It keeps the screen's shape as you resize it and can stay on top of other windows.
 
