@@ -103,6 +103,9 @@ type (
 	recordingSetter interface {
 		SetRecording(on bool)
 	}
+	recordingSizeSetter interface {
+		SetSmallerRecordings(on bool)
+	}
 	retentionSetter interface {
 		SetRetention(days int)
 	}

@@ -25365,6 +25365,72 @@ func (msgs Messages) SettingsPrivacyRecordDesc() string {
 	return Catalog.Format(msgs.locale, "settingsPrivacyRecordDesc", nil)
 }
 
+// SettingsPrivacyRecordOriginal says "Original"
+// in the language the app shows.
+//
+// Settings › Privacy › Recording size: the choice that keeps recordings
+// as the phone sent its screen, at full size and quality.
+func SettingsPrivacyRecordOriginal() string { return In(i18n.Locale()).SettingsPrivacyRecordOriginal() }
+
+// SettingsPrivacyRecordOriginal says "Original"
+// in the language of msgs.
+//
+// Settings › Privacy › Recording size: the choice that keeps recordings
+// as the phone sent its screen, at full size and quality.
+func (msgs Messages) SettingsPrivacyRecordOriginal() string {
+	return Catalog.Format(msgs.locale, "settingsPrivacyRecordOriginal", nil)
+}
+
+// SettingsPrivacyRecordSize says "Recording size"
+// in the language the app shows.
+//
+// Settings › Privacy: the row that chooses how big task recordings are,
+// shown under Record the screen during tasks while that is on; before a
+// select of Smaller or Original; also the select's accessibility label.
+func SettingsPrivacyRecordSize() string { return In(i18n.Locale()).SettingsPrivacyRecordSize() }
+
+// SettingsPrivacyRecordSize says "Recording size"
+// in the language of msgs.
+//
+// Settings › Privacy: the row that chooses how big task recordings are,
+// shown under Record the screen during tasks while that is on; before a
+// select of Smaller or Original; also the select's accessibility label.
+func (msgs Messages) SettingsPrivacyRecordSize() string {
+	return Catalog.Format(msgs.locale, "settingsPrivacyRecordSize", nil)
+}
+
+// SettingsPrivacyRecordSizeDesc says "Smaller recordings take a fraction of the space, and the text of every step stays readable. Pinky makes them when a t…"
+// in the language the app shows.
+//
+// Settings › Privacy: the line under Recording size. Smaller and Original
+// are the choices of its select.
+func SettingsPrivacyRecordSizeDesc() string { return In(i18n.Locale()).SettingsPrivacyRecordSizeDesc() }
+
+// SettingsPrivacyRecordSizeDesc says "Smaller recordings take a fraction of the space, and the text of every step stays readable. Pinky makes them when a t…"
+// in the language of msgs.
+//
+// Settings › Privacy: the line under Recording size. Smaller and Original
+// are the choices of its select.
+func (msgs Messages) SettingsPrivacyRecordSizeDesc() string {
+	return Catalog.Format(msgs.locale, "settingsPrivacyRecordSizeDesc", nil)
+}
+
+// SettingsPrivacyRecordSmaller says "Smaller"
+// in the language the app shows.
+//
+// Settings › Privacy › Recording size: the choice that makes each
+// recording smaller when its task ends (the default).
+func SettingsPrivacyRecordSmaller() string { return In(i18n.Locale()).SettingsPrivacyRecordSmaller() }
+
+// SettingsPrivacyRecordSmaller says "Smaller"
+// in the language of msgs.
+//
+// Settings › Privacy › Recording size: the choice that makes each
+// recording smaller when its task ends (the default).
+func (msgs Messages) SettingsPrivacyRecordSmaller() string {
+	return Catalog.Format(msgs.locale, "settingsPrivacyRecordSmaller", nil)
+}
+
 // SettingsRules says "Rules"
 // in the language the app shows.
 //

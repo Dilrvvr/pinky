@@ -9314,6 +9314,22 @@
   "@settingsPrivacyRecordDesc": {
     "description": "Settings › Privacy: the line under Record the screen during tasks. Activity is the page of finished tasks."
   },
+  "settingsPrivacyRecordOriginal": "Original",
+  "@settingsPrivacyRecordOriginal": {
+    "description": "Settings › Privacy › Recording size: the choice that keeps recordings as the phone sent its screen, at full size and quality."
+  },
+  "settingsPrivacyRecordSize": "Recording size",
+  "@settingsPrivacyRecordSize": {
+    "description": "Settings › Privacy: the row that chooses how big task recordings are, shown under Record the screen during tasks while that is on; before a select of Smaller or Original; also the select's accessibility label."
+  },
+  "settingsPrivacyRecordSizeDesc": "Smaller recordings take a fraction of the space, and the text of every step stays readable. Pinky makes them when a task ends. Original keeps the picture as the phone sent it.",
+  "@settingsPrivacyRecordSizeDesc": {
+    "description": "Settings › Privacy: the line under Recording size. Smaller and Original are the choices of its select."
+  },
+  "settingsPrivacyRecordSmaller": "Smaller",
+  "@settingsPrivacyRecordSmaller": {
+    "description": "Settings › Privacy › Recording size: the choice that makes each recording smaller when its task ends (the default)."
+  },
   "settingsRules": "Rules",
   "@settingsRules": {
     "description": "Settings › Safety › Rules: the heading of the rules every action is checked against, and the accessibility label of that part."

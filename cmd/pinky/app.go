@@ -367,6 +367,7 @@ func settingsVersion(policyVersion int, devices []gateway.DeviceView) int {
 // recording, retention, iPhones over Wi-Fi and remote agents.
 func startSettings(rg *runningGateway, s ui.Settings, log *slog.Logger) {
 	rg.G.SetRecording(s.Record)
+	rg.G.SetSmallerRecordings(s.SmallerRecordings)
 	rg.G.SetRetention(s.KeepDays)
 	rg.G.SetWiFi(s.IOSWiFi)
 	if s.RemoteAgents {
@@ -446,6 +447,9 @@ func applySettings(rg *runningGateway, old, s ui.Settings, log *slog.Logger) {
 	}
 	if s.Record != old.Record {
 		rg.G.SetRecording(s.Record)
+	}
+	if s.SmallerRecordings != old.SmallerRecordings {
+		rg.G.SetSmallerRecordings(s.SmallerRecordings)
 	}
 	if s.KeepDays != old.KeepDays {
 		rg.G.SetRetention(s.KeepDays)

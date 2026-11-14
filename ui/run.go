@@ -182,7 +182,10 @@ type Settings struct {
 	VirtualCredentials bool
 	KeepDays           int
 	Record             bool
-	DeveloperMode      bool
+	// SmallerRecordings makes each task's recording smaller when the task
+	// ends (internal/recording.Smaller); off keeps the phone's own stream.
+	SmallerRecordings bool
+	DeveloperMode     bool
 	// RemoteAgents serves MCP over Streamable HTTP at RemoteAddr, for agents
 	// that cannot start `pinky mcp`; each request needs the agent token.
 	RemoteAgents bool
@@ -349,7 +352,7 @@ func DefaultSettings() Settings {
 		BlockedApps: []BlockedApp{
 			{Name: "Northbank", Kind: "Banking"}, {Name: "Vaultly", Kind: "Passwords"}, {Name: "Coinpouch", Kind: "Wallet"},
 		},
-		UnlockFromComputer: true, HideCodes: true, KeepDays: 30, Record: true, RemoteAddr: DefaultRemoteAddr,
+		UnlockFromComputer: true, HideCodes: true, KeepDays: 30, Record: true, SmallerRecordings: true, RemoteAddr: DefaultRemoteAddr,
 		UsageStats:    usageStatsByDefault,
 		AutoUpdate:    true,
 		KeepAwakeAway: true,
@@ -825,6 +828,7 @@ func (a *app) setAwake(on bool) {
 // them, at start; Settings passes each change the same way.
 func (a *app) applySettings() {
 	a.applyRecording(a.settings.Record)
+	a.applyRecordingSize(a.settings.SmallerRecordings)
 	a.applyRetention(a.settings.KeepDays)
 }
 
@@ -835,6 +839,12 @@ func (a *app) applySettings() {
 func (a *app) applyRecording(on bool) {
 	if rs, ok := a.api.(recordingSetter); ok {
 		a.setq.push("record", func() { rs.SetRecording(on) })
+	}
+}
+
+func (a *app) applyRecordingSize(smaller bool) {
+	if rs, ok := a.api.(recordingSizeSetter); ok {
+		a.setq.push("record-size", func() { rs.SetSmallerRecordings(smaller) })
 	}
 }
 
