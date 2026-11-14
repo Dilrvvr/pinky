@@ -2,6 +2,18 @@
 
 What changed for people in each release of Pinky, newest first. A version is the release's date in Asia/Shanghai and that day's count: 2026.1107.2 is the second release of 7 November 2026. Notes wait under "Unreleased" until the next release takes them; see [docs/RELEASING.md](docs/RELEASING.md).
 
+## 2026.1114.5 (2026-11-14)
+
+- A phone can now have a window of its own: choose Open in a window in its ⋯ menu or right-click menu. The window shows only the phone's live screen and keys and works like the phone's page: a click takes over and Hand back gives it back. It keeps the screen's shape as you resize it and can stay on top of other windows.
+
+## 2026.1114.4 (2026-11-14)
+
+- Screen recordings of tasks now take several times less space: once a task ends, Pinky makes its recording smaller and every step stays readable. Settings › Privacy › Recording size is Smaller by default; choose Original to keep the phone's full picture. Recordings made before this release stay as they are.
+
+## 2026.1114.3 (2026-11-14)
+
+- You can now delete a single task from Activity: choose Delete in its More actions menu. Its steps, approvals, screenshots and screen recording are removed from this computer. A running task can be deleted once it ends.
+
 ## 2026.1114.2 (2026-11-14)
 
 - Ask Pinky now works with OpenAI's GPT-6 models, such as GPT-6.1 Terra, which use tools only through OpenAI's Responses API. Other OpenAI-compatible services switch to it by themselves when a model needs it.

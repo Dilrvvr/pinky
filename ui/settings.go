@@ -782,6 +782,20 @@ func (a *app) settingsPrivacy(c *mg.Context) {
 		if a.toggleRow(c, "rec", locales.SettingsPrivacyRecord(), locales.SettingsPrivacyRecordDesc(), false, &st.Record) {
 			a.applyRecording(st.Record)
 		}
+		if st.Record {
+			settingRow(c, locales.SettingsPrivacyRecordSize(), locales.SettingsPrivacyRecordSizeDesc(), false, func() {
+				smaller, original := locales.SettingsPrivacyRecordSmaller(), locales.SettingsPrivacyRecordOriginal()
+				cur := original
+				if st.SmallerRecordings {
+					cur = smaller
+				}
+				if mg.Select(c.Key("rec-size"), &cur, []string{smaller, original}).Label(locales.SettingsPrivacyRecordSize()).Changed() {
+					st.SmallerRecordings = cur == smaller
+					a.changed()
+					a.applyRecordingSize(st.SmallerRecordings)
+				}
+			})
+		}
 		settingRow(c, locales.SettingsPrivacyDeleteAll(), locales.SettingsPrivacyDeleteAllDesc(), true, func() {
 			b := button(c, locales.SettingsPrivacyDeleteButton(), btnOpt{})
 			if _, ok := a.api.(historyWiper); !ok {

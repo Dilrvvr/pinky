@@ -368,7 +368,53 @@
   },
   "activityDelete": "Delete",
   "@activityDelete": {
-    "description": "An item of the ⋯ menu in a task's detail, which deletes the task. It shows disabled: the gateway cannot delete one task yet."
+    "description": "An item of the ⋯ menu in a task's detail, which asks to confirm, then deletes the task; and the button of that alert which deletes it."
+  },
+  "activityDeleteCancel": "Cancel",
+  "@activityDeleteCancel": {
+    "description": "The button of the alert that confirms deleting a task in Activity, which closes it and deletes nothing."
+  },
+  "activityDeleteFailed": "Couldn't delete the task: {reason}",
+  "@activityDeleteFailed": {
+    "description": "A toast when deleting one task from Activity failed. reason is the error, in English.",
+    "placeholders": {
+      "reason": {
+        "type": "String",
+        "example": "the task is still running"
+      }
+    }
+  },
+  "activityDeleteMessage": "The task, its steps, approvals, screenshots and screen recording are removed from this computer. This can't be undone.",
+  "@activityDeleteMessage": {
+    "description": "The message of the alert that confirms deleting one task from Activity."
+  },
+  "activityDeleteRunning": "A running task can't be deleted",
+  "@activityDeleteRunning": {
+    "description": "The tooltip of the disabled Delete item of a task's ⋯ menu in Activity while the task runs."
+  },
+  "activityDeleteTitle": "Delete “{title}”?",
+  "@activityDeleteTitle": {
+    "description": "The title of the alert that confirms deleting one task from Activity. title is the task's title, in the agent's words.",
+    "placeholders": {
+      "title": {
+        "type": "String",
+        "example": "Reorder last week's lunch"
+      }
+    }
+  },
+  "activityDeleteUnsupported": "This gateway cannot delete tasks",
+  "@activityDeleteUnsupported": {
+    "description": "The tooltip of the disabled Delete item of a task's ⋯ menu in Activity when the gateway cannot delete a task."
+  },
+  "activityDeleted": "Deleted “{title}”",
+  "@activityDeleted": {
+    "description": "A toast once a task is deleted from Activity. title is the task's title, in the agent's words.",
+    "placeholders": {
+      "title": {
+        "type": "String",
+        "example": "Reorder last week's lunch"
+      }
+    }
   },
   "activityDetailLabel": "Task detail",
   "@activityDetailLabel": {
@@ -9268,6 +9314,22 @@
   "@settingsPrivacyRecordDesc": {
     "description": "Settings › Privacy: the line under Record the screen during tasks. Activity is the page of finished tasks."
   },
+  "settingsPrivacyRecordOriginal": "Original",
+  "@settingsPrivacyRecordOriginal": {
+    "description": "Settings › Privacy › Recording size: the choice that keeps recordings as the phone sent its screen, at full size and quality."
+  },
+  "settingsPrivacyRecordSize": "Recording size",
+  "@settingsPrivacyRecordSize": {
+    "description": "Settings › Privacy: the row that chooses how big task recordings are, shown under Record the screen during tasks while that is on; before a select of Smaller or Original; also the select's accessibility label."
+  },
+  "settingsPrivacyRecordSizeDesc": "Smaller recordings take a fraction of the space, and the text of every step stays readable. Pinky makes them when a task ends. Original keeps the picture as the phone sent it.",
+  "@settingsPrivacyRecordSizeDesc": {
+    "description": "Settings › Privacy: the line under Recording size. Smaller and Original are the choices of its select."
+  },
+  "settingsPrivacyRecordSmaller": "Smaller",
+  "@settingsPrivacyRecordSmaller": {
+    "description": "Settings › Privacy › Recording size: the choice that makes each recording smaller when its task ends (the default)."
+  },
   "settingsRules": "Rules",
   "@settingsRules": {
     "description": "Settings › Safety › Rules: the heading of the rules every action is checked against, and the accessibility label of that part."
@@ -12015,5 +12077,21 @@
   "wiFiUseAgain": "Use Wi-Fi again",
   "@wiFiUseAgain": {
     "description": "The same, for a phone whose Wi-Fi connection stopped when it restarted, now plugged in again: moves it to Wi-Fi at once."
+  },
+  "phoneOpenWindow": "Open in a window",
+  "@phoneOpenWindow": {
+    "description": "Item of a phone's ⋯ menu under its mirror and of its right-click menu in the sidebar: opens a window that shows only the phone's live screen and its keys, to use the phone from there. Opened again, the window comes to the front."
+  },
+  "phoneWindowOnTop": "Keep on top",
+  "@phoneWindowOnTop": {
+    "description": "Tooltip and label of the pin button in a phone's own window: keeps the window above other apps' windows."
+  },
+  "phoneWindowOnTopOff": "Stop keeping on top",
+  "@phoneWindowOnTopOff": {
+    "description": "The same button while the window stays on top: lets it go behind other apps' windows again."
+  },
+  "phoneWindowShowInPinky": "Show in Pinky",
+  "@phoneWindowShowInPinky": {
+    "description": "Button in a phone's own window while the phone shows no live screen (offline, paused, connecting, waiting for a step): opens the phone's page in Pinky's main window."
   }
 }
