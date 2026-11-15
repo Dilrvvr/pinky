@@ -10,10 +10,12 @@ import (
 	"io"
 	"log/slog"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"sort"
 	"strings"
 	"sync/atomic"
+	"syscall"
 	"time"
 
 	"github.com/egoist/mygo"
@@ -77,6 +79,9 @@ func runApp(args []string) error {
 	// crash file before the runtime wrote the panic to it.
 	defer func() { crashes.Exit(recover()) }()
 	c.Crashes = crashes
+	// Opened by the person, Pinky may be started by agents again
+	// (quitmark.go), even when another Pinky shows its window instead.
+	appStarted(dirs, *background, c.Fake, c.Log)
 
 	settingsPath := filepath.Join(dirs.Config, "settings.json")
 	settings := loadSettings(settingsPath, c.Log)
@@ -183,6 +188,18 @@ func runApp(args []string) error {
 	if err != nil {
 		c.Log.Warn("open the scheduled tasks", "err", err)
 	}
+	// Whether the person quits Pinky, or the system or a signal makes it
+	// quit (quitmark.go). MyGo quits on SIGINT and SIGTERM as from the
+	// menu; this channel hears them too.
+	var quit quitIntent
+	quit.watch()
+	signals := make(chan os.Signal, 1)
+	for _, s := range []os.Signal{os.Interrupt, syscall.SIGTERM} {
+		if !signal.Ignored(s) { // as MyGo does
+			signal.Notify(signals, s)
+		}
+	}
+	defer signal.Stop(signals)
 	ready := false
 	err = ui.Run(clientAPI(rg, tel, c.Fake), ui.Options{
 		BindShow: func(f func()) { show.Store(&f) },
@@ -250,6 +267,13 @@ func runApp(args []string) error {
 	}
 	// Read after MarkRestart above, so a handover keeps adb for the daemon.
 	restarting = update.Restarting(dirs.Config)
+	select {
+	case <-signals:
+		quit.signalled()
+	default:
+	}
+	// Before the gateway closes, so no new shim starts Pinky meanwhile.
+	afterQuit(dirs, &quit, restarting, c.Fake, err, c.Log)
 	return err
 }
 

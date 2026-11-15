@@ -2,6 +2,31 @@
 
 What changed for people in each release of Pinky, newest first. A version is the release's date in Asia/Shanghai and that day's count: 2026.1107.2 is the second release of 7 November 2026. Notes wait under "Unreleased" until the next release takes them; see [docs/RELEASING.md](docs/RELEASING.md).
 
+## 2026.1115.11 (2026-11-15)
+
+- When Pinky switches an iPhone to Pinky on the iPhone during a task, such as for a banking app that refuses screen sharing, the phone's page now says it is changing the connection and that the agent on your computer keeps doing the task. It used to read as if the task moved to the phone.
+
+## 2026.1115.10 (2026-11-15)
+
+- On Linux desktops that bind shortcuts for apps (KDE on Wayland), Pinky now shows the keys Stop all really has next to it, and none when the shortcut has no keys. The desktop now calls the shortcut "Stop all" instead of "Ctrl+Alt+.".
+
+## 2026.1115.9 (2026-11-15)
+
+- Tapping Send in a chat no longer asks as a payment just because the chat shows prices. It counts as a commit, so your rules for commits still apply.
+- Sending a red packet (发红包, 塞钱进红包, 发送红包) now counts as a payment, so Pinky asks you first. Opening or claiming one you were sent asks nothing.
+
+## 2026.1115.8 (2026-11-15)
+
+- Quitting Pinky now keeps it closed: agents (and anything that starts `pinkyctl mcp` or `pinkyctl task` again, such as an MCP manager reconnecting) no longer start it in the background until you open Pinky yourself. They're told you quit it and pick up where they were once you open it.
+
+## 2026.1115.7 (2026-11-15)
+
+- "Only the apps I choose" now lists your phone's apps to tick, on a first-connection card and in Settings › Agents, in place of a field for typing their names. The apps the agent asked for are ticked already, and a name that matches no app on the phone is shown as such instead of being saved.
+
+## 2026.1115.6 (2026-11-15)
+
+- On Android, the pill that shows while a task runs or your computer uses the phone now shrinks to a small dot at the edge of the screen after a few seconds, so it no longer covers the app. Tap the dot to see the pill again, and drag it wherever you like.
+
 ## 2026.1115.5 (2026-11-15)
 
 - The first time an agent connects to an iPhone after Pinky is installed or updated, it no longer waits about 30 seconds for text recognition to load: Pinky starts loading it as soon as the phone is connected. Thanks @Dshuishui.

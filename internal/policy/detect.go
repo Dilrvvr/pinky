@@ -339,6 +339,79 @@ func screenHasCurrency(s *screen.Screen) bool {
 	return false
 }
 
+// sendWords are labels of a chat's send button, alone: a Latin label of
+// one of these words, or a CJK label of one of cjkSendLabels.
+var sendWords = words("send", "enviar", "envoyer", "senden", "absenden", "invia", "inviare", "отправить")
+
+var cjkSendLabels = []string{"发送", "傳送", "發送", "送信", "보내기", "전송"}
+
+// isSendLabel reports whether a label says only "send", in any supported
+// language: "Send", "发送", "送信". "Send money", "发送红包" or "Send
+// $20" say more, and are not.
+func isSendLabel(label string) bool {
+	if hasCJK(label) {
+		core := cjkCore(label)
+		for _, l := range cjkSendLabels {
+			if core == l {
+				return true
+			}
+		}
+		return false
+	}
+	ws := tokenize(label)
+	return len(ws) == 1 && sendWords[ws[0]]
+}
+
+// bareNumberRe matches a field's text that is a number alone, as a
+// wallet's amount field holds it ("0.5", "1,200").
+var bareNumberRe = regexp.MustCompile(`^[\s+\-]*\d[\d.,\s]*$`)
+
+// sendsChatMessage reports whether tapping t sends what a chat's composer
+// beside it holds, so that an amount elsewhere on the screen, as prices in
+// the chat's history, does not make the tap a payment (GitHub issue #132).
+// It stays a commit, which the person's rules for sending messages judge.
+//
+// It takes all of: a label that says only "send" (isSendLabel); an app
+// outside the finance and store categories; exactly one text field on the
+// screen that is not a search box, the composer, which is no password or
+// code field and sits on the button's row (sameRow); and no text field,
+// search boxes included, that holds or is named by an amount or holds a
+// number alone. It does not hold without bounds for the button and the
+// field. A wallet's "Send" below its amount field, or on a confirmation
+// page without a field, stays a payment. When unsure, the tap is a payment.
+func sendsChatMessage(t *screen.Element, s *screen.Screen, cats []string) bool {
+	if t == nil || s == nil || t.Bounds.Empty() || !isSendLabel(t.Label) ||
+		contains(cats, CatFinance) || contains(cats, CatStores) {
+		return false
+	}
+	composer := false
+	for i := range s.Elements {
+		e := &s.Elements[i]
+		if !isInput(e) {
+			continue
+		}
+		if hasCurrency(e.Label) || hasCurrency(e.Content) || bareNumberRe.MatchString(e.Content) {
+			return false
+		}
+		if IsSearchField(e) {
+			continue
+		}
+		if composer || IsCredentialField(e) || e.Bounds.Empty() || !sameRow(e.Bounds, t.Bounds) {
+			return false
+		}
+		composer = true
+	}
+	return composer
+}
+
+// sameRow reports whether a text field and a button sit on one row: their
+// vertical extents overlap, or are apart by at most half the button's
+// height, as a send button just below a composer's text inside one box.
+func sameRow(field, button screen.Rect) bool {
+	gap := button.H / 2
+	return field.Y < button.Y+button.H+gap && button.Y < field.Y+field.H+gap
+}
+
 var domainRe = regexp.MustCompile(`(?i)^(?:[a-z0-9-]+\.)+[a-z]{2,}(?:[/?#]\S*)?$`)
 
 // looksLikeURL reports whether a link label is a web address.
@@ -616,9 +689,11 @@ func detect(in Input, cats []string) []Kind {
 			add(ChangeSetting)
 		}
 		// A payment: a commit that moves money by itself, or any commit on
-		// a screen that shows an amount.
+		// a screen that shows an amount, but for a chat's send button,
+		// whose message an amount in the chat's history does not make one.
 		if (hasKind(kinds, Commit) || hasKind(kinds, InstallApp)) &&
-			(money || isMoneyIcon(t) || hasCurrency(label) || screenHasCurrency(in.Screen)) {
+			(money || isMoneyIcon(t) || hasCurrency(label) ||
+				(screenHasCurrency(in.Screen) && (hasKind(kinds, InstallApp) || !sendsChatMessage(t, in.Screen, cats)))) {
 			add(Payment)
 		}
 	case OpSwipe:

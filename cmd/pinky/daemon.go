@@ -219,6 +219,8 @@ func startGateway(c gatewayConfig) (*runningGateway, error) {
 	m := mcp.New(g, version)
 	srv := &api.Server{Gateway: g, MCP: m, Token: tok, Trusted: c.Fake, Version: version, Log: log}
 	log.Info("gateway ready", "socket", dirs.Socket(), "data", dataDir, "devices", len(g.Devices()), "fake", c.Fake, "pid", os.Getpid())
+	// Pinky runs again, however it started (quitmark.go).
+	gatewayUp(dirs, c.Fake, log)
 	return &runningGateway{Dirs: dirs, DataDir: dataDir, Policy: pol, G: g, Remote: newRemoteAgents(m, tok, log), MCP: m,
 		Mirror: newWebMirror(g, log), ln: ln, srv: srv, log: log}, nil
 }

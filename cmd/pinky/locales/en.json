@@ -5400,9 +5400,9 @@
   "@gwStatusSwitchCoreDevice": {
     "description": "An iPhone's status line while Pinky moves it back from Pinky on the iPhone to CoreDevice after a task that needed it. Shown only in other languages."
   },
-  "gwStatusSwitchHelper": "Switching to Pinky on the iPhone",
+  "gwStatusSwitchHelper": "Connecting through Pinky on the iPhone",
   "@gwStatusSwitchHelper": {
-    "description": "An iPhone's status line while Pinky moves an agent's task to Pinky on the iPhone, for an app that refuses screen sharing. Shown only in other languages."
+    "description": "An iPhone's status line while Pinky changes how it connects to it, to Pinky on the iPhone (the WebDriverAgent helper), such as for an app that refuses screen sharing. A change of connection, not the task moving to the phone. Shown only in other languages."
   },
   "gwStatusWaiting": "Waiting for you · {title}",
   "@gwStatusWaiting": {
@@ -7710,15 +7710,19 @@
       }
     }
   },
-  "phoneSwitchHelperTitle": "Moving {phone} to Pinky on the iPhone…",
+  "phoneSwitchHelperTitle": "Connecting to {phone} through Pinky on the iPhone…",
   "@phoneSwitchHelperTitle": {
-    "description": "The page of an iPhone while Pinky moves an agent's task to Pinky on the iPhone, which shares no screen, for an app that refuses screen sharing. phone is its name.",
+    "description": "The page of an iPhone while Pinky changes how it connects to it, to Pinky on the iPhone (the WebDriverAgent helper, which shares no screen), such as for an app that refuses screen sharing. The agent on the computer keeps doing the task: word it as a change of connection, not as the task moving to the phone. phone is its name.",
     "placeholders": {
       "phone": {
         "type": "String",
         "example": "DIYgod's iPhone"
       }
     }
+  },
+  "phoneSwitchHelperTask": "The agent on this computer keeps doing the task. Only how Pinky connects to the phone changes.",
+  "@phoneSwitchHelperTask": {
+    "description": "Under the title of an iPhone's page while Pinky changes its connection to Pinky on the iPhone during an agent's task, so the person does not think the task moved to the phone."
   },
   "phoneTailnetAway": "Pinky can't reach {name} through Tailscale now. It connects again by itself once Tailscale says the phone is online.",
   "@phoneTailnetAway": {
@@ -8686,9 +8690,43 @@
   "@settingsAgentsApps": {
     "description": "The accessibility label of the field of the apps an agent may use, under the select of what it may do (Settings › Agents, and a first-connection card)."
   },
+  "settingsAgentsAppsAsked": "Asked for",
+  "@settingsAgentsAppsAsked": {
+    "description": "A short note beside an app in the list of apps to tick under \"Only the apps I choose\" on a first-connection card: the agent named this app for its task."
+  },
+  "settingsAgentsAppsBlocked": "Blocked",
+  "@settingsAgentsAppsBlocked": {
+    "description": "A short note beside an app in the list of apps to tick under \"Only the apps I choose\" which a rule blocks for agents: it is greyed and cannot be ticked."
+  },
+  "settingsAgentsAppsChosen": "{count, plural, =0 {No app chosen yet} one {# app chosen} other {# apps chosen}}",
+  "@settingsAgentsAppsChosen": {
+    "description": "Under the list of apps to tick under \"Only the apps I choose\": how many are ticked. With one or more it is a link that shows the ticked apps alone.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "settingsAgentsAppsMissing": "No app by this name",
+  "@settingsAgentsAppsMissing": {
+    "description": "A short note beside a name in the list of apps to tick under \"Only the apps I choose\" that names no app on the connected phones, such as an English name on a phone that shows the app under its Chinese one: a name the agent gave for its task (greyed, unticked), or one chosen before."
+  },
+  "settingsAgentsAppsNone": "No app on your phones matches.",
+  "@settingsAgentsAppsNone": {
+    "description": "In place of the list of apps to tick under \"Only the apps I choose\", when what is typed in the field above it matches no app."
+  },
   "settingsAgentsAppsPlaceholder": "Apps, separated by commas: Dinely, Chatter",
   "@settingsAgentsAppsPlaceholder": {
-    "description": "The placeholder of the field of the apps an agent may use. Dinely and Chatter are example app names; keep them."
+    "description": "The placeholder of the field of the apps an agent may use, shown while no phone lists its apps to tick. Dinely and Chatter are example app names; keep them."
+  },
+  "settingsAgentsAppsSearch": "Search apps",
+  "@settingsAgentsAppsSearch": {
+    "description": "The placeholder and accessibility label of the field that narrows down the list of apps to tick under \"Only the apps I choose\"."
+  },
+  "settingsAgentsAppsShowAll": "Show all apps",
+  "@settingsAgentsAppsShowAll": {
+    "description": "A link under the list of apps to tick under \"Only the apps I choose\", while it shows the apps chosen only (after a click on the count of apps chosen): back to every app."
   },
   "settingsAgentsChangeLabel": "Change what {agent} may do",
   "@settingsAgentsChangeLabel": {

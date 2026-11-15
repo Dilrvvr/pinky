@@ -26,7 +26,7 @@ func TestMoneyMovingButtonsAskByDefault(t *testing.T) {
 		"Sell", "Sell all", "Swap", "Confirm swap", "Slide to swap", "Trade", "Repay", "Borrow", "Stake",
 		"Unstake", "Bridge", "Withdraw", "Transfer", "Buy", "Pay", "Deposit", "Place order", "Top up",
 		"还款", "立即还款", "分期还款", "去分期", "立即分期", "借钱", "买入", "卖出", "赎回", "申购", "闪兑",
-		"预约还款", "转账", "确认支付", "賣出", "売却", "返済", "매도", "상환", "Vender", "Verkaufen",
+		"预约还款", "转账", "确认支付", "发红包", "发送红包", "塞钱进红包", "發紅包", "塞錢進紅包", "賣出", "売却", "返済", "매도", "상환", "Vender", "Verkaufen",
 	}
 	for _, l := range payments {
 		v := e.Evaluate(tapOn(dex, *button(l)))
@@ -125,5 +125,16 @@ func TestOCRText(t *testing.T) {
 	// By default the payments among them ask.
 	if v := Default().Evaluate(tapOn(dex, ocr("账单 还款 分期还款 去分期"))); v.Decision != Ask || v.Rule != "Payments" {
 		t.Fatalf("OCR repayment by default: %+v", v)
+	}
+}
+
+// TestRedPacketsReceivedAskNothing: opening or claiming a red packet someone
+// sent brings money in, and a page of past red packets moves none.
+func TestRedPacketsReceivedAskNothing(t *testing.T) {
+	e := Default()
+	for _, l := range []string{"领红包", "开红包", "红包记录", "紅包紀錄"} {
+		if v := e.Evaluate(tapOn(dex, *button(l))); v.Decision != Allow || v.Has(Payment) {
+			t.Errorf("%q: %+v", l, v)
+		}
 	}
 }
