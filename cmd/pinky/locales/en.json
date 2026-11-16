@@ -9352,6 +9352,56 @@
   "@settingsPrivacyRecordDesc": {
     "description": "Settings › Privacy: the line under Record the screen during tasks. Activity is the page of finished tasks."
   },
+  "settingsPrivacyRecordFolder": "Recordings folder",
+  "@settingsPrivacyRecordFolder": {
+    "description": "Settings › Privacy: the row that chooses the folder new task recordings go to, shown under Record the screen during tasks while that is on."
+  },
+  "settingsPrivacyRecordFolderChoose": "Choose…",
+  "@settingsPrivacyRecordFolderChoose": {
+    "description": "Settings › Privacy › Recordings folder: the button that opens the system's folder picker."
+  },
+  "settingsPrivacyRecordFolderDefault": "New recordings go to Pinky's own folder.",
+  "@settingsPrivacyRecordFolderDefault": {
+    "description": "Settings › Privacy: the line under Recordings folder while no folder is chosen."
+  },
+  "settingsPrivacyRecordFolderDesc": "New recordings go to {folder}. Recordings made before stay where they are.",
+  "@settingsPrivacyRecordFolderDesc": {
+    "description": "Settings › Privacy: the line under Recordings folder when the person chose one. folder is its path.",
+    "placeholders": {
+      "folder": {
+        "type": "String",
+        "example": "/Volumes/Archive/Pinky"
+      }
+    }
+  },
+  "settingsPrivacyRecordFolderFailed": "Couldn't choose the folder: {reason}",
+  "@settingsPrivacyRecordFolderFailed": {
+    "description": "A toast when the folder picker of Settings › Privacy › Recordings folder failed. reason is the error, in English.",
+    "placeholders": {
+      "reason": {
+        "type": "String",
+        "example": "exit status 1"
+      }
+    }
+  },
+  "settingsPrivacyRecordFolderInside": "That folder is inside Pinky's own recordings folder, which Delete all activity removes. Choose another folder.",
+  "@settingsPrivacyRecordFolderInside": {
+    "description": "A toast when the folder picked for Settings › Privacy › Recordings folder is Pinky's own recordings folder or in it (also through a link); the setting stays as it was. Delete all activity is the button of Settings › Privacy that deletes every task."
+  },
+  "settingsPrivacyRecordFolderMissing": "{folder} isn't there now, so new recordings go to Pinky's own folder until it is.",
+  "@settingsPrivacyRecordFolderMissing": {
+    "description": "Settings › Privacy: the line under Recordings folder when the chosen folder is missing, as on a disk that is not plugged in. folder is its path.",
+    "placeholders": {
+      "folder": {
+        "type": "String",
+        "example": "/Volumes/Archive/Pinky"
+      }
+    }
+  },
+  "settingsPrivacyRecordFolderReset": "Use Pinky's folder",
+  "@settingsPrivacyRecordFolderReset": {
+    "description": "Settings › Privacy › Recordings folder: the button, shown while a folder is chosen, that sends new recordings back to Pinky's own folder."
+  },
   "settingsPrivacyRecordOriginal": "Original",
   "@settingsPrivacyRecordOriginal": {
     "description": "Settings › Privacy › Recording size: the choice that keeps recordings as the phone sent its screen, at full size and quality."
@@ -10403,6 +10453,30 @@
   "tasksReadOnly": "Read only",
   "@tasksReadOnly": {
     "description": "On a task card's line with the agent, the phone and the time, for a task the agent asked to run read-only."
+  },
+  "tasksReadOnlyAgent": "{agent} has read-only access: it browses and searches, and types only into search fields. Change what it may do in Settings › Agents.",
+  "@tasksReadOnlyAgent": {
+    "description": "Under a running task's line with the agent and the phone, when the person gave the agent read-only access on its first-connection card (scopeReadOnly). Settings › Agents is where its Change button changes that; asking the person for approval does not.",
+    "placeholders": {
+      "agent": {
+        "type": "String",
+        "example": "Claude Code"
+      }
+    }
+  },
+  "tasksReadOnlyMode": "Read-only mode is on for every agent: they type only into search fields. Turn it off in Settings › Safety.",
+  "@tasksReadOnlyMode": {
+    "description": "Under a running task's line with the agent and the phone, while Read-only mode (settingsSafetyReadOnly) is on in Settings › Safety. It applies to every agent, whatever access each has."
+  },
+  "tasksReadOnlyTask": "{agent} asked to run this task read-only, so it types only into search fields. To do more, it starts a new task that is not read-only.",
+  "@tasksReadOnlyTask": {
+    "description": "Under a running task's line with the agent and the phone, when the agent itself asked to run the task read-only (phone_connect read_only) and its access is not read-only. Nothing in Settings changes this.",
+    "placeholders": {
+      "agent": {
+        "type": "String",
+        "example": "Claude Code"
+      }
+    }
   },
   "tasksRowDone": "done",
   "@tasksRowDone": {

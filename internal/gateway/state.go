@@ -112,6 +112,11 @@ type device struct {
 	wokeAt time.Time
 	// lockReadAt is when an idle phone's lock state was last read.
 	lockReadAt time.Time
+	// lockSeq counts the lock states recorded (setLocked), whether they
+	// changed locked or not. A fresh read that sees the phone unlocked
+	// clears locked only when nothing else recorded a state meanwhile
+	// (unlockedNow).
+	lockSeq uint64
 	// personAt is when the person last used the phone's own screen while
 	// an agent worked on a background display (which does not pause it).
 	personAt time.Time

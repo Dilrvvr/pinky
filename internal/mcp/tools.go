@@ -194,7 +194,7 @@ type batchIn struct {
 type readListIn struct {
 	Device        string    `json:"device,omitempty" jsonschema:"The phone, by device id or name. Required when this session holds more than one phone."`
 	Intent        string    `json:"intent,omitempty" jsonschema:"One sentence on why you read this list, shown in history."`
-	Ref           int       `json:"ref,omitempty" jsonschema:"The list element from the latest screen. Without ref, Pinky uses the largest list or scrollable shown."`
+	Ref           int       `json:"ref,omitempty" jsonschema:"The list element from the latest screen. Without ref, Pinky uses the largest list or scrollable shown, or else a column of like rows, such as a settings page whose list the phone does not mark."`
 	Area          *listArea `json:"scroll_area,omitempty" jsonschema:"A screen-pixel rectangle to use when a web page exposes content but no list element. It must lie on screen and be at least 100 by 200 pixels."`
 	Direction     string    `json:"direction,omitempty" jsonschema:"Where the finger moves: up scrolls down through the list (default), or down scrolls back up."`
 	MaxScreens    int       `json:"max_screens,omitempty" jsonschema:"How many settled screens to read, including the screen shown now. Default 10; at most 30."`

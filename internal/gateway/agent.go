@@ -284,6 +284,8 @@ type ScanView struct {
 	OutputBytes  int
 	Sections     []ScanPage
 	Continuation string
+	// gap says why a read stopped at a gap (gapNote), for the message.
+	gap string
 }
 
 // Limits from DESIGN.md's tool table.

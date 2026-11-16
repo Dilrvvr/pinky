@@ -25519,6 +25519,154 @@ func (msgs Messages) SettingsPrivacyRecordDesc() string {
 	return Catalog.Format(msgs.locale, "settingsPrivacyRecordDesc", nil)
 }
 
+// SettingsPrivacyRecordFolder says "Recordings folder"
+// in the language the app shows.
+//
+// Settings › Privacy: the row that chooses the folder new task recordings
+// go to, shown under Record the screen during tasks while that is on.
+func SettingsPrivacyRecordFolder() string { return In(i18n.Locale()).SettingsPrivacyRecordFolder() }
+
+// SettingsPrivacyRecordFolder says "Recordings folder"
+// in the language of msgs.
+//
+// Settings › Privacy: the row that chooses the folder new task recordings
+// go to, shown under Record the screen during tasks while that is on.
+func (msgs Messages) SettingsPrivacyRecordFolder() string {
+	return Catalog.Format(msgs.locale, "settingsPrivacyRecordFolder", nil)
+}
+
+// SettingsPrivacyRecordFolderChoose says "Choose…"
+// in the language the app shows.
+//
+// Settings › Privacy › Recordings folder: the button that opens the
+// system's folder picker.
+func SettingsPrivacyRecordFolderChoose() string {
+	return In(i18n.Locale()).SettingsPrivacyRecordFolderChoose()
+}
+
+// SettingsPrivacyRecordFolderChoose says "Choose…"
+// in the language of msgs.
+//
+// Settings › Privacy › Recordings folder: the button that opens the
+// system's folder picker.
+func (msgs Messages) SettingsPrivacyRecordFolderChoose() string {
+	return Catalog.Format(msgs.locale, "settingsPrivacyRecordFolderChoose", nil)
+}
+
+// SettingsPrivacyRecordFolderDefault says "New recordings go to Pinky's own folder."
+// in the language the app shows.
+//
+// Settings › Privacy: the line under Recordings folder while no folder is
+// chosen.
+func SettingsPrivacyRecordFolderDefault() string {
+	return In(i18n.Locale()).SettingsPrivacyRecordFolderDefault()
+}
+
+// SettingsPrivacyRecordFolderDefault says "New recordings go to Pinky's own folder."
+// in the language of msgs.
+//
+// Settings › Privacy: the line under Recordings folder while no folder is
+// chosen.
+func (msgs Messages) SettingsPrivacyRecordFolderDefault() string {
+	return Catalog.Format(msgs.locale, "settingsPrivacyRecordFolderDefault", nil)
+}
+
+// SettingsPrivacyRecordFolderDesc says "New recordings go to {folder}. Recordings made before stay where they are."
+// in the language the app shows.
+//
+// Settings › Privacy: the line under Recordings folder when the person
+// chose one. folder is its path.
+func SettingsPrivacyRecordFolderDesc(folder string) string {
+	return In(i18n.Locale()).SettingsPrivacyRecordFolderDesc(folder)
+}
+
+// SettingsPrivacyRecordFolderDesc says "New recordings go to {folder}. Recordings made before stay where they are."
+// in the language of msgs.
+//
+// Settings › Privacy: the line under Recordings folder when the person
+// chose one. folder is its path.
+func (msgs Messages) SettingsPrivacyRecordFolderDesc(folder string) string {
+	return Catalog.Format(msgs.locale, "settingsPrivacyRecordFolderDesc", map[string]any{"folder": folder})
+}
+
+// SettingsPrivacyRecordFolderFailed says "Couldn't choose the folder: {reason}"
+// in the language the app shows.
+//
+// A toast when the folder picker of Settings › Privacy › Recordings
+// folder failed. reason is the error, in English.
+func SettingsPrivacyRecordFolderFailed(reason string) string {
+	return In(i18n.Locale()).SettingsPrivacyRecordFolderFailed(reason)
+}
+
+// SettingsPrivacyRecordFolderFailed says "Couldn't choose the folder: {reason}"
+// in the language of msgs.
+//
+// A toast when the folder picker of Settings › Privacy › Recordings
+// folder failed. reason is the error, in English.
+func (msgs Messages) SettingsPrivacyRecordFolderFailed(reason string) string {
+	return Catalog.Format(msgs.locale, "settingsPrivacyRecordFolderFailed", map[string]any{"reason": reason})
+}
+
+// SettingsPrivacyRecordFolderInside says "That folder is inside Pinky's own recordings folder, which Delete all activity removes. Choose another folder."
+// in the language the app shows.
+//
+// A toast when the folder picked for Settings › Privacy › Recordings
+// folder is Pinky's own recordings folder or in it (also through a link);
+// the setting stays as it was. Delete all activity is the button of
+// Settings › Privacy that deletes every task.
+func SettingsPrivacyRecordFolderInside() string {
+	return In(i18n.Locale()).SettingsPrivacyRecordFolderInside()
+}
+
+// SettingsPrivacyRecordFolderInside says "That folder is inside Pinky's own recordings folder, which Delete all activity removes. Choose another folder."
+// in the language of msgs.
+//
+// A toast when the folder picked for Settings › Privacy › Recordings
+// folder is Pinky's own recordings folder or in it (also through a link);
+// the setting stays as it was. Delete all activity is the button of
+// Settings › Privacy that deletes every task.
+func (msgs Messages) SettingsPrivacyRecordFolderInside() string {
+	return Catalog.Format(msgs.locale, "settingsPrivacyRecordFolderInside", nil)
+}
+
+// SettingsPrivacyRecordFolderMissing says "{folder} isn't there now, so new recordings go to Pinky's own folder until it is."
+// in the language the app shows.
+//
+// Settings › Privacy: the line under Recordings folder when the chosen
+// folder is missing, as on a disk that is not plugged in. folder is its
+// path.
+func SettingsPrivacyRecordFolderMissing(folder string) string {
+	return In(i18n.Locale()).SettingsPrivacyRecordFolderMissing(folder)
+}
+
+// SettingsPrivacyRecordFolderMissing says "{folder} isn't there now, so new recordings go to Pinky's own folder until it is."
+// in the language of msgs.
+//
+// Settings › Privacy: the line under Recordings folder when the chosen
+// folder is missing, as on a disk that is not plugged in. folder is its
+// path.
+func (msgs Messages) SettingsPrivacyRecordFolderMissing(folder string) string {
+	return Catalog.Format(msgs.locale, "settingsPrivacyRecordFolderMissing", map[string]any{"folder": folder})
+}
+
+// SettingsPrivacyRecordFolderReset says "Use Pinky's folder"
+// in the language the app shows.
+//
+// Settings › Privacy › Recordings folder: the button, shown while a
+// folder is chosen, that sends new recordings back to Pinky's own folder.
+func SettingsPrivacyRecordFolderReset() string {
+	return In(i18n.Locale()).SettingsPrivacyRecordFolderReset()
+}
+
+// SettingsPrivacyRecordFolderReset says "Use Pinky's folder"
+// in the language of msgs.
+//
+// Settings › Privacy › Recordings folder: the button, shown while a
+// folder is chosen, that sends new recordings back to Pinky's own folder.
+func (msgs Messages) SettingsPrivacyRecordFolderReset() string {
+	return Catalog.Format(msgs.locale, "settingsPrivacyRecordFolderReset", nil)
+}
+
 // SettingsPrivacyRecordOriginal says "Original"
 // in the language the app shows.
 //
@@ -28673,6 +28821,62 @@ func TasksReadOnly() string { return In(i18n.Locale()).TasksReadOnly() }
 // the agent asked to run read-only.
 func (msgs Messages) TasksReadOnly() string {
 	return Catalog.Format(msgs.locale, "tasksReadOnly", nil)
+}
+
+// TasksReadOnlyAgent says "{agent} has read-only access: it browses and searches, and types only into search fields. Change what it may do in Se…"
+// in the language the app shows.
+//
+// Under a running task's line with the agent and the phone, when the person
+// gave the agent read-only access on its first-connection card
+// (scopeReadOnly). Settings › Agents is where its Change button changes
+// that; asking the person for approval does not.
+func TasksReadOnlyAgent(agent string) string { return In(i18n.Locale()).TasksReadOnlyAgent(agent) }
+
+// TasksReadOnlyAgent says "{agent} has read-only access: it browses and searches, and types only into search fields. Change what it may do in Se…"
+// in the language of msgs.
+//
+// Under a running task's line with the agent and the phone, when the person
+// gave the agent read-only access on its first-connection card
+// (scopeReadOnly). Settings › Agents is where its Change button changes
+// that; asking the person for approval does not.
+func (msgs Messages) TasksReadOnlyAgent(agent string) string {
+	return Catalog.Format(msgs.locale, "tasksReadOnlyAgent", map[string]any{"agent": agent})
+}
+
+// TasksReadOnlyMode says "Read-only mode is on for every agent: they type only into search fields. Turn it off in Settings › Safety."
+// in the language the app shows.
+//
+// Under a running task's line with the agent and the phone, while Read-only
+// mode (settingsSafetyReadOnly) is on in Settings › Safety. It applies to
+// every agent, whatever access each has.
+func TasksReadOnlyMode() string { return In(i18n.Locale()).TasksReadOnlyMode() }
+
+// TasksReadOnlyMode says "Read-only mode is on for every agent: they type only into search fields. Turn it off in Settings › Safety."
+// in the language of msgs.
+//
+// Under a running task's line with the agent and the phone, while Read-only
+// mode (settingsSafetyReadOnly) is on in Settings › Safety. It applies to
+// every agent, whatever access each has.
+func (msgs Messages) TasksReadOnlyMode() string {
+	return Catalog.Format(msgs.locale, "tasksReadOnlyMode", nil)
+}
+
+// TasksReadOnlyTask says "{agent} asked to run this task read-only, so it types only into search fields. To do more, it starts a new task that …"
+// in the language the app shows.
+//
+// Under a running task's line with the agent and the phone, when the agent
+// itself asked to run the task read-only (phone_connect read_only) and its
+// access is not read-only. Nothing in Settings changes this.
+func TasksReadOnlyTask(agent string) string { return In(i18n.Locale()).TasksReadOnlyTask(agent) }
+
+// TasksReadOnlyTask says "{agent} asked to run this task read-only, so it types only into search fields. To do more, it starts a new task that …"
+// in the language of msgs.
+//
+// Under a running task's line with the agent and the phone, when the agent
+// itself asked to run the task read-only (phone_connect read_only) and its
+// access is not read-only. Nothing in Settings changes this.
+func (msgs Messages) TasksReadOnlyTask(agent string) string {
+	return Catalog.Format(msgs.locale, "tasksReadOnlyTask", map[string]any{"agent": agent})
 }
 
 // TasksRowDone says "done"

@@ -191,21 +191,31 @@ func (g *Gateway) Tasks() []TaskView {
 	var out []TaskView
 	for _, d := range g.sortedDevicesLocked() {
 		if d.lease != nil {
-			out = append(out, taskView(d.lease.task))
+			out = append(out, g.taskViewLocked(d.lease.task))
 		}
 	}
 	cutoff := time.Now().Add(-10 * time.Minute)
 	for i := len(g.ended) - 1; i >= 0; i-- {
 		if t := g.ended[i]; t.ended.After(cutoff) {
-			out = append(out, taskView(t))
+			out = append(out, g.taskViewLocked(t))
 		}
 	}
 	return out
 }
 
-func taskView(t *task) TaskView {
-	return TaskView{ID: t.id, DeviceID: t.deviceID, DeviceName: t.deviceName, Agent: t.agent, Title: t.title,
+// taskViewLocked is t as a card, with the access its agent has now while
+// it runs. The caller holds g.mu.
+func (g *Gateway) taskViewLocked(t *task) TaskView {
+	v := TaskView{ID: t.id, DeviceID: t.deviceID, DeviceName: t.deviceName, Agent: t.agent, Title: t.title,
 		State: t.state, Started: t.started, Ended: t.ended, Steps: append([]StepView(nil), t.steps...), ReadOnly: t.readOnly}
+	if t.ended.IsZero() && t.agent != "" {
+		scope := g.opt.DefaultScope
+		if st, ok := g.agents[t.agent]; ok {
+			scope = st.scope
+		}
+		v.AgentReadOnly = scope.Mode == ScopeReadOnly
+	}
+	return v
 }
 
 // Needs implements API.
@@ -316,7 +326,7 @@ func (g *Gateway) memoryHistory(q HistoryQuery) []TaskView {
 		if search != "" && !strings.Contains(strings.ToLower(t.title+" "+t.agent+" "+t.deviceName), search) {
 			continue
 		}
-		out = append(out, taskView(t))
+		out = append(out, g.taskViewLocked(t))
 	}
 	return out
 }

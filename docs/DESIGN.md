@@ -265,7 +265,7 @@ Approvals are decided in the client and enforced in the gateway; the agent only 
 
 ### Policy terms
 
-- **Read-only:** the agent may observe, launch apps, tap, scroll and type into search fields (including an app's own search box that reads only as its placeholder at the top of the screen, with the keyboard up and no other field); anything that would be Ask becomes Deny.
+- **Read-only:** the agent may observe, launch apps, tap, scroll and type into search fields (including an app's own search box that reads only as its placeholder at the top of the screen, with the keyboard up and no other field; and a field that names nothing but is the only one on the screen, one line high in its top quarter, with a "Search" button on its row or a search page's heading such as "历史搜索", as Pinduoduo's); anything that would be Ask becomes Deny. Read-only comes from the agent's access (chosen on its first-connection card, changed in Settings › Agents), from the agent asking for a read-only task, or from Read-only mode in Settings › Safety; refusals and the task card say which, and approving a `phone_request_approval` lifts none.
 - **Watch-only:** observe only.
 - **Kind:** the rule an approval matched, such as "Payments"; "Always allow payments in Dinely" keeps an exemption for that kind in that app (see [Always allow](#always-allow)).
 - An app outside the agent's scope or the task's allow-list returns `scope_denied`; a blocked app or a Deny rule returns `blocked_by_policy`.

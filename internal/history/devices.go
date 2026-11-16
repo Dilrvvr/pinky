@@ -151,5 +151,5 @@ func (s *Store) DeleteDeviceHistory(ctx context.Context, deviceID string, before
 	if err := tx.Commit(); err != nil {
 		return out, err
 	}
-	return out, removeFiles(files)
+	return out, s.removeDropped(ctx, files)
 }

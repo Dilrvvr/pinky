@@ -850,9 +850,62 @@ func (d *Device) Tap(ctx context.Context, p screen.Point, opt driver.TapOptions)
 	return d.gesture(ctx, []screen.Point{p}, hold)
 }
 
-// Swipe implements driver.Device.
+// swipeRest is how long a swipe's finger rests at its end before it lifts.
+// iOS takes the finger's speed when it lifts for a fling: a swipe lifted
+// while still moving carried the Settings list past a whole screen (GitHub
+// issue #148), while one that stops first moves the content only as far as
+// the finger went. The mirror's wheel rests 120 ms for the same reason
+// (ui/mirrorwheel.go).
+const swipeRest = 150 * time.Millisecond
+
+// Swipe implements driver.Device. The finger eases in and out along the
+// line and rests at to before it lifts, so the content moves by about the
+// swipe's length and nothing flings on: an agent that swipes and reads
+// sees every row. A swipe from the edge of the screen toward its middle
+// is a system gesture (Home from the bottom, back from the left, the
+// Notification Center from the top), which iOS takes only at speed, so
+// it is lifted still moving, as fling does.
 func (d *Device) Swipe(ctx context.Context, from, to screen.Point, dur time.Duration) error {
+	s := d.freshDisplay(ctx).upright()
+	return d.gestureSteps(ctx, swipeSteps(from, to, dur, s.Width, s.Height), nil)
+}
+
+// fling swipes along a straight line at a steady speed and lifts the
+// finger still moving, so the content flings on: the system gestures
+// (Home, back, the passcode pad) that need speed.
+func (d *Device) fling(ctx context.Context, from, to screen.Point, dur time.Duration) error {
 	return d.gesture(ctx, swipePath(from, to, dur), 10*time.Millisecond)
+}
+
+// swipeSteps is the finger's path for Swipe on a screen of w by h pixels
+// (0 when unknown): eased in and out and resting swipeRest at to, or a
+// fling's steady line for a swipe from the screen's edge.
+func swipeSteps(from, to screen.Point, dur time.Duration, w, h int) []driver.DragStep {
+	if dur <= 0 {
+		dur = 300 * time.Millisecond
+	}
+	if edgeSwipe(from, to, w, h) {
+		path := swipePath(from, to, dur)
+		steps := make([]driver.DragStep, 0, len(path))
+		steps = append(steps, driver.DragStep{P: path[0]})
+		for _, p := range path[1:] {
+			steps = append(steps, driver.DragStep{Wait: 10 * time.Millisecond, P: p})
+		}
+		return steps
+	}
+	g := driver.Drag{From: from, Stops: []driver.DragStop{{Point: to, Move: dur, Pause: swipeRest}}}
+	return g.Steps(10 * time.Millisecond)
+}
+
+// edgeSwipe reports whether a swipe starts within a fiftieth of the
+// screen of one of its edges and moves away from it: a system gesture.
+func edgeSwipe(from, to screen.Point, w, h int) bool {
+	if w <= 0 || h <= 0 {
+		return false
+	}
+	mx, my := max(w/50, 1), max(h/50, 1)
+	return (from.Y >= h-my && to.Y < from.Y) || (from.Y < my && to.Y > from.Y) ||
+		(from.X < mx && to.X > from.X) || (from.X >= w-mx && to.X < from.X)
 }
 
 // swipePath is a straight line from from to to, one point per 10 ms.

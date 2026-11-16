@@ -130,6 +130,10 @@ type TaskView struct {
 	// ReadOnly is set when the agent asked to run the task read-only
 	// (phone_connect read_only), whatever its scope.
 	ReadOnly bool
+	// AgentReadOnly is set, while the task runs, when the person gave its
+	// agent read-only access (ScopeReadOnly, changed in Settings ›
+	// Agents), whatever the agent asked.
+	AgentReadOnly bool
 }
 
 // StepView is one step of a task.

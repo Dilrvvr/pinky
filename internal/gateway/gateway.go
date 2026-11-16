@@ -846,6 +846,12 @@ func (g *Gateway) checkLock(ctx context.Context, d *device) {
 // computer does end the handoffs opened for the lock (see Unlock).
 func (g *Gateway) setLocked(d *device, locked bool) {
 	g.mu.Lock()
+	g.setLockedLocked(d, locked)
+}
+
+// setLockedLocked is setLocked with g.mu held, which it releases.
+func (g *Gateway) setLockedLocked(d *device, locked bool) {
+	d.lockSeq++
 	if d.locked == locked {
 		g.mu.Unlock()
 		return

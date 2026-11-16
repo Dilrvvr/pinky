@@ -109,6 +109,12 @@ type (
 	retentionSetter interface {
 		SetRetention(days int)
 	}
+	// recordingsDirChecker says why a folder cannot be Settings › Privacy ›
+	// Recordings folder (gateway.ErrRecordingsDirInside), before the client
+	// keeps it.
+	recordingsDirChecker interface {
+		CheckRecordingsDir(dir string) error
+	}
 	historyExporter interface {
 		ExportHistory(ctx context.Context, taskIDs []string, dir string) (string, error)
 	}

@@ -2,6 +2,48 @@
 
 What changed for people in each release of Pinky, newest first. A version is the release's date in Asia/Shanghai and that day's count: 2026.1107.2 is the second release of 7 November 2026. Notes wait under "Unreleased" until the next release takes them; see [docs/RELEASING.md](docs/RELEASING.md).
 
+## 2026.1117.1 (2026-11-17)
+
+- You can now choose where task recordings are saved, in Settings › Privacy › Recordings folder, for example on an external disk. New recordings go there; earlier ones stay where they are and still play. Use Pinky's folder switches back.
+- While the chosen folder is missing (a disk that isn't plugged in) or can't be written, recordings go to Pinky's own folder, and Settings says when the folder is missing. Pinky won't take a folder inside its own recordings folder, even through a link, and says why.
+- Recordings of tasks you delete are removed from the chosen folder too, also when the disk was unplugged or read-only at the time: Pinky removes them once it can. Delete all activity removes only Pinky's recordings there, never your other files.
+
+## 2026.1116.8 (2026-11-16)
+
+- Agents with read-only access can now type into search boxes that don't say they are one, such as Pinduoduo's.
+- When read-only stops an agent, the task card and the agent's message now say why: the agent's own access (change it in Settings › Agents), a read-only task it asked for, or Read-only mode (Settings › Safety).
+
+## 2026.1116.7 (2026-11-16)
+
+- Reading a long list on an iPhone, such as the Settings home page, no longer stops after the first screen as if the screens did not follow on. When a read does stop there, the agent is told which lines made it stop.
+
+## 2026.1116.6 (2026-11-16)
+
+- Screenshots and Checkup's "Seeing the screen" now work over USB on foldables and other phones with two screens, such as the vivo X Fold 6, and show the screen in use.
+
+## 2026.1116.5 (2026-11-16)
+
+- When the phone is unlocked outside Pinky, for example by a script, the agent's next action now goes ahead right away instead of being refused as locked for several seconds.
+
+## 2026.1116.4 (2026-11-16)
+
+- On iPhones below iOS 27, pressing Home on a locked phone now just wakes its screen. It used to report an error.
+
+## 2026.1116.3 (2026-11-16)
+
+- On iPhones below iOS 27, agents can now press the arrow keys (and Page Up / Page Down), for example to move the caret in a text field or turn pictures in Photos. They used to be reported as not supported.
+
+## 2026.1116.2 (2026-11-16)
+
+- On an iPhone, a swipe now scrolls by about its length instead of flinging past whole screens, so agents no longer skip rows.
+- Agents can now read a long list on iPhone screens that don't mark it as a list, such as the main page of Settings.
+- Agents can now name iPhone system apps such as Settings, Photos and Clock in English on a phone set to another language.
+
+## 2026.1116.1 (2026-11-16)
+
+- In a narrow Tasks panel, the task limit beside the buttons no longer shrinks to one letter a line: the buttons move below it when there isn't room.
+- An Android phone on its cable that is also paired over Wireless debugging no longer shows up a second time as an offline phone with an address for a name.
+
 ## 2026.1115.11 (2026-11-15)
 
 - When Pinky switches an iPhone to Pinky on the iPhone during a task, such as for a banking app that refuses screen sharing, the phone's page now says it is changing the connection and that the agent on your computer keeps doing the task. It used to read as if the task moved to the phone.

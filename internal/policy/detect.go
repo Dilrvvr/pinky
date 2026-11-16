@@ -435,15 +435,150 @@ func IsSearchField(e *screen.Element) bool {
 }
 
 // IsSearchBox reports whether a text field typed into is a search box:
-// target, the field, reads as one (IsSearchField), or, when the screen
-// shows no field with focus (target nil), the field is one the app draws
-// itself and the screen shows a search box at its top
-// (impliedSearchBox).
+// target, the field, reads as one (IsSearchField) or sits where a search
+// box does (searchBoxByPlace), or, when the screen shows no field with
+// focus (target nil), the field is one the app draws itself and the
+// screen shows a search box at its top (impliedSearchBox).
 func IsSearchBox(target *screen.Element, s *screen.Screen) bool {
 	if target != nil {
-		return IsSearchField(target)
+		return IsSearchField(target) || searchBoxByPlace(target, s)
 	}
 	return impliedSearchBox(s)
+}
+
+// searchBoxByPlace reports whether target, a text field that does not
+// name itself a search box, is one by where it sits. Pinduoduo's search
+// box shows only a suggested term ("羽绒服女冬季") in place of a hint, and
+// its resource id says nothing (GitHub issue #156). It takes all of:
+//
+//   - target is a text field, no password or code field, and holds no
+//     amount;
+//   - it is the only text field on the screen, search boxes aside: forms
+//     (an address, a payment, a sign-in) have more than one;
+//   - it is one line high and sits in the top quarter of the screen, where
+//     apps put their search box; a chat's or a comment's compose field
+//     sits at the bottom, above the keyboard;
+//   - on its row, a "Search" button or text ("搜索", "検索"), or a button
+//     whose resource id names search (a magnifier icon); or, anywhere on
+//     the screen, a search page's heading: "历史搜索", "Recent searches".
+//
+// A "Send" or "Post" button beside a field at the top does not count, nor
+// do search words in a message's text.
+func searchBoxByPlace(target *screen.Element, s *screen.Screen) bool {
+	if target == nil || s == nil || s.Height <= 0 || target.Bounds.Empty() || !isInput(target) ||
+		IsCredentialField(target) || hasCurrency(target.Label) || hasCurrency(target.Content) {
+		return false
+	}
+	b := target.Bounds
+	if b.Center().Y >= s.Height/4 || b.H*searchBoxMaxHeight > s.Height {
+		return false
+	}
+	signal := false
+	for i := range s.Elements {
+		e := &s.Elements[i]
+		if isInput(e) {
+			if sameElement(e, target) || IsSearchField(e) {
+				continue
+			}
+			return false
+		}
+		if e.Bounds.Empty() || sameElement(e, target) {
+			continue
+		}
+		if isSearchHeading(e.Label) ||
+			sameRow(b, e.Bounds) && !overlaps(b, e.Bounds) && isSearchButton(e) {
+			signal = true
+		}
+	}
+	return signal
+}
+
+// searchBoxMaxHeight bounds a one-line field: at most an eighth of the
+// screen's height.
+const searchBoxMaxHeight = 8
+
+// sameElement reports whether e is target, read from the same screen.
+func sameElement(e, target *screen.Element) bool {
+	if e.Ref != 0 && e.Ref == target.Ref {
+		return true
+	}
+	return e.Bounds == target.Bounds && e.Role == target.Role && e.Label == target.Label
+}
+
+// overlaps reports whether two rectangles share any area: a button inside
+// the field (a clear button) is not one beside it.
+func overlaps(a, b screen.Rect) bool {
+	return a.X < b.X+b.W && b.X < a.X+a.W && a.Y < b.Y+b.H && b.Y < a.Y+a.H
+}
+
+var cjkSearchLabels = []string{"搜索", "搜尋", "搜", "搜一搜", "检索", "検索", "검색"}
+
+var searchLabelWords = words("search", "find", "buscar", "rechercher", "suchen", "pesquisar", "cerca", "cercare",
+	"поиск", "найти", "искать")
+
+// searchHeadings head a search page's history and suggestions.
+var searchHeadings = []string{
+	"历史搜索", "搜索历史", "最近搜索", "搜索发现", "热门搜索", "大家都在搜", "猜你想搜",
+	"歷史搜尋", "搜尋紀錄", "最近搜尋", "熱門搜尋", "検索履歴", "最近の検索", "最近検索した項目", "최근 검색어",
+	"recent searches", "search history", "recent search", "popular searches", "trending searches",
+}
+
+// isSearchButton reports whether e, on a text field's row, searches: its
+// label says only "search" ("搜索", "Search"), or it is a button or image
+// without text of its own whose resource id names search (a magnifier).
+func isSearchButton(e *screen.Element) bool {
+	if isSearchLabel(e.Label) {
+		return true
+	}
+	if e.Role != screen.RoleButton && e.Role != screen.RoleImage {
+		return false
+	}
+	id := e.ID
+	if i := strings.LastIndex(id, "/"); i >= 0 {
+		id = id[i+1:]
+	}
+	if id == "" || (e.Label != "" && e.Label != id) {
+		return false
+	}
+	for _, w := range identifierWords(id) {
+		if searchLabelWords[strings.ToLower(w)] {
+			return true
+		}
+	}
+	return false
+}
+
+// isSearchLabel reports whether a label says only "search", in any
+// supported language. "搜索聊天记录" or "Search history" say more.
+func isSearchLabel(label string) bool {
+	if hasCJK(label) {
+		core := cjkCore(label)
+		for _, l := range cjkSearchLabels {
+			if core == l {
+				return true
+			}
+		}
+		return false
+	}
+	ws := tokenize(label)
+	return len(ws) == 1 && searchLabelWords[ws[0]]
+}
+
+// isSearchHeading reports whether a label is a search page's heading.
+func isSearchHeading(label string) bool {
+	l := strings.ToLower(strings.TrimSpace(label))
+	if hasCJK(l) {
+		l = cjkCore(l)
+	}
+	for _, h := range searchHeadings {
+		if hasCJK(h) {
+			h = cjkCore(h)
+		}
+		if l == h {
+			return true
+		}
+	}
+	return false
 }
 
 // impliedSearchBox reports whether the field that has focus, which s does
