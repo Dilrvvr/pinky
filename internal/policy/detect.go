@@ -807,6 +807,12 @@ func detect(in Input, cats []string) []Kind {
 		if t == nil || isInput(t) || t.Role == screen.RoleList || t.Role == screen.RoleTab {
 			break
 		}
+		// A long press on the home screen or in system UI opens a menu
+		// (an icon's, to rearrange or remove it; a notification's) and
+		// presses nothing: a "PayPal" or "支付宝" icon is no payment.
+		if in.LongPress && has(CatSystem) {
+			break
+		}
 		commit, money := commitParts(t)
 		if commit || (isAffirmative(label) && screenAsksCommit(in.Screen, t)) || isCommitIcon(t) {
 			add(Commit)

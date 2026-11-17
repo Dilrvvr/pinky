@@ -138,3 +138,32 @@ func TestRedPacketsReceivedAskNothing(t *testing.T) {
 		}
 	}
 }
+
+// TestHomeScreenLongPressIsNoPayment: a long press on a payment app's icon
+// on the home screen opens its menu, and asks nothing (DIYgod/pinky#157);
+// the same long press inside an app, and a tap on the icon, are judged as
+// before.
+func TestHomeScreenLongPressIsNoPayment(t *testing.T) {
+	e := Default()
+	homes := []screen.App{
+		{Name: "Home Screen", ID: "com.apple.springboard"},
+		{Name: "Pixel Launcher", ID: "com.google.android.apps.nexuslauncher"},
+	}
+	for _, home := range homes {
+		for _, l := range []string{"PayPal", "Pay", "支付宝", "Apple Pay"} {
+			in := tapOn(home, *button(l))
+			in.LongPress = true
+			if v := e.Evaluate(in); v.Decision != Allow || len(v.Kinds) != 0 {
+				t.Errorf("long press on %q in %s: %+v", l, home.ID, v)
+			}
+		}
+	}
+	in := tapOn(dex, *button("Pay"))
+	in.LongPress = true
+	if v := e.Evaluate(in); v.Decision != Ask || !v.Has(Payment) {
+		t.Errorf("long press on Pay inside an app: %+v", v)
+	}
+	if v := e.Evaluate(tapOn(homes[0], *button("Pay"))); !v.Has(Payment) {
+		t.Errorf("tap on Pay on the home screen: %+v", v)
+	}
+}

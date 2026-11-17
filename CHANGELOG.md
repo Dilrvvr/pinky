@@ -2,6 +2,15 @@
 
 What changed for people in each release of Pinky, newest first. A version is the release's date in Asia/Shanghai and that day's count: 2026.1107.2 is the second release of 7 November 2026. Notes wait under "Unreleased" until the next release takes them; see [docs/RELEASING.md](docs/RELEASING.md).
 
+## 2026.1117.3 (2026-11-17)
+
+- Choosing "Only the apps I choose" when an agent first connects no longer hides Deny and Approve in the floating panel.
+
+## 2026.1117.2 (2026-11-17)
+
+- Long-pressing a payment app's icon on the home screen (PayPal, Alipay) no longer asks for a payment approval.
+- Pinky now taps and reads the screen correctly on the iPhone Duo's inner display.
+
 ## 2026.1117.1 (2026-11-17)
 
 - You can now choose where task recordings are saved, in Settings › Privacy › Recordings folder, for example on an external disk. New recordings go there; earlier ones stay where they are and still play. Use Pinky's folder switches back.

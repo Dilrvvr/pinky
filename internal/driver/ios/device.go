@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"math"
+	"os"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -772,13 +773,22 @@ func (d *Device) panel(p screen.Point) (uint16, uint16) {
 // panelPoint maps a point of the upright screen si describes to the touch
 // panel.
 func panelPoint(p screen.Point, si screenInfo) (uint16, uint16) {
+	// PINKY_IOS_TOUCH_RAW=1 (debugging only) takes the point as panel units, 0..65535 on each axis, with no turn
+	// or scaling: for measuring how a touchscreen's axes map to a display.
+	if os.Getenv("PINKY_IOS_TOUCH_RAW") == "1" {
+		return uint16(max(0, min(p.X, 65535))), uint16(max(0, min(p.Y, 65535)))
+	}
 	u := si.upright()
 	if u.Width <= 0 || u.Height <= 0 {
 		return 0, 0
 	}
 	p.X = max(0, min(p.X, u.Width-1))
 	p.Y = max(0, min(p.Y, u.Height-1))
-	back := si.touchTurn().inverse()
+	turn := si.touchTurn()
+	if q, ok := touchTurnOverride(); ok {
+		turn = q
+	}
+	back := turn.inverse()
 	t := turnPoint(p, u.Width, u.Height, back)
 	tw, th := turnSize(u.Width, u.Height, back)
 	return scaleAxis(t.X, tw), scaleAxis(t.Y, th)
@@ -816,6 +826,7 @@ func (d *Device) waitInput(ctx context.Context) (*hidSession, error) {
 		}
 	}
 	d.markInput()
+	h.useSurface(touchSurface(d.display()))
 	return h, nil
 }
 
@@ -977,6 +988,8 @@ func (d *Device) gestureSteps(ctx context.Context, steps []driver.DragStep, onDo
 	// one showed on the display in use (multiinput.go).
 	unseen := d.inputUnseen()
 	si := d.freshDisplay(ctx)
+	// Read again: a fold since waitInput moves the gesture to the other screen.
+	h.useSurface(touchSurface(si))
 	x, y := panelPoint(steps[0].P, si)
 	sent := time.Now()
 	if err := h.touchAt(true, x, y); err != nil {
