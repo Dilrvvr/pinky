@@ -2,6 +2,12 @@
 
 What changed for people in each release of Pinky, newest first. A version is the release's date in Asia/Shanghai and that day's count: 2026.1107.2 is the second release of 7 November 2026. Notes wait under "Unreleased" until the next release takes them; see [docs/RELEASING.md](docs/RELEASING.md).
 
+## 2026.1117.4 (2026-11-17)
+
+- When Pinky starts hidden on macOS, a window that opens by itself for an approval no longer takes the keyboard, so a stray Return can't answer it.
+- The floating panel now leaves room for the whole list of apps when you choose "Only the apps I choose" for a new agent.
+- The Tasks box's buttons now wrap in a narrow window instead of running past the box.
+
 ## 2026.1117.3 (2026-11-17)
 
 - Choosing "Only the apps I choose" when an agent first connects no longer hides Deny and Approve in the floating panel.

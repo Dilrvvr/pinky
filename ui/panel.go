@@ -29,7 +29,9 @@ const (
 	// panelApps is the room a first connection's list of apps takes in
 	// the floating panel, under "Only the apps I choose": the field that
 	// narrows it down, the list (appsListHeight) and how many are chosen.
-	panelApps = 170
+	// A phone has more apps than the list shows, so it takes its whole
+	// height; Japanese and an agent that asked to only read take the most.
+	panelApps = appsListHeight + 80
 )
 
 // panelHeight is the floating panel's height for need n, which it asks or

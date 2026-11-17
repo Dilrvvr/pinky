@@ -239,7 +239,9 @@ func (a *app) askBox(c *mg.Context) {
 					mg.Text(c, locales.AskToday(today)).FontSize(fsCaption).TextColor(p.ink3).FontFeatures("tnum")
 				}
 			})
-			mg.Row(c).Gap(sp3).AlignItems(mg.Center).Shrink(0).Children(func() {
+			// The buttons wrap too: in English and Japanese the three are
+			// wider together than a narrow panel's box.
+			mg.Row(c).Gap(sp3).AlignItems(mg.Center).Justify(mg.End).Wrap().Children(func() {
 				// About the screen: a question about what the phone shows
 				// now, which may be left empty to have the screen explained.
 				screen := button(c, locales.AskScreen(), btnOpt{small: true}).Disabled(why != "").

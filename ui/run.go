@@ -460,6 +460,7 @@ type app struct {
 	setq      settingsQueue // settings on their way to the gateway
 	postHook  func(func())  // tests run posted functions themselves
 	shownOnce bool          // the main window has shown (Options.Hidden)
+	docked    bool          // a hidden-started app has its Dock icon (regularApp)
 
 	mediaCache map[string]*mediaEntry // step screenshots by media id
 	mediaSweep bool                   // a sweepMedia is due (mediaKeep)
@@ -633,7 +634,7 @@ func (a *app) ready() {
 	a.main.OnMinimize(a.closeMirrors)
 	a.main.OnShow(a.main.Invalidate)
 	a.main.OnRestore(a.main.Invalidate)
-	a.main.OnFocus(func() { a.focused = true; a.syncPanel() })
+	a.main.OnFocus(func() { a.focused = true; a.regularApp(); a.syncPanel() })
 	a.main.OnBlur(func() { a.focused = false; a.syncPanel() })
 	a.focused = a.main.IsFocused()
 
@@ -1154,15 +1155,19 @@ func (a *app) openForNeed(n gateway.NeedView) {
 		return
 	}
 	a.selectPhone(n.DeviceID)
-	a.regularApp()
+	a.shownOnce = true
 	a.main.ShowInactive()
 }
 
-// regularApp gives a hidden-started app its Dock icon once a window shows.
+// regularApp gives a hidden-started app its Dock icon when the person
+// opens or focuses its window. On macOS that also makes it the active app,
+// whose front window takes the keyboard, so a window that opened by itself
+// (openForNeed) waits for the person to come to it.
 func (a *app) regularApp() {
-	if a.opt.Hidden && !a.shownOnce && runtime.GOOS == "darwin" {
+	if a.opt.Hidden && !a.docked && runtime.GOOS == "darwin" {
 		mygo.App.SetActivationPolicy(mygo.ActivationPolicyRegular)
 	}
+	a.docked = true
 	a.shownOnce = true
 }
 

@@ -684,6 +684,17 @@ func TestAskPinkyLimitFits(t *testing.T) {
 				if b.Y < r.Y+r.H && b.X < r.X+r.W {
 					t.Errorf("width %d: %q %v overlaps the limit %v", w, locales.AskScreen(), b, r)
 				}
+				// The buttons stay in the box: 開始 (Start) went past its
+				// right edge, to the window's, in Japanese.
+				box, ok := tt.AccessByRole(mg.RoleGroup, locales.AskTitle())
+				if !ok {
+					t.Fatalf("width %d: no box", w)
+				}
+				for _, name := range []string{locales.AskScreen(), locales.SchedButton(), locales.AskStart()} {
+					if b, ok := tt.AccessByRole(mg.RoleButton, name); !ok || b.Bounds.X+b.Bounds.W > box.Bounds.X+box.Bounds.W {
+						t.Errorf("width %d: %q %v is not inside the box %v", w, name, b.Bounds, box.Bounds)
+					}
+				}
 			}
 		})
 	}
