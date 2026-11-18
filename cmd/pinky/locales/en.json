@@ -674,21 +674,21 @@
   "@addPhoneChooseAndroid": {
     "description": "Add phone, first step: under \"Android\" on its card, examples of Android phones."
   },
-  "addPhoneChooseDetail": "Pinky works with Android phones and iPhones.",
+  "addPhoneChooseDetail": "Pinky works with Android phones, iPhones and iPads.",
   "@addPhoneChooseDetail": {
     "description": "Add phone, first step: the line under the heading."
   },
   "addPhoneChooseIPhone": "Best on iOS 27; older versions work too",
   "@addPhoneChooseIPhone": {
-    "description": "Add phone, first step: under \"iPhone\" on its card, which iOS versions work."
+    "description": "Add phone, first step: under \"iPhone / iPad\" on its card, which iOS versions work."
   },
   "addPhoneChooseTitle": "Which phone?",
   "@addPhoneChooseTitle": {
-    "description": "Add phone, first step: the heading above two cards to pick from, Android and iPhone."
+    "description": "Add phone, first step: the heading above two cards to pick from, Android and iPhone / iPad."
   },
   "addPhoneChooseVirtual": "Virtual phone",
   "@addPhoneChooseVirtual": {
-    "description": "Add phone, first step: the title of the card below Android and iPhone, for iOS Simulators and Android emulators that run on this computer."
+    "description": "Add phone, first step: the title of the card below Android and iPhone / iPad, for iOS Simulators and Android emulators that run on this computer."
   },
   "addPhoneChooseVirtualMac": "An iOS Simulator or an Android emulator on this Mac",
   "@addPhoneChooseVirtualMac": {

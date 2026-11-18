@@ -2,6 +2,10 @@
 
 What changed for people in each release of Pinky, newest first. A version is the release's date in Asia/Shanghai and that day's count: 2026.1107.2 is the second release of 7 November 2026. Notes wait under "Unreleased" until the next release takes them; see [docs/RELEASING.md](docs/RELEASING.md).
 
+## 2026.1118.5 (2026-11-18)
+
+- Add phone now names the iPad on the iPhone card, "iPhone / iPad", so it is clear where to add an iPad.
+
 ## 2026.1118.4 (2026-11-18)
 
 - On Windows, reading a phone's network traffic no longer leaves out a request the phone made right after you handed it back to the agent.

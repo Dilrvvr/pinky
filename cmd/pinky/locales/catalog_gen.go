@@ -1965,13 +1965,13 @@ func (msgs Messages) AddPhoneChooseAndroid() string {
 	return Catalog.Format(msgs.locale, "addPhoneChooseAndroid", nil)
 }
 
-// AddPhoneChooseDetail says "Pinky works with Android phones and iPhones."
+// AddPhoneChooseDetail says "Pinky works with Android phones, iPhones and iPads."
 // in the language the app shows.
 //
 // Add phone, first step: the line under the heading.
 func AddPhoneChooseDetail() string { return In(i18n.Locale()).AddPhoneChooseDetail() }
 
-// AddPhoneChooseDetail says "Pinky works with Android phones and iPhones."
+// AddPhoneChooseDetail says "Pinky works with Android phones, iPhones and iPads."
 // in the language of msgs.
 //
 // Add phone, first step: the line under the heading.
@@ -1982,15 +1982,15 @@ func (msgs Messages) AddPhoneChooseDetail() string {
 // AddPhoneChooseIPhone says "Best on iOS 27; older versions work too"
 // in the language the app shows.
 //
-// Add phone, first step: under "iPhone" on its card, which iOS versions
-// work.
+// Add phone, first step: under "iPhone / iPad" on its card, which iOS
+// versions work.
 func AddPhoneChooseIPhone() string { return In(i18n.Locale()).AddPhoneChooseIPhone() }
 
 // AddPhoneChooseIPhone says "Best on iOS 27; older versions work too"
 // in the language of msgs.
 //
-// Add phone, first step: under "iPhone" on its card, which iOS versions
-// work.
+// Add phone, first step: under "iPhone / iPad" on its card, which iOS
+// versions work.
 func (msgs Messages) AddPhoneChooseIPhone() string {
 	return Catalog.Format(msgs.locale, "addPhoneChooseIPhone", nil)
 }
@@ -1999,14 +1999,14 @@ func (msgs Messages) AddPhoneChooseIPhone() string {
 // in the language the app shows.
 //
 // Add phone, first step: the heading above two cards to pick from, Android
-// and iPhone.
+// and iPhone / iPad.
 func AddPhoneChooseTitle() string { return In(i18n.Locale()).AddPhoneChooseTitle() }
 
 // AddPhoneChooseTitle says "Which phone?"
 // in the language of msgs.
 //
 // Add phone, first step: the heading above two cards to pick from, Android
-// and iPhone.
+// and iPhone / iPad.
 func (msgs Messages) AddPhoneChooseTitle() string {
 	return Catalog.Format(msgs.locale, "addPhoneChooseTitle", nil)
 }
@@ -2014,15 +2014,15 @@ func (msgs Messages) AddPhoneChooseTitle() string {
 // AddPhoneChooseVirtual says "Virtual phone"
 // in the language the app shows.
 //
-// Add phone, first step: the title of the card below Android and iPhone,
-// for iOS Simulators and Android emulators that run on this computer.
+// Add phone, first step: the title of the card below Android and iPhone /
+// iPad, for iOS Simulators and Android emulators that run on this computer.
 func AddPhoneChooseVirtual() string { return In(i18n.Locale()).AddPhoneChooseVirtual() }
 
 // AddPhoneChooseVirtual says "Virtual phone"
 // in the language of msgs.
 //
-// Add phone, first step: the title of the card below Android and iPhone,
-// for iOS Simulators and Android emulators that run on this computer.
+// Add phone, first step: the title of the card below Android and iPhone /
+// iPad, for iOS Simulators and Android emulators that run on this computer.
 func (msgs Messages) AddPhoneChooseVirtual() string {
 	return Catalog.Format(msgs.locale, "addPhoneChooseVirtual", nil)
 }

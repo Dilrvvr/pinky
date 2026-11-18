@@ -470,6 +470,8 @@ PINKY_SIM_UDID=<sim> PINKY_WDA_URL=http://127.0.0.1:18100 PINKY_MJPEG_URL=http:/
 
 WDA on a simulator listens on every interface of the computer while it runs; stop it when done. `iosctl` opens a phone below iOS 27 the way Pinky would and runs the commands every path has (observe, tap, swipe, key, type, screenshot, stream, launch, apps, locked).
 
+<a id="installing-pinky-for-iphone"></a>
+
 ### Installing Pinky on the iPhone
 
 (Called "Installing Pinky on the iPhone (WebDriverAgent)" before 2026-11-12, and "Installing Pinky for iPhone" until 2026-11-13, when Pinky on the iPhone, Pinky's iPhone app, took the place of Pinky Helper as WebDriverAgent's host; "the helper" below is either.) Once per phone, on a Mac with Xcode, with the iPhone plugged in (or paired over Wi-Fi): **Install Pinky on the iPhone** in Pinky's window (below, "From Pinky's window"), or in Terminal:
@@ -545,6 +547,8 @@ What ran where:
 | Building for a phone with the profiles on this Mac, branding and signing again | `generic/platform=iOS`, the owner's team through its wildcard profile, "iOS Team Provisioning Profile: *", 2026-11-11 | The same certificate, team, identifier and entitlements (DER included) as Xcode's; two more sealed files (the translations); `codesign --verify --deep --strict` passes; nothing asked of Apple |
 | Branding with the Mac's actool, the brand mark, finding the branded runner, the phone and team choice, devicectl's list, certificates, hints | Unit tests (`helperbrand_test.go`, `helperinstall_test.go`) | Pass |
 | `pinkyctl helper install` on a phone, replacing the helper another tool had installed | The owner's iPhone 13 mini, iOS 27.0.1, on Wi-Fi only (no cable), Xcode 27.2, `--team 492J8Q67PF --local-signing`, 2026-11-11 | usbmuxd did not list the phone, so the helper on it came from devicectl's list (team unknown); built with the local wildcard profile, branded, signed again, installed in place over the old one with the same bundle id; WDA printed `ServerURLHere` and was stopped; the phone then listed it as Pinky Helper. The first try waited on a locked phone until it was unlocked, hence the notice above |
+
+<a id="when-pinky-for-iphones-signature-runs-out"></a>
 
 ### When the signature of Pinky on the iPhone runs out
 
