@@ -164,7 +164,7 @@ Interaction rules:
 
 ## Agent interface
 
-Agents see one MCP server, `pinky`, with 20 tools. Every action waits for the screen to settle and returns the new screen, or only what changed, so agents rarely call `phone_observe`. A list read keeps its per-screen changes inside the gateway and sends back one compact transcript.
+Agents see one MCP server, `pinky`, with 21 tools. Every action waits for the screen to settle and returns the new screen, or only what changed, so agents rarely call `phone_observe`. A list read keeps its per-screen changes inside the gateway and sends back one compact transcript.
 
 | Tool | Arguments | Returns |
 | --- | --- | --- |
@@ -185,6 +185,7 @@ Agents see one MCP server, `pinky`, with 20 tools. Every action waits for the sc
 | `phone_files` | none | A local folder synced with the phone's `Pinky/` folder (Android only); agents elsewhere upload files into it |
 | `phone_app` | `action` (install, uninstall, stop); `paths` or `app` | Installs or updates an app from that local folder (an APK, an IPA or a `.app`), uninstalls an app, or force-quits it |
 | `phone_logs` | `app`, `kind?` (logs or crashes), `since?`, `filter?`, `level?`, `limit?` | One app's own log lines or crash reports ([notes/app-logs.md](notes/app-logs.md)) |
+| `phone_traffic` | `id?`, `bodies?`, `host?`, `path?`, `method?`, `since?`, `since_step?`, `limit?` | The HTTP(S) requests the phone made during the task, through Pinky's own proxy ([notes/traffic-capture.md](notes/traffic-capture.md)) |
 | `phone_device` | `rotation?`, `appearance?`, `location?`, `reset?` | The switches developers test with, read or set, and on a read the phone's model, system, battery and storage; Pinky puts them back when the task ends ([notes/device-switches.md](notes/device-switches.md)) |
 | `phone_request_approval` | `summary`, `details?` | The person's answer and note; it grants nothing by itself |
 | `phone_handoff` | `reason` | Returns when the person hands control back, with their note |
@@ -361,6 +362,7 @@ always_allow:
 - `phone_files` reaches only the phone's `Pinky/` folder. Writing to the phone is Ask, and read-only mode turns it off.
 - `phone_app` installs only from the phone's folder on the computer, and installing and uninstalling ask, whatever the preset; Allow for this task covers the same app from the same signer, and for installs Always allow does too, for one agent on one phone (above). Uninstalling has no Always allow. It never touches Pinky's own apps, system apps, finance apps, password managers or blocked apps ([notes/apps.md](notes/apps.md)).
 - `phone_logs` reads one app's own lines and crash reports, never another process's, and only of apps in the agent's scope and the task's list; never of blocked, finance, password-manager, system or Pinky's own apps. The first read of an app in a task is Ask (rule `App logs`) unless the app is a development build; history keeps the count, not the text.
+- `phone_traffic` (prototype) reads a phone's web requests only when the person turned on Read network traffic for that phone (off by default) and set the phone's proxy to Pinky's proxy setup link (a PAC file that falls back to direct connections). The proxy listens only on the address the phone reaches, accepts only that phone and runs only during its tasks; outside them only the PAC file and the certificate are served. Its CA is made per install, lasts a year and is renewed a month before it ends; its key is in the macOS keychain (a file only the user reads on Linux and Windows). Banking, payment, brokerage and password-manager hosts, and the hosts the person blocks, are never decrypted. The first read in a task is Ask (rule `Network traffic`, no Always allow), and the first read of bodies asks again; credentials are redacted; nothing is recorded while the person holds the phone; captures stay in memory, bounded, and are dropped when the task ends. Pinky never installs certificates on the phone, and changes an Android phone's proxy only behind a switch the person turns on, restoring it after each task and at every start ([notes/traffic-capture.md](notes/traffic-capture.md)).
 - An agent's first connection needs approval and a scope.
 
 ### Threat model

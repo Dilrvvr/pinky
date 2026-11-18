@@ -29,8 +29,9 @@ import (
 // schemaVersion is stored in PRAGMA user_version. Version 2 added the
 // recordings and device_settings tables, version 3 device_connections,
 // version 4 removed_devices, version 5 paused_devices, version 6
-// recording_removals; all versions open the same way.
-const schemaVersion = 6
+// recording_removals, version 7 traffic_devices, traffic_routes and
+// traffic_blocklist; all versions open the same way.
+const schemaVersion = 7
 
 const schema = `
 CREATE TABLE IF NOT EXISTS devices (
@@ -149,6 +150,25 @@ CREATE TABLE IF NOT EXISTS paused_devices (
 
 CREATE TABLE IF NOT EXISTS recording_removals (
 	path TEXT PRIMARY KEY
+);
+
+CREATE TABLE IF NOT EXISTS traffic_devices (
+	device_id TEXT PRIMARY KEY,
+	on_at     INTEGER NOT NULL DEFAULT 0,
+	route     INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS traffic_blocklist (
+	device_id TEXT NOT NULL,
+	host      TEXT NOT NULL,
+	PRIMARY KEY (device_id, host)
+);
+
+CREATE TABLE IF NOT EXISTS traffic_routes (
+	device_id TEXT PRIMARY KEY,
+	prev      TEXT NOT NULL DEFAULT '',
+	port      INTEGER NOT NULL DEFAULT 0,
+	routed_at INTEGER NOT NULL DEFAULT 0
 );
 `
 

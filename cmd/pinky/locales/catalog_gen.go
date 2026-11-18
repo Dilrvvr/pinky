@@ -5281,6 +5281,644 @@ func (msgs Messages) BackgroundUnsupported(phone string) string {
 	return Catalog.Format(msgs.locale, "backgroundUnsupported", map[string]any{"phone": phone})
 }
 
+// TrafficTitle says "Read network traffic"
+// in the language the app shows.
+//
+// Settings › Phones: a phone's switch that lets agents read the web
+// requests the phone makes during their tasks (phone_traffic), through
+// Pinky's own proxy. Off by default.
+func TrafficTitle() string { return In(i18n.Locale()).TrafficTitle() }
+
+// TrafficTitle says "Read network traffic"
+// in the language of msgs.
+//
+// Settings › Phones: a phone's switch that lets agents read the web
+// requests the phone makes during their tasks (phone_traffic), through
+// Pinky's own proxy. Off by default.
+func (msgs Messages) TrafficTitle() string {
+	return Catalog.Format(msgs.locale, "trafficTitle", nil)
+}
+
+// TrafficDesc says "Agents may see the web requests this phone makes during their tasks, once its proxy is set to Pinky. Pinky asks you f…"
+// in the language the app shows.
+//
+// Settings › Phones: the line under Read network traffic.
+func TrafficDesc() string { return In(i18n.Locale()).TrafficDesc() }
+
+// TrafficDesc says "Agents may see the web requests this phone makes during their tasks, once its proxy is set to Pinky. Pinky asks you f…"
+// in the language of msgs.
+//
+// Settings › Phones: the line under Read network traffic.
+func (msgs Messages) TrafficDesc() string {
+	return Catalog.Format(msgs.locale, "trafficDesc", nil)
+}
+
+// TrafficChangeFailed says "Couldn't change Read network traffic for {phone}: {error}"
+// in the language the app shows.
+//
+// A toast when Pinky could not turn Read network traffic on or off. phone
+// is the phone's name, error what went wrong.
+func TrafficChangeFailed(phone string, error string) string {
+	return In(i18n.Locale()).TrafficChangeFailed(phone, error)
+}
+
+// TrafficChangeFailed says "Couldn't change Read network traffic for {phone}: {error}"
+// in the language of msgs.
+//
+// A toast when Pinky could not turn Read network traffic on or off. phone
+// is the phone's name, error what went wrong.
+func (msgs Messages) TrafficChangeFailed(phone string, error string) string {
+	return Catalog.Format(msgs.locale, "trafficChangeFailed", map[string]any{"phone": phone, "error": error})
+}
+
+// TrafficSetupTitle says "Send traffic through Pinky"
+// in the language the app shows.
+//
+// Settings › Phones, under Read network traffic once it is on: the row
+// that opens the phone's setup for Pinky's proxy.
+func TrafficSetupTitle() string { return In(i18n.Locale()).TrafficSetupTitle() }
+
+// TrafficSetupTitle says "Send traffic through Pinky"
+// in the language of msgs.
+//
+// Settings › Phones, under Read network traffic once it is on: the row
+// that opens the phone's setup for Pinky's proxy.
+func (msgs Messages) TrafficSetupTitle() string {
+	return Catalog.Format(msgs.locale, "trafficSetupTitle", nil)
+}
+
+// TrafficSetupDesc says "The proxy setup link for this phone, Pinky's certificate, and what to set on the phone."
+// in the language the app shows.
+//
+// The line under Send traffic through Pinky.
+func TrafficSetupDesc() string { return In(i18n.Locale()).TrafficSetupDesc() }
+
+// TrafficSetupDesc says "The proxy setup link for this phone, Pinky's certificate, and what to set on the phone."
+// in the language of msgs.
+//
+// The line under Send traffic through Pinky.
+func (msgs Messages) TrafficSetupDesc() string {
+	return Catalog.Format(msgs.locale, "trafficSetupDesc", nil)
+}
+
+// TrafficSetupShow says "Show Setup"
+// in the language the app shows.
+//
+// The button that opens the setup.
+func TrafficSetupShow() string { return In(i18n.Locale()).TrafficSetupShow() }
+
+// TrafficSetupShow says "Show Setup"
+// in the language of msgs.
+//
+// The button that opens the setup.
+func (msgs Messages) TrafficSetupShow() string {
+	return Catalog.Format(msgs.locale, "trafficSetupShow", nil)
+}
+
+// TrafficSetupHide says "Hide Setup"
+// in the language the app shows.
+//
+// The button that closes the setup.
+func TrafficSetupHide() string { return In(i18n.Locale()).TrafficSetupHide() }
+
+// TrafficSetupHide says "Hide Setup"
+// in the language of msgs.
+//
+// The button that closes the setup.
+func (msgs Messages) TrafficSetupHide() string {
+	return Catalog.Format(msgs.locale, "trafficSetupHide", nil)
+}
+
+// TrafficSetupReading says "Reading…"
+// in the language the app shows.
+//
+// While the setup is first read.
+func TrafficSetupReading() string { return In(i18n.Locale()).TrafficSetupReading() }
+
+// TrafficSetupReading says "Reading…"
+// in the language of msgs.
+//
+// While the setup is first read.
+func (msgs Messages) TrafficSetupReading() string {
+	return Catalog.Format(msgs.locale, "trafficSetupReading", nil)
+}
+
+// TrafficSetupWaiting says "Pinky is looking for this phone on this computer's networks…"
+// in the language the app shows.
+//
+// While Pinky has not found where the phone reaches its proxy yet.
+func TrafficSetupWaiting() string { return In(i18n.Locale()).TrafficSetupWaiting() }
+
+// TrafficSetupWaiting says "Pinky is looking for this phone on this computer's networks…"
+// in the language of msgs.
+//
+// While Pinky has not found where the phone reaches its proxy yet.
+func (msgs Messages) TrafficSetupWaiting() string {
+	return Catalog.Format(msgs.locale, "trafficSetupWaiting", nil)
+}
+
+// TrafficCertificate says "Certificate"
+// in the language the app shows.
+//
+// A row with the link where the phone's browser downloads Pinky's
+// certificate.
+func TrafficCertificate() string { return In(i18n.Locale()).TrafficCertificate() }
+
+// TrafficCertificate says "Certificate"
+// in the language of msgs.
+//
+// A row with the link where the phone's browser downloads Pinky's
+// certificate.
+func (msgs Messages) TrafficCertificate() string {
+	return Catalog.Format(msgs.locale, "trafficCertificate", nil)
+}
+
+// TrafficCopyCertURL says "Copy the certificate link"
+// in the language the app shows.
+//
+// The Copy button of the certificate link.
+func TrafficCopyCertURL() string { return In(i18n.Locale()).TrafficCopyCertURL() }
+
+// TrafficCopyCertURL says "Copy the certificate link"
+// in the language of msgs.
+//
+// The Copy button of the certificate link.
+func (msgs Messages) TrafficCopyCertURL() string {
+	return Catalog.Format(msgs.locale, "trafficCopyCertURL", nil)
+}
+
+// TrafficCopiedCertURL says "Copied the certificate link"
+// in the language the app shows.
+//
+// A toast after copying the certificate link.
+func TrafficCopiedCertURL() string { return In(i18n.Locale()).TrafficCopiedCertURL() }
+
+// TrafficCopiedCertURL says "Copied the certificate link"
+// in the language of msgs.
+//
+// A toast after copying the certificate link.
+func (msgs Messages) TrafficCopiedCertURL() string {
+	return Catalog.Format(msgs.locale, "trafficCopiedCertURL", nil)
+}
+
+// TrafficPACURL says "Proxy setup link"
+// in the language the app shows.
+//
+// A row with the link (a proxy auto-config file) the phone's Wi-Fi proxy is
+// set to, as Automatic.
+func TrafficPACURL() string { return In(i18n.Locale()).TrafficPACURL() }
+
+// TrafficPACURL says "Proxy setup link"
+// in the language of msgs.
+//
+// A row with the link (a proxy auto-config file) the phone's Wi-Fi proxy is
+// set to, as Automatic.
+func (msgs Messages) TrafficPACURL() string {
+	return Catalog.Format(msgs.locale, "trafficPACURL", nil)
+}
+
+// TrafficCopyPACURL says "Copy the proxy setup link"
+// in the language the app shows.
+//
+// The Copy button of the proxy setup link.
+func TrafficCopyPACURL() string { return In(i18n.Locale()).TrafficCopyPACURL() }
+
+// TrafficCopyPACURL says "Copy the proxy setup link"
+// in the language of msgs.
+//
+// The Copy button of the proxy setup link.
+func (msgs Messages) TrafficCopyPACURL() string {
+	return Catalog.Format(msgs.locale, "trafficCopyPACURL", nil)
+}
+
+// TrafficCopiedPACURL says "Copied the proxy setup link"
+// in the language the app shows.
+//
+// A toast after copying the proxy setup link.
+func TrafficCopiedPACURL() string { return In(i18n.Locale()).TrafficCopiedPACURL() }
+
+// TrafficCopiedPACURL says "Copied the proxy setup link"
+// in the language of msgs.
+//
+// A toast after copying the proxy setup link.
+func (msgs Messages) TrafficCopiedPACURL() string {
+	return Catalog.Format(msgs.locale, "trafficCopiedPACURL", nil)
+}
+
+// TrafficCAExpires says "It's valid until {date}. A month before then, Pinky makes a new one, and this phone needs the new one installed."
+// in the language the app shows.
+//
+// When Pinky's certificate ends. date is the day.
+func TrafficCAExpires(date string) string { return In(i18n.Locale()).TrafficCAExpires(date) }
+
+// TrafficCAExpires says "It's valid until {date}. A month before then, Pinky makes a new one, and this phone needs the new one installed."
+// in the language of msgs.
+//
+// When Pinky's certificate ends. date is the day.
+func (msgs Messages) TrafficCAExpires(date string) string {
+	return Catalog.Format(msgs.locale, "trafficCAExpires", map[string]any{"date": date})
+}
+
+// TrafficCARenewed says "Pinky made a new certificate because the old one was about to expire. Install the new one on this phone (steps 2 to 4…"
+// in the language the app shows.
+//
+// A warning in the setup after Pinky replaced its certificate authority:
+// the phone has to install the new certificate.
+func TrafficCARenewed() string { return In(i18n.Locale()).TrafficCARenewed() }
+
+// TrafficCARenewed says "Pinky made a new certificate because the old one was about to expire. Install the new one on this phone (steps 2 to 4…"
+// in the language of msgs.
+//
+// A warning in the setup after Pinky replaced its certificate authority:
+// the phone has to install the new certificate.
+func (msgs Messages) TrafficCARenewed() string {
+	return Catalog.Format(msgs.locale, "trafficCARenewed", nil)
+}
+
+// TrafficRemoveIOS says "To remove Pinky's certificate from the iPhone: Settings › General › VPN & Device Management, tap Pinky's profile,…"
+// in the language the app shows.
+//
+// How to take Pinky's certificate off an iPhone. Use the names iOS gives
+// these settings in the language.
+func TrafficRemoveIOS() string { return In(i18n.Locale()).TrafficRemoveIOS() }
+
+// TrafficRemoveIOS says "To remove Pinky's certificate from the iPhone: Settings › General › VPN & Device Management, tap Pinky's profile,…"
+// in the language of msgs.
+//
+// How to take Pinky's certificate off an iPhone. Use the names iOS gives
+// these settings in the language.
+func (msgs Messages) TrafficRemoveIOS() string {
+	return Catalog.Format(msgs.locale, "trafficRemoveIOS", nil)
+}
+
+// TrafficRemoveAndroid says "To remove Pinky's certificate from the phone: Settings › Security & privacy › More security settings › Encrypti…"
+// in the language the app shows.
+//
+// How to take Pinky's certificate off an Android phone. Use the names stock
+// Android gives these settings in the language.
+func TrafficRemoveAndroid() string { return In(i18n.Locale()).TrafficRemoveAndroid() }
+
+// TrafficRemoveAndroid says "To remove Pinky's certificate from the phone: Settings › Security & privacy › More security settings › Encrypti…"
+// in the language of msgs.
+//
+// How to take Pinky's certificate off an Android phone. Use the names stock
+// Android gives these settings in the language.
+func (msgs Messages) TrafficRemoveAndroid() string {
+	return Catalog.Format(msgs.locale, "trafficRemoveAndroid", nil)
+}
+
+// TrafficBlockTitle says "Never decrypt"
+// in the language the app shows.
+//
+// Settings › Phones, in a phone's traffic setup: the hosts Pinky never
+// decrypts or records for this phone.
+func TrafficBlockTitle() string { return In(i18n.Locale()).TrafficBlockTitle() }
+
+// TrafficBlockTitle says "Never decrypt"
+// in the language of msgs.
+//
+// Settings › Phones, in a phone's traffic setup: the hosts Pinky never
+// decrypts or records for this phone.
+func (msgs Messages) TrafficBlockTitle() string {
+	return Catalog.Format(msgs.locale, "trafficBlockTitle", nil)
+}
+
+// TrafficBlockDesc says "Pinky never decrypts banking, payment, brokerage or password-manager apps. Add other hosts here, subdomains included:…"
+// in the language the app shows.
+//
+// The line under Never decrypt.
+func TrafficBlockDesc() string { return In(i18n.Locale()).TrafficBlockDesc() }
+
+// TrafficBlockDesc says "Pinky never decrypts banking, payment, brokerage or password-manager apps. Add other hosts here, subdomains included:…"
+// in the language of msgs.
+//
+// The line under Never decrypt.
+func (msgs Messages) TrafficBlockDesc() string {
+	return Catalog.Format(msgs.locale, "trafficBlockDesc", nil)
+}
+
+// TrafficBlockLabel says "Host to never decrypt"
+// in the language the app shows.
+//
+// The field's accessible label, where the person types a host to add to
+// Never decrypt.
+func TrafficBlockLabel() string { return In(i18n.Locale()).TrafficBlockLabel() }
+
+// TrafficBlockLabel says "Host to never decrypt"
+// in the language of msgs.
+//
+// The field's accessible label, where the person types a host to add to
+// Never decrypt.
+func (msgs Messages) TrafficBlockLabel() string {
+	return Catalog.Format(msgs.locale, "trafficBlockLabel", nil)
+}
+
+// TrafficBlockAdd says "Add"
+// in the language the app shows.
+//
+// The button that adds the typed host to Never decrypt.
+func TrafficBlockAdd() string { return In(i18n.Locale()).TrafficBlockAdd() }
+
+// TrafficBlockAdd says "Add"
+// in the language of msgs.
+//
+// The button that adds the typed host to Never decrypt.
+func (msgs Messages) TrafficBlockAdd() string {
+	return Catalog.Format(msgs.locale, "trafficBlockAdd", nil)
+}
+
+// TrafficBlockRemove says "Remove {host}"
+// in the language the app shows.
+//
+// The accessible label of the button that takes a host off Never decrypt.
+func TrafficBlockRemove(host string) string { return In(i18n.Locale()).TrafficBlockRemove(host) }
+
+// TrafficBlockRemove says "Remove {host}"
+// in the language of msgs.
+//
+// The accessible label of the button that takes a host off Never decrypt.
+func (msgs Messages) TrafficBlockRemove(host string) string {
+	return Catalog.Format(msgs.locale, "trafficBlockRemove", map[string]any{"host": host})
+}
+
+// TrafficBlockInvalid says "“{text}” isn't a host name, like bank.example.com."
+// in the language the app shows.
+//
+// When what the person typed into Never decrypt is no host name.
+func TrafficBlockInvalid(text string) string { return In(i18n.Locale()).TrafficBlockInvalid(text) }
+
+// TrafficBlockInvalid says "“{text}” isn't a host name, like bank.example.com."
+// in the language of msgs.
+//
+// When what the person typed into Never decrypt is no host name.
+func (msgs Messages) TrafficBlockInvalid(text string) string {
+	return Catalog.Format(msgs.locale, "trafficBlockInvalid", map[string]any{"text": text})
+}
+
+// TrafficBlockFailed says "Couldn't change the hosts Pinky never decrypts for {phone}: {error}"
+// in the language the app shows.
+//
+// A toast when saving Never decrypt failed. phone is the phone's name,
+// error what went wrong.
+func TrafficBlockFailed(phone string, error string) string {
+	return In(i18n.Locale()).TrafficBlockFailed(phone, error)
+}
+
+// TrafficBlockFailed says "Couldn't change the hosts Pinky never decrypts for {phone}: {error}"
+// in the language of msgs.
+//
+// A toast when saving Never decrypt failed. phone is the phone's name,
+// error what went wrong.
+func (msgs Messages) TrafficBlockFailed(phone string, error string) string {
+	return Catalog.Format(msgs.locale, "trafficBlockFailed", map[string]any{"phone": phone, "error": error})
+}
+
+// TrafficCAInfo says "Certificate “{name}”, SHA-256 {fingerprint}. Pinky made it on this computer and keeps its key only here."
+// in the language the app shows.
+//
+// Pinky's certificate authority: name is its name, fingerprint its SHA-256
+// fingerprint, for the person to compare on the phone.
+func TrafficCAInfo(name string, fingerprint string) string {
+	return In(i18n.Locale()).TrafficCAInfo(name, fingerprint)
+}
+
+// TrafficCAInfo says "Certificate “{name}”, SHA-256 {fingerprint}. Pinky made it on this computer and keeps its key only here."
+// in the language of msgs.
+//
+// Pinky's certificate authority: name is its name, fingerprint its SHA-256
+// fingerprint, for the person to compare on the phone.
+func (msgs Messages) TrafficCAInfo(name string, fingerprint string) string {
+	return Catalog.Format(msgs.locale, "trafficCAInfo", map[string]any{"name": name, "fingerprint": fingerprint})
+}
+
+// TrafficStepsIOS says "On the iPhone:\n1. Settings › Wi-Fi, tap ⓘ next to the network, then Configure Proxy › Automatic, and enter the …"
+// in the language the app shows.
+//
+// The steps on an iPhone to send its traffic through Pinky's proxy (an
+// automatic proxy with the proxy setup link) and trust Pinky's certificate.
+// Use the names iOS gives these settings in the language.
+func TrafficStepsIOS() string { return In(i18n.Locale()).TrafficStepsIOS() }
+
+// TrafficStepsIOS says "On the iPhone:\n1. Settings › Wi-Fi, tap ⓘ next to the network, then Configure Proxy › Automatic, and enter the …"
+// in the language of msgs.
+//
+// The steps on an iPhone to send its traffic through Pinky's proxy (an
+// automatic proxy with the proxy setup link) and trust Pinky's certificate.
+// Use the names iOS gives these settings in the language.
+func (msgs Messages) TrafficStepsIOS() string {
+	return Catalog.Format(msgs.locale, "trafficStepsIOS", nil)
+}
+
+// TrafficStepsAndroid says "On the phone:\n1. Settings › Network & internet › Internet, tap the gear next to the Wi-Fi network, edit it, set P…"
+// in the language the app shows.
+//
+// The steps on an Android phone to send its traffic through Pinky's proxy
+// (Proxy Auto-Config with the proxy setup link) and install Pinky's
+// certificate. Menu names differ between makers; use the names stock
+// Android gives them in the language. Route over the cable during tasks is
+// trafficRouteTitle.
+func TrafficStepsAndroid() string { return In(i18n.Locale()).TrafficStepsAndroid() }
+
+// TrafficStepsAndroid says "On the phone:\n1. Settings › Network & internet › Internet, tap the gear next to the Wi-Fi network, edit it, set P…"
+// in the language of msgs.
+//
+// The steps on an Android phone to send its traffic through Pinky's proxy
+// (Proxy Auto-Config with the proxy setup link) and install Pinky's
+// certificate. Menu names differ between makers; use the names stock
+// Android gives them in the language. Route over the cable during tasks is
+// trafficRouteTitle.
+func (msgs Messages) TrafficStepsAndroid() string {
+	return Catalog.Format(msgs.locale, "trafficStepsAndroid", nil)
+}
+
+// TrafficAndroidAppsWarning says "Most apps made for Android 7 or later trust only the system's certificates, not ones you install, so Pinky sees only …"
+// in the language the app shows.
+//
+// A warning under the Android steps: apps targeting API 24 or later ignore
+// user-installed certificates.
+func TrafficAndroidAppsWarning() string { return In(i18n.Locale()).TrafficAndroidAppsWarning() }
+
+// TrafficAndroidAppsWarning says "Most apps made for Android 7 or later trust only the system's certificates, not ones you install, so Pinky sees only …"
+// in the language of msgs.
+//
+// A warning under the Android steps: apps targeting API 24 or later ignore
+// user-installed certificates.
+func (msgs Messages) TrafficAndroidAppsWarning() string {
+	return Catalog.Format(msgs.locale, "trafficAndroidAppsWarning", nil)
+}
+
+// TrafficOutsideTasks says "Pinky's proxy runs only during this phone's tasks. At other times, and while Pinky isn't running, the phone connects …"
+// in the language the app shows.
+//
+// A note under the steps: the proxy listens only during tasks; otherwise
+// the automatic proxy goes direct, but a phone that can't fetch the setup
+// link may stop connecting.
+func TrafficOutsideTasks() string { return In(i18n.Locale()).TrafficOutsideTasks() }
+
+// TrafficOutsideTasks says "Pinky's proxy runs only during this phone's tasks. At other times, and while Pinky isn't running, the phone connects …"
+// in the language of msgs.
+//
+// A note under the steps: the proxy listens only during tasks; otherwise
+// the automatic proxy goes direct, but a phone that can't fetch the setup
+// link may stop connecting.
+func (msgs Messages) TrafficOutsideTasks() string {
+	return Catalog.Format(msgs.locale, "trafficOutsideTasks", nil)
+}
+
+// TrafficRouteTitle says "Route over the cable during tasks"
+// in the language the app shows.
+//
+// Settings › Phones, in an Android phone's traffic setup: a switch that
+// has Pinky set the phone's proxy to itself over USB during tasks. Off by
+// default.
+func TrafficRouteTitle() string { return In(i18n.Locale()).TrafficRouteTitle() }
+
+// TrafficRouteTitle says "Route over the cable during tasks"
+// in the language of msgs.
+//
+// Settings › Phones, in an Android phone's traffic setup: a switch that
+// has Pinky set the phone's proxy to itself over USB during tasks. Off by
+// default.
+func (msgs Messages) TrafficRouteTitle() string {
+	return Catalog.Format(msgs.locale, "trafficRouteTitle", nil)
+}
+
+// TrafficRouteDesc says "When a task starts, Pinky sets this phone's proxy to itself through the USB cable (port {port}), and puts your settin…"
+// in the language the app shows.
+//
+// The line under Route over the cable during tasks. port is the proxy's
+// port.
+func TrafficRouteDesc(port string) string { return In(i18n.Locale()).TrafficRouteDesc(port) }
+
+// TrafficRouteDesc says "When a task starts, Pinky sets this phone's proxy to itself through the USB cable (port {port}), and puts your settin…"
+// in the language of msgs.
+//
+// The line under Route over the cable during tasks. port is the proxy's
+// port.
+func (msgs Messages) TrafficRouteDesc(port string) string {
+	return Catalog.Format(msgs.locale, "trafficRouteDesc", map[string]any{"port": port})
+}
+
+// TrafficRouteStranded says "If the cable comes out or Pinky quits during a task, the phone keeps pointing at Pinky and has no web until it is plu…"
+// in the language the app shows.
+//
+// A warning under Route over the cable during tasks: the phone's proxy
+// stays set to Pinky when the cable is unplugged or Pinky stops mid-task.
+// adb shell settings put global http_proxy :0 is a command: keep it as it
+// is.
+func TrafficRouteStranded() string { return In(i18n.Locale()).TrafficRouteStranded() }
+
+// TrafficRouteStranded says "If the cable comes out or Pinky quits during a task, the phone keeps pointing at Pinky and has no web until it is plu…"
+// in the language of msgs.
+//
+// A warning under Route over the cable during tasks: the phone's proxy
+// stays set to Pinky when the cable is unplugged or Pinky stops mid-task.
+// adb shell settings put global http_proxy :0 is a command: keep it as it
+// is.
+func (msgs Messages) TrafficRouteStranded() string {
+	return Catalog.Format(msgs.locale, "trafficRouteStranded", nil)
+}
+
+// TrafficRouteChangeFailed says "Couldn't change Route over the cable during tasks for {phone}: {error}"
+// in the language the app shows.
+//
+// A toast when Pinky could not turn the cable route on or off. phone is the
+// phone's name, error what went wrong.
+func TrafficRouteChangeFailed(phone string, error string) string {
+	return In(i18n.Locale()).TrafficRouteChangeFailed(phone, error)
+}
+
+// TrafficRouteChangeFailed says "Couldn't change Route over the cable during tasks for {phone}: {error}"
+// in the language of msgs.
+//
+// A toast when Pinky could not turn the cable route on or off. phone is the
+// phone's name, error what went wrong.
+func (msgs Messages) TrafficRouteChangeFailed(phone string, error string) string {
+	return Catalog.Format(msgs.locale, "trafficRouteChangeFailed", map[string]any{"phone": phone, "error": error})
+}
+
+// TrafficProblemNoAddress says "Pinky doesn't know an address of {phone} on a network this computer is on. Connect both to the same Wi-Fi or tailnet."
+// in the language the app shows.
+//
+// Why Pinky's proxy does not listen for the phone: it found no address of
+// the phone on this computer's networks. phone is its name.
+func TrafficProblemNoAddress(phone string) string {
+	return In(i18n.Locale()).TrafficProblemNoAddress(phone)
+}
+
+// TrafficProblemNoAddress says "Pinky doesn't know an address of {phone} on a network this computer is on. Connect both to the same Wi-Fi or tailnet."
+// in the language of msgs.
+//
+// Why Pinky's proxy does not listen for the phone: it found no address of
+// the phone on this computer's networks. phone is its name.
+func (msgs Messages) TrafficProblemNoAddress(phone string) string {
+	return Catalog.Format(msgs.locale, "trafficProblemNoAddress", map[string]any{"phone": phone})
+}
+
+// TrafficProblemListenFailed says "Another program on this computer uses the proxy's port, so Pinky can't listen."
+// in the language the app shows.
+//
+// Why Pinky's proxy does not listen: its port is taken.
+func TrafficProblemListenFailed() string { return In(i18n.Locale()).TrafficProblemListenFailed() }
+
+// TrafficProblemListenFailed says "Another program on this computer uses the proxy's port, so Pinky can't listen."
+// in the language of msgs.
+//
+// Why Pinky's proxy does not listen: its port is taken.
+func (msgs Messages) TrafficProblemListenFailed() string {
+	return Catalog.Format(msgs.locale, "trafficProblemListenFailed", nil)
+}
+
+// TrafficProblemNoCA says "Pinky couldn't read or make its certificate."
+// in the language the app shows.
+//
+// Why Pinky's proxy does not run: its certificate authority could not be
+// read or made.
+func TrafficProblemNoCA() string { return In(i18n.Locale()).TrafficProblemNoCA() }
+
+// TrafficProblemNoCA says "Pinky couldn't read or make its certificate."
+// in the language of msgs.
+//
+// Why Pinky's proxy does not run: its certificate authority could not be
+// read or made.
+func (msgs Messages) TrafficProblemNoCA() string {
+	return Catalog.Format(msgs.locale, "trafficProblemNoCA", nil)
+}
+
+// TrafficProblemRouteFailed says "Pinky couldn't set {phone}'s proxy over its cable."
+// in the language the app shows.
+//
+// Why the cable route failed. phone is the phone's name.
+func TrafficProblemRouteFailed(phone string) string {
+	return In(i18n.Locale()).TrafficProblemRouteFailed(phone)
+}
+
+// TrafficProblemRouteFailed says "Pinky couldn't set {phone}'s proxy over its cable."
+// in the language of msgs.
+//
+// Why the cable route failed. phone is the phone's name.
+func (msgs Messages) TrafficProblemRouteFailed(phone string) string {
+	return Catalog.Format(msgs.locale, "trafficProblemRouteFailed", map[string]any{"phone": phone})
+}
+
+// TrafficProblemRouteBusy says "Another phone is routed over its cable. Pinky routes one phone at a time, so {phone} waits."
+// in the language the app shows.
+//
+// Why the cable route waits: another phone uses it. phone is this phone's
+// name.
+func TrafficProblemRouteBusy(phone string) string {
+	return In(i18n.Locale()).TrafficProblemRouteBusy(phone)
+}
+
+// TrafficProblemRouteBusy says "Another phone is routed over its cable. Pinky routes one phone at a time, so {phone} waits."
+// in the language of msgs.
+//
+// Why the cable route waits: another phone uses it. phone is this phone's
+// name.
+func (msgs Messages) TrafficProblemRouteBusy(phone string) string {
+	return Catalog.Format(msgs.locale, "trafficProblemRouteBusy", map[string]any{"phone": phone})
+}
+
 // BrandHonor says "HONOR"
 // in the language the app shows.
 //
@@ -13599,6 +14237,64 @@ func (msgs Messages) GwDoReadLogs(app string) string {
 	return Catalog.Format(msgs.locale, "gwDoReadLogs", map[string]any{"app": app})
 }
 
+// GwDoReadTraffic says "read the network traffic of {phone}"
+// in the language the app shows.
+//
+// What a step asked for: give the agent the web requests a phone made
+// during the task (phone_traffic). Shown only in other languages; in
+// English the gateway's own words show.
+func GwDoReadTraffic(phone string) string { return In(i18n.Locale()).GwDoReadTraffic(phone) }
+
+// GwDoReadTraffic says "read the network traffic of {phone}"
+// in the language of msgs.
+//
+// What a step asked for: give the agent the web requests a phone made
+// during the task (phone_traffic). Shown only in other languages; in
+// English the gateway's own words show.
+func (msgs Messages) GwDoReadTraffic(phone string) string {
+	return Catalog.Format(msgs.locale, "gwDoReadTraffic", map[string]any{"phone": phone})
+}
+
+// GwDoReadTrafficWithBodies says "read the network traffic of {phone} with request and response bodies"
+// in the language the app shows.
+//
+// What a step asked for: give the agent the web requests a phone made
+// during the task, with their bodies (phone_traffic). Shown only in other
+// languages; in English the gateway's own words show.
+func GwDoReadTrafficWithBodies(phone string) string {
+	return In(i18n.Locale()).GwDoReadTrafficWithBodies(phone)
+}
+
+// GwDoReadTrafficWithBodies says "read the network traffic of {phone} with request and response bodies"
+// in the language of msgs.
+//
+// What a step asked for: give the agent the web requests a phone made
+// during the task, with their bodies (phone_traffic). Shown only in other
+// languages; in English the gateway's own words show.
+func (msgs Messages) GwDoReadTrafficWithBodies(phone string) string {
+	return Catalog.Format(msgs.locale, "gwDoReadTrafficWithBodies", map[string]any{"phone": phone})
+}
+
+// GwDoReadTrafficBodies says "read the request and response bodies in the network traffic of {phone}"
+// in the language the app shows.
+//
+// What a step asked for: give the agent the bodies of web requests a phone
+// made during the task, after it could read the requests (phone_traffic).
+// Shown only in other languages; in English the gateway's own words show.
+func GwDoReadTrafficBodies(phone string) string {
+	return In(i18n.Locale()).GwDoReadTrafficBodies(phone)
+}
+
+// GwDoReadTrafficBodies says "read the request and response bodies in the network traffic of {phone}"
+// in the language of msgs.
+//
+// What a step asked for: give the agent the bodies of web requests a phone
+// made during the task, after it could read the requests (phone_traffic).
+// Shown only in other languages; in English the gateway's own words show.
+func (msgs Messages) GwDoReadTrafficBodies(phone string) string {
+	return Catalog.Format(msgs.locale, "gwDoReadTrafficBodies", map[string]any{"phone": phone})
+}
+
 // GwDoReceiveFile says "receive “{path}” from the agent"
 // in the language the app shows.
 //
@@ -14669,6 +15365,24 @@ func (msgs Messages) GwStatusLockedTask(task string) string {
 	return Catalog.Format(msgs.locale, "gwStatusLockedTask", map[string]any{"task": task})
 }
 
+// GwStatusScreenOff says "Screen off"
+// in the language the app shows.
+//
+// A phone's status line: the phone is idle and its own screen is off
+// without a lock screen, such as an Android TV in standby. Shown only in
+// other languages; in English the gateway's own words show.
+func GwStatusScreenOff() string { return In(i18n.Locale()).GwStatusScreenOff() }
+
+// GwStatusScreenOff says "Screen off"
+// in the language of msgs.
+//
+// A phone's status line: the phone is idle and its own screen is off
+// without a lock screen, such as an Android TV in standby. Shown only in
+// other languages; in English the gateway's own words show.
+func (msgs Messages) GwStatusScreenOff() string {
+	return Catalog.Format(msgs.locale, "gwStatusScreenOff", nil)
+}
+
 // GwStatusLostOnWiFi says "Lost on Wi-Fi"
 // in the language the app shows.
 //
@@ -15405,6 +16119,46 @@ func GwStepReadLogLines(count string, app string) string {
 // the gateway's own words show.
 func (msgs Messages) GwStepReadLogLines(count string, app string) string {
 	return Catalog.Format(msgs.locale, "gwStepReadLogLines", map[string]any{"count": count, "app": app})
+}
+
+// GwStepReadTraffic says "Read {count} network requests of {phone}"
+// in the language the app shows.
+//
+// A step: the agent read the list of web requests a phone made
+// (phone_traffic); history keeps only this line, not the requests. Shown
+// only in other languages; in English the gateway's own words show.
+func GwStepReadTraffic(count string, phone string) string {
+	return In(i18n.Locale()).GwStepReadTraffic(count, phone)
+}
+
+// GwStepReadTraffic says "Read {count} network requests of {phone}"
+// in the language of msgs.
+//
+// A step: the agent read the list of web requests a phone made
+// (phone_traffic); history keeps only this line, not the requests. Shown
+// only in other languages; in English the gateway's own words show.
+func (msgs Messages) GwStepReadTraffic(count string, phone string) string {
+	return Catalog.Format(msgs.locale, "gwStepReadTraffic", map[string]any{"count": count, "phone": phone})
+}
+
+// GwStepReadTrafficOne says "Read network request {id} of {phone}"
+// in the language the app shows.
+//
+// A step: the agent read one web request a phone made, by its id
+// (phone_traffic); history keeps only this line. Shown only in other
+// languages; in English the gateway's own words show.
+func GwStepReadTrafficOne(id string, phone string) string {
+	return In(i18n.Locale()).GwStepReadTrafficOne(id, phone)
+}
+
+// GwStepReadTrafficOne says "Read network request {id} of {phone}"
+// in the language of msgs.
+//
+// A step: the agent read one web request a phone made, by its id
+// (phone_traffic); history keeps only this line. Shown only in other
+// languages; in English the gateway's own words show.
+func (msgs Messages) GwStepReadTrafficOne(id string, phone string) string {
+	return Catalog.Format(msgs.locale, "gwStepReadTrafficOne", map[string]any{"id": id, "phone": phone})
 }
 
 // GwStepReceivedFile says "Received “{path}” ({size}) from the agent"
@@ -16925,6 +17679,24 @@ func (msgs Messages) MirrorCallType() string {
 	return Catalog.Format(msgs.locale, "mirrorCallType", nil)
 }
 
+// MirrorCallWake says "turn the screen on"
+// in the language the app shows.
+//
+// A verb phrase that completes the toast "Couldn't …: <error>" when a
+// click on the mirror of a phone whose screen is off cannot turn its screen
+// on.
+func MirrorCallWake() string { return In(i18n.Locale()).MirrorCallWake() }
+
+// MirrorCallWake says "turn the screen on"
+// in the language of msgs.
+//
+// A verb phrase that completes the toast "Couldn't …: <error>" when a
+// click on the mirror of a phone whose screen is off cannot turn its screen
+// on.
+func (msgs Messages) MirrorCallWake() string {
+	return Catalog.Format(msgs.locale, "mirrorCallWake", nil)
+}
+
 // MirrorConnecting says "Connecting…"
 // in the language the app shows.
 //
@@ -17057,6 +17829,58 @@ func MirrorScreenLabel(phone string) string { return In(i18n.Locale()).MirrorScr
 // clicks, scrolls and typing reach the phone. phone is the phone's name.
 func (msgs Messages) MirrorScreenLabel(phone string) string {
 	return Catalog.Format(msgs.locale, "mirrorScreenLabel", map[string]any{"phone": phone})
+}
+
+// MirrorScreenOff says "{phone}'s screen is off"
+// in the language the app shows.
+//
+// A pill over the dimmed mirror of a phone whose own screen is off without
+// a lock screen, such as an Android TV in standby, which sends no picture
+// until it wakes. phone is the phone's name. One line over the phone's
+// picture: keep it short.
+func MirrorScreenOff(phone string) string { return In(i18n.Locale()).MirrorScreenOff(phone) }
+
+// MirrorScreenOff says "{phone}'s screen is off"
+// in the language of msgs.
+//
+// A pill over the dimmed mirror of a phone whose own screen is off without
+// a lock screen, such as an Android TV in standby, which sends no picture
+// until it wakes. phone is the phone's name. One line over the phone's
+// picture: keep it short.
+func (msgs Messages) MirrorScreenOff(phone string) string {
+	return Catalog.Format(msgs.locale, "mirrorScreenOff", map[string]any{"phone": phone})
+}
+
+// MirrorScreenOffTile says "Screen off"
+// in the language the app shows.
+//
+// The same pill over the phone's tile in All phones, which can be 168
+// points wide.
+func MirrorScreenOffTile() string { return In(i18n.Locale()).MirrorScreenOffTile() }
+
+// MirrorScreenOffTile says "Screen off"
+// in the language of msgs.
+//
+// The same pill over the phone's tile in All phones, which can be 168
+// points wide.
+func (msgs Messages) MirrorScreenOffTile() string {
+	return Catalog.Format(msgs.locale, "mirrorScreenOffTile", nil)
+}
+
+// MirrorScreenOffWake says "Click to turn it on"
+// in the language the app shows.
+//
+// Under mirrorScreenOff: a click on the mirror, or a key, turns the phone's
+// screen on. It never unlocks the phone.
+func MirrorScreenOffWake() string { return In(i18n.Locale()).MirrorScreenOffWake() }
+
+// MirrorScreenOffWake says "Click to turn it on"
+// in the language of msgs.
+//
+// Under mirrorScreenOff: a click on the mirror, or a key, turns the phone's
+// screen on. It never unlocks the phone.
+func (msgs Messages) MirrorScreenOffWake() string {
+	return Catalog.Format(msgs.locale, "mirrorScreenOffWake", nil)
 }
 
 // MirrorStreamEnded says "The stream ended. Reconnecting…"
@@ -22485,6 +23309,22 @@ func RuleAppLogs() string { return In(i18n.Locale()).RuleAppLogs() }
 // or crash reports in a task (apps that are not development builds).
 func (msgs Messages) RuleAppLogs() string {
 	return Catalog.Format(msgs.locale, "ruleAppLogs", nil)
+}
+
+// RuleNetworkTraffic says "Network traffic"
+// in the language the app shows.
+//
+// The name of the rule that asks before an agent first reads a phone's
+// network traffic in a task (phone_traffic).
+func RuleNetworkTraffic() string { return In(i18n.Locale()).RuleNetworkTraffic() }
+
+// RuleNetworkTraffic says "Network traffic"
+// in the language of msgs.
+//
+// The name of the rule that asks before an agent first reads a phone's
+// network traffic in a task (phone_traffic).
+func (msgs Messages) RuleNetworkTraffic() string {
+	return Catalog.Format(msgs.locale, "ruleNetworkTraffic", nil)
 }
 
 // RuleBlockedByYou says "Blocked by you"

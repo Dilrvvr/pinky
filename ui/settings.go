@@ -433,6 +433,7 @@ func (a *app) settingsPhones(c *mg.Context) {
 				if d.Features.Background {
 					a.backgroundRow(c, d, false)
 				}
+				a.trafficRow(c, d, false)
 				a.connectionRows(c, d)
 				a.awayRow(c, d)
 				a.phoneWiFiRow(c, d)

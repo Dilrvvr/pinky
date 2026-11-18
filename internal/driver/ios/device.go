@@ -93,6 +93,9 @@ type Device struct {
 	restartFailedAt time.Time
 	restartErr      error
 
+	// startFn starts a stream of display id (tests); nil: startMedia.
+	startFn func(ctx context.Context, l *link, id int) (*media, error)
+
 	raxDialMu   sync.Mutex // one remoteAXService dial at a time (raxReady)
 	svcMu       sync.Mutex
 	info2       *cdService // deviceinfo
@@ -128,9 +131,12 @@ type Device struct {
 	imageDir string // Pinky's folder for developer disk images (checkup.go)
 }
 
-// Open connects to a device and starts its video stream and HID session.
-// It goes over USB when it can, and over Wi-Fi when info.Connection is
-// "wifi".
+// Open connects to a device: its tunnel and the services on it. It goes
+// over USB when it can, and over Wi-Fi when info.Connection is "wifi". It
+// does not start the video stream and its HID session: the first view or
+// input does (live). While the stream runs, iOS takes the camera and
+// microphone from the phone's apps (idle.go), and the gateway opens a
+// phone whenever it shows up, with nobody using Pinky.
 func Open(ctx context.Context, info driver.Info) (*Device, error) {
 	return open(ctx, info, nil)
 }
@@ -141,7 +147,7 @@ func open(ctx context.Context, info driver.Info, log *slog.Logger) (*Device, err
 	if err != nil {
 		return nil, err
 	}
-	if err := d.start(ctx); err != nil {
+	if err := d.prepare(ctx); err != nil {
 		d.l.Close()
 		return nil, err
 	}
@@ -149,8 +155,8 @@ func open(ctx context.Context, info driver.Info, log *slog.Logger) (*Device, err
 	return d, nil
 }
 
-// dialDevice opens the tunnel to the phone, for start to start the stream
-// on.
+// dialDevice opens the tunnel to the phone, for prepare to read its
+// displays through.
 func dialDevice(ctx context.Context, info driver.Info, log *slog.Logger) (*Device, error) {
 	l, err := dialLink(ctx, info.ID, info.Connection == "wifi")
 	if err != nil {
@@ -191,12 +197,10 @@ func (d *Device) run() {
 	}()
 }
 
-// start reads the phone's displays and starts the stream.
-func (d *Device) start(ctx context.Context) error {
-	if err := d.readDisplays(ctx); err != nil {
-		return err
-	}
-	return d.restartMedia(ctx)
+// prepare reads the phone's displays, which the stream starts on once a
+// view or input needs it (live); it starts no stream (coreSession).
+func (d *Device) prepare(ctx context.Context) error {
+	return d.readDisplays(ctx)
 }
 
 // readDisplays connects the display info service and reads the phone's
@@ -218,21 +222,8 @@ func (d *Device) readDisplays(ctx context.Context) error {
 	return nil
 }
 
-// retryMedia starts the stream again on a device whose start the phone
-// refused while an app used the camera or microphone (mediaWait).
-func (d *Device) retryMedia(ctx context.Context) error {
-	d.restartMu.Lock()
-	defer d.restartMu.Unlock()
-	d.mu.Lock()
-	closed := d.closed
-	d.mu.Unlock()
-	if closed {
-		return fmt.Errorf("device closed: %w", driver.ErrOffline)
-	}
-	return d.restartMedia(ctx)
-}
-
-// opened runs the device once its stream started (coreSession).
+// opened runs the device once its tunnel is up and its displays read
+// (coreSession).
 func (d *Device) opened() driver.Device {
 	d.run()
 	return d
@@ -262,7 +253,9 @@ const nextDisplayWait = 12 * time.Second
 func (d *Device) restartMedia(ctx context.Context) error {
 	err := d.startStream(ctx)
 	var nv *noVideoError
-	if err != nil && !errors.As(err, &nv) {
+	if err != nil && (!errors.As(err, &nv) || mediaInUse(err)) {
+		// An app holding the camera or microphone is no phone that sends
+		// no picture: the checkup keeps what it knew.
 		return err
 	}
 	d.mu.Lock()
@@ -296,7 +289,12 @@ func (d *Device) startStream(ctx context.Context) error {
 		stop(old)
 	}
 	sd := streamDisplay{
-		start:  func(ctx context.Context, id int) (*media, error) { return startMedia(ctx, d.link(), id) },
+		start: func(ctx context.Context, id int) (*media, error) {
+			if d.startFn != nil {
+				return d.startFn(ctx, d.link(), id)
+			}
+			return startMedia(ctx, d.link(), id)
+		},
 		stop:   stop,
 		gone:   d.linkGone,
 		wait:   readyWait,
@@ -517,8 +515,12 @@ func (d *Device) displayMoved() bool {
 	return d.displayMovedLocked()
 }
 
-// live returns the running stream and HID session. It restarts the stream
-// if the phone stopped it and reconnects HID if that connection dropped.
+// live returns the running stream and HID session. It starts the stream
+// when none runs (the first view or input since the device opened or the
+// stream went idle, or the phone stopped it) and reconnects HID if that
+// connection dropped. A start fails for restartBackoff after one failed;
+// one the phone refused because an app uses the camera or microphone fails
+// with the driver.SetupMediaInUse step (mediainuse.go).
 func (d *Device) live(ctx context.Context) (*media, *hidSession, error) {
 	d.mu.Lock()
 	closed, m, h, moved := d.closed, d.m, d.hid, d.displayMovedLocked()
@@ -572,6 +574,7 @@ func (d *Device) live(ctx context.Context) (*media, *hidSession, error) {
 		return nil, nil, fmt.Errorf("video stream: %w", d.restartErr)
 	}
 	if err := d.restartMedia(ctx); err != nil {
+		err = mediaInUseStep(err)
 		d.restartFailedAt, d.restartErr = time.Now(), err
 		return nil, nil, err
 	}

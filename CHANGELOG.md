@@ -2,6 +2,25 @@
 
 What changed for people in each release of Pinky, newest first. A version is the release's date in Asia/Shanghai and that day's count: 2026.1107.2 is the second release of 7 November 2026. Notes wait under "Unreleased" until the next release takes them; see [docs/RELEASING.md](docs/RELEASING.md).
 
+## 2026.1118.4 (2026-11-18)
+
+- On Windows, reading a phone's network traffic no longer leaves out a request the phone made right after you handed it back to the agent.
+
+## 2026.1118.3 (2026-11-18)
+
+- Agents can now read the web requests a phone makes during their tasks, through Pinky's own proxy. It is off for every phone until you turn on "Read network traffic" in Settings › Phones and set the phone up there. Pinky asks you first in each task, hides passwords and tokens, and never decrypts banking, payment, brokerage or password-manager apps.
+
+## 2026.1118.2 (2026-11-18)
+
+- Pinky no longer takes your iPhone's camera and microphone while nobody is using it: it shares the iPhone's screen only while you watch the phone in Pinky or an agent works on it, so the camera and voice input keep working.
+- When an app on the iPhone is using the camera or microphone, the mirror now says so, and agents are told to ask you to free them.
+
+## 2026.1118.1 (2026-11-18)
+
+- A Simulator or an emulator now says "Simulator" or "Emulator" under its name in the sidebar, so it no longer looks like a second copy of your own phone.
+- An Android TV in standby (or any phone whose screen is off without a lock screen) now shows "Screen off" on its mirror instead of seeming to connect forever; click the mirror to turn the screen on.
+- Typing on an iPhone in an app that shows a web page no longer asks to approve a different app for tasks limited to chosen apps.
+
 ## 2026.1117.4 (2026-11-17)
 
 - When Pinky starts hidden on macOS, a window that opens by itself for an approval no longer takes the keyboard, so a stray Return can't answer it.

@@ -71,7 +71,7 @@ const (
 type DeviceView struct {
 	Info       driver.Info
 	Status     DeviceStatus
-	StatusLine string // plain words: "Claude Code · Reorder lunch", "Idle", "Locked", "Needs setup", "Camera or microphone in use", "Offline"
+	StatusLine string // plain words: "Claude Code · Reorder lunch", "Idle", "Screen off", "Locked", "Needs setup", "Camera or microphone in use", "Offline"
 	TaskID     string // the running task, if any
 	// LeaseGen changes whenever an agent's task starts or ends on the
 	// phone, and LeaseEnded is when the last one ended (zero when none
@@ -91,6 +91,12 @@ type DeviceView struct {
 	// capturing it (an iPhone's display stream, which iOS shows as screen
 	// sharing, stops a while after the last look or input).
 	Streaming bool
+	// ScreenOff is set while the phone is idle and its own screen is off
+	// without a lock screen, such as an Android TV in standby, so its
+	// mirror gets no picture until the person wakes it (Gateway.Wake). The
+	// gateway reads it only while a mirror watches the phone. StatusLine
+	// is then "Screen off".
+	ScreenOff bool
 }
 
 // Features are the optional driver capabilities the client has controls for.

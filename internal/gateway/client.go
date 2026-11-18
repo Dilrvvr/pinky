@@ -52,6 +52,7 @@ func (g *Gateway) Devices() []DeviceView {
 		}
 		st, line := g.statusLocked(d, open)
 		v := DeviceView{Info: info, Status: st, StatusLine: line, Paused: paused, Streaming: g.capturingLocked(d)}
+		v.ScreenOff = st == DeviceIdle && d.screenOff
 		if d.online && d.dev != nil {
 			v.Features = featuresOf(d.dev)
 			// Over CoreDevice, the person's Rotate and pinch move to the
@@ -173,6 +174,9 @@ func (g *Gateway) statusLocked(d *device, open []approval.Info) (DeviceStatus, s
 			line += " · in the background"
 		}
 		return DeviceWorking, line
+	}
+	if d.screenOff {
+		return DeviceIdle, "Screen off"
 	}
 	return DeviceIdle, "Idle"
 }
@@ -421,7 +425,7 @@ func canAllowTask(info approval.Info) bool {
 	if _, ok := info.Data.(*appAsk); ok {
 		return true
 	}
-	return info.Rule == filesRule || info.Rule == policy.RuleAppLogs || info.Rule == settingsRule
+	return info.Rule == filesRule || info.Rule == policy.RuleAppLogs || info.Rule == settingsRule || info.Rule == RuleTraffic
 }
 
 func (g *Gateway) decide(id string, d approval.Decision, note string) error {
@@ -479,6 +483,7 @@ func (g *Gateway) takeOver(d *device, byInput bool) {
 	changed := !d.person
 	if changed {
 		d.person = true
+		g.quietLocked(d, quietPerson, true)
 		g.noteWorkLocked(d)
 		if l != nil {
 			l.tookOverSeen = false
@@ -519,6 +524,7 @@ func (g *Gateway) HandBack(deviceID, note string) error {
 	}
 	g.mu.Lock()
 	d.person, d.personInput = false, false
+	g.quietLocked(d, quietPerson|quietHandoff, false)
 	g.noteWorkLocked(d)
 	l := d.lease
 	if l == nil {

@@ -2115,6 +2115,15 @@ func (g *Gateway) actionError(l *lease, err error) *Result {
 	if res := g.onPhoneResult(l, err); res != nil {
 		return res
 	}
+	var se *driver.SetupError
+	if errors.As(err, &se) && se.Setup != "" {
+		// The phone refused what the input needs, and says why: an iPhone
+		// whose camera or microphone an app uses refuses the stream that
+		// input goes over (driver.SetupMediaInUse). The phone stays open.
+		res := statusResult(StatusNeedsSetup, "%s Nothing was done.", strings.TrimSpace(se.Detail))
+		res.Setup = se.Setup
+		return res
+	}
 	switch {
 	case errors.Is(err, driver.ErrUnsupported):
 		return errResult(ErrUnsupported, "This phone cannot do that: %v. Nothing was done.", err)

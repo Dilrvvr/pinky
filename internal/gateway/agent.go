@@ -812,6 +812,9 @@ func (g *Gateway) newLeaseLocked(s *Session, d *device, title string, apps []str
 	s.leases[d.id] = l
 	s.used = appendUniq(s.used, d.id)
 	g.recordTaskLocked(t)
+	if g.trafficOn[d.id] {
+		g.captureSoon()
+	}
 	return l
 }
 
@@ -1906,6 +1909,7 @@ func (s *Session) Handoff(ctx context.Context, req HandoffRequest) *Result {
 			Title: reason, Detail: fmt.Sprintf("%s · %s", s.agent.Name, l.task.title), Agent: s.agent.Name,
 			TaskID: l.task.id, DeviceName: l.dev.name(), App: g.appName(l.dev), Timeout: g.opt.HandoffTimeout})
 		g.mu.Lock()
+		g.quietLocked(l.dev, quietHandoff, true)
 		if endsOnUnlock {
 			l.unlockHandoffs = append(l.unlockHandoffs, info.ID)
 		}
@@ -1938,6 +1942,12 @@ func (s *Session) Handoff(ctx context.Context, req HandoffRequest) *Result {
 	}
 	if err != nil {
 		return g.finish(l, g.cancelled(l, info.ID))
+	}
+	if out.State != approval.Open {
+		// The handoff ended; a takeover during it keeps the phone quiet.
+		g.mu.Lock()
+		g.quietLocked(l.dev, quietHandoff, false)
+		g.mu.Unlock()
 	}
 	switch {
 	case out.State == approval.Open:

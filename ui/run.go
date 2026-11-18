@@ -480,6 +480,7 @@ type app struct {
 	t         telState       // usage statistics, crash reports and feedback
 	comp      companionState // the Android companion app, per phone
 	bg        bgState        // background displays, per phone
+	traffic   trafficState   // Read network traffic, per phone (traffic.go)
 	conn      connState      // iPhones: how Pinky connects, per phone
 	helper    helperState    // iPhones: installing the helper from the window (helper.go)
 	tasksTip  tasksTipState  // the card about tasks on the phone itself (phonetasks.go)
@@ -596,6 +597,7 @@ func (a *app) ready() {
 	a.devices, a.tasks = a.api.Devices(), a.api.Tasks()
 	a.setNeeds(a.api.Needs())
 	a.setBackgrounds(a.readBackground(a.devices))
+	a.setTraffics(a.readTraffic(a.devices))
 	a.loaded = true
 	a.applySettings()
 	a.afterRefresh(true)
@@ -760,10 +762,11 @@ func (a *app) refresh(devs, tasks, needs bool) {
 	var d []gateway.DeviceView
 	var t []gateway.TaskView
 	var n []gateway.NeedView
-	var bg map[string]bool
+	var bg, tr map[string]bool
 	if devs {
 		d = a.api.Devices()
 		bg = a.readBackground(d)
+		tr = a.readTraffic(d)
 	}
 	if tasks {
 		t = a.api.Tasks()
@@ -775,6 +778,7 @@ func (a *app) refresh(devs, tasks, needs bool) {
 		if devs {
 			a.devices = d
 			a.setBackgrounds(bg)
+			a.setTraffics(tr)
 			for id := range a.pin.wrong {
 				if dv := a.device(id); dv != nil && dv.Status != gateway.DeviceLocked && dv.Status != gateway.DeviceNeedsYou {
 					delete(a.pin.wrong, id) // unlocked on the phone: the person may try again
