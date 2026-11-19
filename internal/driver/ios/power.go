@@ -265,23 +265,40 @@ func reachPad(ctx context.Context, p powerPhone) (unlocked bool, err error) {
 		}
 	}
 	// Face ID can unlock the phone on the way, if its owner is there. A
-	// failed look for the pad is tried again in a new session.
-	var lookErr error
+	// failed look for the pad is tried again in a new session. A phone
+	// that can also show the pad in a screenshot (padshot.go) is looked at
+	// that way after the first failed look of each swipe, so a service
+	// that does not answer costs one wait per swipe, not one per look.
+	shooter, _ := p.(padShooter)
+	var lookErr, shotErr error
+	var axDown bool
 	padOrOpen := func(c context.Context) (bool, error) {
 		l, err := p.locked(c)
 		if err != nil || !l {
 			unlocked = err == nil
 			return unlocked, err
 		}
-		shown, err := p.keypadShown(c)
-		if err != nil {
+		if !axDown {
+			shown, err := p.keypadShown(c)
+			if err == nil {
+				return shown, nil
+			}
 			lookErr = err
 			p.freshAX()
+			if shooter == nil {
+				return false, nil
+			}
+			axDown = true
+		}
+		shown, err := shooter.padInScreenshot(c)
+		if err != nil {
+			shotErr = err
 			return false, nil
 		}
 		return shown, nil
 	}
 	for swipe := 1; ; swipe++ {
+		axDown = false
 		if swipe > 1 {
 			// The screen may have gone dark while the pad was looked for.
 			if _, err := wakeUp(ctx, p); err != nil {
@@ -301,6 +318,9 @@ func reachPad(ctx context.Context, p powerPhone) (unlocked bool, err error) {
 		if !errors.Is(err, errWaitedOut) || swipe == unlockSwipes {
 			if lookErr != nil {
 				err = fmt.Errorf("%v (last error: %v)", err, lookErr)
+			}
+			if shotErr != nil {
+				err = fmt.Errorf("%v (screenshot: %v)", err, shotErr)
 			}
 			if errors.Is(err, errWaitedOut) {
 				err = fmt.Errorf("%v after %d swipes", err, swipe)
@@ -351,17 +371,20 @@ func (p devicePower) swipeUp(ctx context.Context) error {
 // secure text field for an alphanumeric passcode.
 func (p devicePower) keypadShown(ctx context.Context) (bool, error) {
 	rax, err := p.d.raxReady(ctx)
-	if err != nil {
-		return false, err
+	if err == nil {
+		lim := p.d.walkLimits()
+		c, cancel := context.WithTimeout(context.WithoutCancel(ctx), lim.Budget+raxRequestTimeout)
+		var els []raxElement
+		els, _, err = rax.walk(c, lim)
+		cancel()
+		if err == nil {
+			return passcodePad(els), nil
+		}
 	}
-	lim := p.d.walkLimits()
-	c, cancel := context.WithTimeout(context.WithoutCancel(ctx), lim.Budget+raxRequestTimeout)
-	defer cancel()
-	els, _, err := rax.walk(c, lim)
-	if err != nil {
-		return false, err
+	if ctx.Err() == nil {
+		p.d.log.Info("iphone: could not look for the passcode pad through accessibility", "device", p.d.info.ID, "err", err)
 	}
-	return passcodePad(els), nil
+	return false, err
 }
 
 // passcodePad reports whether elements include a passcode pad.

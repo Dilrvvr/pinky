@@ -28,6 +28,7 @@ type fakePhone struct {
 	slept        time.Duration
 	fresh        int // accessibility sessions dropped
 	lookErrs     int // looks for the pad that fail before one works
+	axLooks      int // looks for the pad through accessibility
 }
 
 func (f *fakePhone) freshAX() { f.fresh++ }
@@ -63,6 +64,7 @@ func (f *fakePhone) swipeUp(context.Context) error {
 }
 
 func (f *fakePhone) keypadShown(context.Context) (bool, error) {
+	f.axLooks++
 	if f.lookErrs > 0 {
 		f.lookErrs--
 		return false, errors.New("the accessibility session went away")

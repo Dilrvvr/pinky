@@ -1289,7 +1289,7 @@
   "removePhoneBusy": "正在移除…",
   "removePhoneButton": "移除…",
   "removePhoneButtonLabel": "移除 {name}",
-  "removePhoneCable": "它用数据线连着，所以会马上作为一台新手机重新出现。想让它不再出现，请先拔掉数据线。",
+  "removePhoneCable": "它用数据线连着。只要一直插着，它就不会回到列表里；拔掉再插上即可加回来。",
   "removePhoneCancel": "取消",
   "removePhoneConfirm": "移除",
   "removePhoneDone": "已移除 {name}",

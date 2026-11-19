@@ -2,6 +2,21 @@
 
 What changed for people in each release of Pinky, newest first. A version is the release's date in Asia/Shanghai and that day's count: 2026.1107.2 is the second release of 7 November 2026. Notes wait under "Unreleased" until the next release takes them; see [docs/RELEASING.md](docs/RELEASING.md).
 
+## 2026.1119.7 (2026-11-19)
+
+- On an iPhone, reading a screen while the phone is slow to answer (a long list in a mini-program or web page) no longer comes back with only a few elements: Pinky uses the screen the phone just sent or reads it again, and says "partial" when some elements may still be missing.
+- On an iPhone, text in a web page that has just scrolled into view is no longer left out of the screen read.
+- On an iPhone, a web page no longer jumps back to its top when Pinky reads it while the phone's accessibility service is not answering.
+- Unlocking an iPhone from the computer now finds the passcode keypad even when the phone's accessibility service is not answering.
+
+## 2026.1119.6 (2026-11-19)
+
+- A scheduled task set for a time the clocks skip when daylight saving time starts now runs just after they move forward, instead of an hour early, and no longer makes another time that day get skipped.
+
+## 2026.1119.5 (2026-11-19)
+
+- A phone you remove while it is plugged in, such as an iPhone charging from the computer, now stays off the list until you unplug it and plug it in again, instead of coming straight back.
+
 ## 2026.1119.4 (2026-11-19)
 
 - An action you had allowed that was under way when Pinky crashed or was force-quit no longer shows "Waiting for you" in Activity for ever: the next start marks it as one that may have happened.

@@ -1289,7 +1289,7 @@
   "removePhoneBusy": "削除中…",
   "removePhoneButton": "削除…",
   "removePhoneButtonLabel": "{name} を削除",
-  "removePhoneCable": "ケーブルで接続されているため、すぐ新しいスマホとして再表示されます。出さないようにするには、先に抜いてください。",
+  "removePhoneCable": "ケーブルで接続されています。挿したままの間は一覧に戻りません。戻す際は、一度抜いてから挿し直してください。",
   "removePhoneCancel": "キャンセル",
   "removePhoneConfirm": "削除",
   "removePhoneDone": "{name} を削除しました",

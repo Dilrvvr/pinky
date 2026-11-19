@@ -204,8 +204,13 @@ type Screen struct {
 	// Covered lists other parts of the screen where system windows lie
 	// over the app and take touches, such as the status and navigation
 	// bars, when the driver can tell.
-	Covered    []Rect
-	Locked     bool
+	Covered []Rect
+	Locked  bool
+	// Partial says that the read ended before it had every element: the
+	// phone answered too slowly, or the screen has more than a read
+	// takes. Elements may be missing, so an element that is not listed
+	// is not thereby gone. The header says "partial".
+	Partial    bool
 	Elements   []Element
 	Events     []Event
 	CapturedAt time.Time
@@ -265,6 +270,9 @@ func (s *Screen) Header() string {
 	}
 	if f, ok := s.Focused(); ok && f.Ref != 0 {
 		parts = append(parts, fmt.Sprintf("focus [%d]", f.Ref))
+	}
+	if s.Partial {
+		parts = append(parts, "partial")
 	}
 	return strings.Join(parts, " · ")
 }

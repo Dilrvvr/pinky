@@ -22545,14 +22545,14 @@ func (msgs Messages) RemovePhoneButtonLabel(name string) string {
 	return Catalog.Format(msgs.locale, "removePhoneButtonLabel", map[string]any{"name": name})
 }
 
-// RemovePhoneCable says "It's connected with a cable, so it shows up again right away, as a new phone. Unplug it first to keep it off the list."
+// RemovePhoneCable says "It's connected with a cable. It stays off the list while it stays plugged in; unplug it and plug it in again to add i…"
 // in the language the app shows.
 //
 // In the Remove phone dialog, for a phone connected with a USB cable now:
 // removing it does not keep it away.
 func RemovePhoneCable() string { return In(i18n.Locale()).RemovePhoneCable() }
 
-// RemovePhoneCable says "It's connected with a cable, so it shows up again right away, as a new phone. Unplug it first to keep it off the list."
+// RemovePhoneCable says "It's connected with a cable. It stays off the list while it stays plugged in; unplug it and plug it in again to add i…"
 // in the language of msgs.
 //
 // In the Remove phone dialog, for a phone connected with a USB cable now:
