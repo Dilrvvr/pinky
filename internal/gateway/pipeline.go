@@ -499,6 +499,10 @@ func (g *Gateway) act(ctx context.Context, l *lease, c Call, a Action) *Result {
 	}
 	cur, err := g.startScreen(ctx, l, c)
 	if err != nil {
+		if res := g.homeUnread(ctx, l, c, a, err); res != nil {
+			d.act.Unlock()
+			return res
+		}
 		d.act.Unlock()
 		return g.readError(l, err)
 	}
@@ -590,6 +594,42 @@ func (g *Gateway) launchUnread(ctx context.Context, l *lease, c Call, a Action) 
 	if !reports || waits {
 		return nil
 	}
+	return g.runUnread(ctx, l, c, a)
+}
+
+// homeUnread presses Home when the read before it failed, as it fails on a
+// screen the driver cannot read (one that never stops changing, GitHub
+// issue #174, or a stalled app): Home is the way out of such a screen, the
+// rules allow it in any app, and the read after it says where the phone
+// went. Not when the phone is gone, locked or held by someone else, or the
+// call is out of time; then, and for any other action, it returns nil and
+// the read's error stands.
+func (g *Gateway) homeUnread(ctx context.Context, l *lease, c Call, a Action, err error) *Result {
+	if a.Tool != "key" || a.Key != "home" || ctx.Err() != nil {
+		return nil
+	}
+	for _, stop := range []error{driver.ErrOffline, driver.ErrLocked, driver.ErrStoppedOnPhone, driver.ErrBusy, errOutOfTime, context.Canceled} {
+		if errors.Is(err, stop) {
+			return nil
+		}
+	}
+	var be *driver.BusyError
+	if errors.As(err, &be) {
+		return nil
+	}
+	g.mu.Lock()
+	waits := g.stepWaitsLocked(l.dev)
+	g.mu.Unlock()
+	if waits {
+		return nil
+	}
+	return g.runUnread(ctx, l, c, a)
+}
+
+// runUnread runs an action without a read of the screen it starts from:
+// the rules see no screen, and an Ask they return without the person's
+// allowance for the task makes it return nil, for the usual path.
+func (g *Gateway) runUnread(ctx context.Context, l *lease, c Call, a Action) *Result {
 	p, res := g.prepare(ctx, l, a, nil)
 	if res != nil {
 		g.recordRefusal(l, c, a, p, res)
@@ -940,6 +980,9 @@ func (g *Gateway) prepare(ctx context.Context, l *lease, a Action, cur *screen.S
 	case "key":
 		p.input.Op = policy.OpKey
 		p.input.Key = a.Key
+		if cur == nil {
+			break // home pressed without a read (homeUnread)
+		}
 		if f, ok := cur.Focused(); ok {
 			p.target = &f
 		}
@@ -2496,9 +2539,18 @@ func (g *Gateway) screenResult(l *lease, raw *screen.Screen, full bool) *Result 
 	if rule != "" {
 		res.Rule = rule
 		res.Message = fmt.Sprintf("The foreground app is blocked by the rule %q; Pinky hides its screen. Press home or launch another app.", rule)
+	} else if raw.Unsettled {
+		res.Message = unsettledMessage
 	}
 	return res
 }
+
+// unsettledMessage goes with a read whose screen kept changing, so that the
+// driver could read no element tree (screen.Screen.Unsettled).
+const unsettledMessage = "The screen kept changing (an animation or a live page), so Pinky could not read its elements: " +
+	"this read has no refs, only the app, lock and keyboard state and any text OCR read from a picture of the screen, " +
+	"which may already be out of date. Tap by x and y, ask for a screenshot (phone_observe screenshot: true) to see the screen, " +
+	"or use phone_key (back, home) to leave the page; keys work as usual."
 
 // settle waits until the screen stops changing, up to limit. A limit of 0,
 // or under a millisecond, does not wait, and reports the screen as not

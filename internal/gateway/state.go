@@ -354,6 +354,11 @@ const (
 	OutcomePaused       = "paused"       // the person paused Pinky's connection to the phone (pause.go)
 )
 
+// outcomeGatewayStopped is the outcome of a task that ran when the gateway
+// stopped (Close), or when it crashed or was killed, which the next
+// gateway's start records.
+const outcomeGatewayStopped = "gateway stopped"
+
 // stateForOutcome maps how a task ended to its card state. An agent that
 // leaves or idles without phone_release has not failed, so those count as
 // done; history keeps the exact outcome.

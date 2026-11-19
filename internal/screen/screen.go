@@ -209,6 +209,11 @@ type Screen struct {
 	Elements   []Element
 	Events     []Event
 	CapturedAt time.Time
+	// Unsettled: the screen kept changing, so the driver could not read
+	// its element tree (Android's uiautomator waits for the screen to stop
+	// changing). Elements then hold only what OCR read from a picture, if
+	// anything; the app, lock and keyboard state are still known.
+	Unsettled bool
 }
 
 // Find returns the element with the given ref.
@@ -254,6 +259,9 @@ func (s *Screen) Header() string {
 		parts = append(parts, "keyboard shown")
 	} else {
 		parts = append(parts, "keyboard hidden")
+	}
+	if s.Unsettled {
+		parts = append(parts, "still changing: no element tree")
 	}
 	if f, ok := s.Focused(); ok && f.Ref != 0 {
 		parts = append(parts, fmt.Sprintf("focus [%d]", f.Ref))
