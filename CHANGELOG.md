@@ -2,6 +2,10 @@
 
 What changed for people in each release of Pinky, newest first. A version is the release's date in Asia/Shanghai and that day's count: 2026.1107.2 is the second release of 7 November 2026. Notes wait under "Unreleased" until the next release takes them; see [docs/RELEASING.md](docs/RELEASING.md).
 
+## 2026.1120.1 (2026-11-20)
+
+- The web mirror in Safari no longer stays on "Connecting" while the phone's screen doesn't change. Thanks @pseudoyu.
+
 ## 2026.1119.7 (2026-11-19)
 
 - On an iPhone, reading a screen while the phone is slow to answer (a long list in a mini-program or web page) no longer comes back with only a few elements: Pinky uses the screen the phone just sent or reads it again, and says "partial" when some elements may still be missing.
