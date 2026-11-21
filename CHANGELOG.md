@@ -2,6 +2,14 @@
 
 What changed for people in each release of Pinky, newest first. A version is the release's date in Asia/Shanghai and that day's count: 2026.1107.2 is the second release of 7 November 2026. Notes wait under "Unreleased" until the next release takes them; see [docs/RELEASING.md](docs/RELEASING.md).
 
+## 2026.1121.2 (2026-11-21)
+
+- `pinky -help` now prints the help and exits successfully, like `pinky -h` and `pinky --help`. Thanks @6moran.
+
+## 2026.1121.1 (2026-11-21)
+
+- Unlocking an iPhone or iPad with Touch ID from the computer now taps "Use Passcode" on its Touch ID prompt, so the passcode can be typed. Thanks @1zyao for the report.
+
 ## 2026.1120.1 (2026-11-20)
 
 - The web mirror in Safari no longer stays on "Connecting" while the phone's screen doesn't change. Thanks @pseudoyu.

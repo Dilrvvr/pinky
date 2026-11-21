@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"strings"
 	"time"
 
@@ -87,6 +88,10 @@ type powerPhone interface {
 	pressHome(ctx context.Context) error
 	swipeUp(ctx context.Context) error
 	keypadShown(ctx context.Context) (bool, error)
+	// pressPadButton taps the button of a Touch ID prompt that brings up
+	// the passcode pad ("Use Passcode"), when the locked screen shows such
+	// a prompt and no pad; it reports whether it tapped.
+	pressPadButton(ctx context.Context) (bool, error)
 	pressKey(ctx context.Context, k keyStroke) error
 	sleep(ctx context.Context, d time.Duration) error
 }
@@ -312,6 +317,19 @@ func reachPad(ctx context.Context, p powerPhone) (unlocked bool, err error) {
 			return false, err
 		}
 		err := waitFor(ctx, p, keypadWait, padOrOpen, "the passcode pad did not appear")
+		if errors.Is(err, errWaitedOut) {
+			// A phone with Touch ID shows its prompt instead of the pad,
+			// which comes only with the prompt's "Use Passcode". Tapping it
+			// types nothing and uses no attempt.
+			if pressed, perr := p.pressPadButton(ctx); perr == nil && pressed {
+				p.freshAX()
+				axDown = false
+				if err := p.sleep(ctx, afterSwipe); err != nil {
+					return false, err
+				}
+				err = waitFor(ctx, p, keypadWait, padOrOpen, "the passcode pad did not appear after Use Passcode")
+			}
+		}
 		if err == nil {
 			return unlocked, nil
 		}
@@ -385,6 +403,78 @@ func (p devicePower) keypadShown(ctx context.Context) (bool, error) {
 		p.d.log.Info("iphone: could not look for the passcode pad through accessibility", "device", p.d.info.ID, "err", err)
 	}
 	return false, err
+}
+
+// pressPadButton implements powerPhone.
+func (p devicePower) pressPadButton(ctx context.Context) (bool, error) {
+	rax, err := p.d.raxReady(ctx)
+	if err != nil {
+		return false, err
+	}
+	lim := p.d.walkLimits()
+	c, cancel := context.WithTimeout(context.WithoutCancel(ctx), lim.Budget+raxRequestTimeout)
+	els, _, err := rax.walk(c, lim)
+	cancel()
+	if err != nil || len(els) == 0 {
+		return false, err
+	}
+	si := p.d.freshDisplay(ctx).upright()
+	scale := raxScale(els[0], si)
+	els = turnRaxFrames(els, si, scale)
+	b, ok := padButton(els[1:])
+	if !ok {
+		return false, nil
+	}
+	pt := frameCenter(b.Frame, scale)
+	p.d.log.Info("iphone: tapping the Touch ID prompt's button for the passcode pad", "device", p.d.info.ID, "label", b.Label)
+	return true, p.d.Tap(ctx, pt, driver.TapOptions{})
+}
+
+// frameCenter is the middle of a frame in points, in screen pixels.
+func frameCenter(f axpRect, scale float64) screen.Point {
+	return screen.Point{
+		X: int(math.Round((f.X + f.W/2) * scale)),
+		Y: int(math.Round((f.Y + f.H/2) * scale)),
+	}
+}
+
+// padButton finds, on a locked screen without a passcode pad, the button
+// of a Touch ID prompt that brings the pad up. Its label is in the phone's
+// language ("Use Passcode", 「使用密码」), so it goes by the prompt's shape:
+// the upper of two buttons stacked one over the other, centered alike (the
+// lower one is Cancel), or else the only button on the screen. The lock
+// screen's own buttons, the flashlight and the camera, sit side by side in
+// the corners and are neither.
+func padButton(els []raxElement) (raxElement, bool) {
+	if passcodePad(els) {
+		return raxElement{}, false
+	}
+	var buttons []raxElement
+	for _, e := range els {
+		isButton := e.Type == xcButton || (e.Type == 0 && e.AXRole == axpRoleButton)
+		if isButton && e.Visible && e.HasFrame && e.Frame.W > 0 && e.Frame.H > 0 && strings.TrimSpace(e.Label) != "" {
+			buttons = append(buttons, e)
+		}
+	}
+	var upper []raxElement
+	for _, a := range buttons {
+		for _, b := range buttons {
+			ax, bx := a.Frame.X+a.Frame.W/2, b.Frame.X+b.Frame.W/2
+			gap := b.Frame.Y - (a.Frame.Y + a.Frame.H)
+			if math.Abs(ax-bx) <= math.Max(8, a.Frame.W/10) && gap >= -a.Frame.H/4 && gap <= 2*a.Frame.H &&
+				b.Frame.W < 2*a.Frame.W && a.Frame.W < 2*b.Frame.W {
+				upper = append(upper, a)
+				break
+			}
+		}
+	}
+	switch {
+	case len(upper) == 1:
+		return upper[0], true
+	case len(upper) == 0 && len(buttons) == 1:
+		return buttons[0], true
+	}
+	return raxElement{}, false
 }
 
 // passcodePad reports whether elements include a passcode pad.
