@@ -2,6 +2,40 @@
 
 What changed for people in each release of Pinky, newest first. A version is the release's date in Asia/Shanghai and that day's count: 2026.1107.2 is the second release of 7 November 2026. Notes wait under "Unreleased" until the next release takes them; see [docs/RELEASING.md](docs/RELEASING.md).
 
+## 2026.1121.10 (2026-11-21)
+
+- Typing a tailnet address for an Android phone now works when the phone reaches the tailnet through a VPN app that runs Tailscale itself, such as sing-box, instead of saying the address isn't on the phone's VPN. Thanks @crown3 for reporting it.
+
+## 2026.1121.9 (2026-11-21)
+
+- Routing an Android phone over the cable now works when another app on the computer uses Pinky's proxy port, and Settings › Phones names the port when one is taken.
+- A page that keeps reconnecting to a banking or payment site now shows as one line in the phone's network traffic, with how many times it connected, and it shows up right away.
+
+## 2026.1121.8 (2026-11-21)
+
+- The Android steps for reading network traffic now include Encryption & credentials on the way to installing Pinky's certificate, and the steps to remove it now go to Trusted credentials › User: removing it from User credentials alone can leave the phone still trusting it.
+
+## 2026.1121.7 (2026-11-21)
+
+- When an Android phone connected by address never comes online, Pinky now says so every time, instead of sometimes showing a bare time-out error on a busy computer.
+
+## 2026.1121.6 (2026-11-21)
+
+- An agent that asks Pinky to run a task just as Pinky starts is no longer told that tasks run only while Pinky's window is open. Thanks @pseudoyu.
+
+## 2026.1121.5 (2026-11-21)
+
+- Typing a tailnet address by hand for an Android phone now says this computer can't reach the phone there when something answers at that address but the phone doesn't, instead of asking you to connect the phone. Thanks @pseudoyu.
+
+## 2026.1121.4 (2026-11-21)
+
+- Pinky now quits when it is told to stop (SIGTERM or Ctrl-C) just as it starts, instead of staying open until it is killed. Thanks @pseudoyu.
+
+## 2026.1121.3 (2026-11-21)
+
+- When another app comes to the front on the phone without the agent opening it (on an iPhone, for example, because you opened it yourself), the agent is now told, and its next tap or typing isn't sent into that app.
+- Use away from home on Android can now take a tailnet address you enter, for a computer that reaches your tailnet without the Tailscale app (such as a proxy with a Tailscale outbound): click Enter address… under Use away from home. Thanks @crown3 for the idea.
+
 ## 2026.1121.2 (2026-11-21)
 
 - `pinky -help` now prints the help and exits successfully, like `pinky -h` and `pinky --help`. Thanks @6moran.

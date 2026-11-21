@@ -497,6 +497,7 @@ func (g *Gateway) act(ctx context.Context, l *lease, c Call, a Action) *Result {
 			return res
 		}
 	}
+	readAt := time.Now()
 	cur, err := g.startScreen(ctx, l, c)
 	if err != nil {
 		if res := g.homeUnread(ctx, l, c, a, err); res != nil {
@@ -510,6 +511,12 @@ func (g *Gateway) act(ctx context.Context, l *lease, c Call, a Action) *Result {
 		d.act.Unlock()
 		return g.attachScreen(l, statusResult(StatusLocked,
 			"The phone is locked. Nothing was done. Call phone_handoff so the person can unlock it."), cur)
+	}
+	if aimed(a) {
+		if from, to, ok := g.switchedApp(l, cur, readAt, true); ok {
+			d.act.Unlock()
+			return g.attachScreen(l, statusResult(StatusStale, "%s", switchedStale(from, to)), cur)
+		}
 	}
 	p, res := g.prepare(ctx, l, a, cur)
 	if res != nil && p.unplaced {
@@ -1909,6 +1916,11 @@ func (g *Gateway) executeOn(ctx context.Context, l *lease, c Call, a Action, p *
 	// early: settle_ms ended the wait while the screen was still changing,
 	// so the read may come before the action's effect shows.
 	early := !settled && limit < g.opt.SettleMax
+	g.mu.Lock()
+	// An app the action opens late still counts as its doing for a while
+	// from this read (appswitch.go).
+	d.inputAt = time.Now()
+	g.mu.Unlock()
 	res := g.screenResult(l, next, false)
 	res.Status = StatusSettled
 	if unread {
@@ -2527,6 +2539,7 @@ func (g *Gateway) screenResult(l *lease, raw *screen.Screen, full bool) *Result 
 	view.Events = evs
 	prev := l.baseline
 	l.baseline = view
+	l.mark = inputMark{inputs: d.inputs, calls: l.calls}
 	name := d.name()
 	g.mu.Unlock()
 	res := &Result{Device: d.id, DeviceName: name, Screen: view}

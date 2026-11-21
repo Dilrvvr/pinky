@@ -105,6 +105,9 @@ type device struct {
 	// inputs counts input sent to the phone, by the agent or the person. A
 	// history screenshot is dropped when input came while it was taken.
 	inputs uint64
+	// inputAt is when input last went to the phone (inputLocked), or the
+	// read that ended an agent's action was made (appswitch.go).
+	inputAt time.Time
 	// shot is the history screenshot being taken, or waiting for a read to
 	// confirm it; kept is the last one kept, which steps reuse while the
 	// screen matches (see shots.go).
@@ -229,6 +232,12 @@ type lease struct {
 	endedBy  string // an Outcome
 	// baseline is the last screen the agent received, for diffs.
 	baseline *screen.Screen
+	// mark is what the gateway knew of input when baseline was set, and
+	// calls counts the agent's calls that may change the screen (all but
+	// reads) from their start: together they tell an app that came to the
+	// front by nobody's input Pinky knows of (appswitch.go).
+	mark  inputMark
+	calls uint64
 	// apps is the task's app allow-list, ids and names.
 	apps []string
 	// grants holds the rules the person allowed for the rest of the task,
