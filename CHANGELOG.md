@@ -2,6 +2,14 @@
 
 What changed for people in each release of Pinky, newest first. A version is the release's date in Asia/Shanghai and that day's count: 2026.1107.2 is the second release of 7 November 2026. Notes wait under "Unreleased" until the next release takes them; see [docs/RELEASING.md](docs/RELEASING.md).
 
+## 2026.1122.2 (2026-11-22)
+
+- `pinky <command> -h`, `--help` and `help` now print the usage and exit with status 0 instead of 2 (1 for `pinky helper`), so scripts no longer take asking for help as a failure. `pinky task` with a missing or wrong subcommand still exits with 2. Thanks @6moran.
+
+## 2026.1122.1 (2026-11-22)
+
+- Opening a background display on an Android phone reached over a slow network, such as Tailscale, no longer times out: Pinky now copies its screen helper to the phone once instead of every time. Thanks @garryforreg for reporting it.
+
 ## 2026.1121.10 (2026-11-21)
 
 - Typing a tailnet address for an Android phone now works when the phone reaches the tailnet through a VPN app that runs Tailscale itself, such as sing-box, instead of saying the address isn't on the phone's VPN. Thanks @crown3 for reporting it.
