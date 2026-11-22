@@ -2,6 +2,40 @@
 
 What changed for people in each release of Pinky, newest first. A version is the release's date in Asia/Shanghai and that day's count: 2026.1107.2 is the second release of 7 November 2026. Notes wait under "Unreleased" until the next release takes them; see [docs/RELEASING.md](docs/RELEASING.md).
 
+## 2026.1122.9 (2026-11-22)
+
+- On an iPhone connected through Pinky on the iPhone, a screen whose elements take the phone too long to give (such as a long list in some apps) no longer makes every call fail: Pinky reads its text from a picture instead, and reads that app faster for the next few minutes.
+- Taps and swipes on such a screen now say they reached the phone instead of ending as uncertain.
+- Opening an app that needs Pinky on the iPhone no longer makes the agent's call time out while the phone moves there.
+
+## 2026.1122.8 (2026-11-22)
+
+- Agents can now read a list on web pages that show no list, such as a bank's statement page on iPhone: Pinky scrolls the page's content and says which part it read.
+- On a phone that reads its screen slowly, reading a list now ends with what it read so far and a way to continue, instead of an error, and each continuation gets further down the list.
+- Continuing a list read no longer repeats lines that were already read.
+
+## 2026.1122.7 (2026-11-22)
+
+- When an agent's task waits for an iPhone the Mac lost on Wi-Fi, Pinky now shows it in Needs you with Restart device service and sends a notification, so someone nearby can bring the phone back.
+- Agents are told that only someone at the computer can bring back an iPhone the Mac lost on Wi-Fi, so a scheduled run nobody watches stops or uses another phone instead of waiting 15 minutes.
+
+## 2026.1122.6 (2026-11-22)
+
+- Files whose names start or end with a space now copy to and from Android phones as they are, instead of stopping the copy or replacing another file. Thanks @pseudoyu.
+- Typing a tailnet address for an Android phone that doesn't answer there now says the address can't be reached, instead of sometimes showing a timeout from Pinky's own adb connection.
+
+## 2026.1122.5 (2026-11-22)
+
+- With the Assistant open on an Android phone, Pinky no longer tells the agent that an app with a blank name came to the front, and no longer refuses its next action for it. Thanks @pseudoyu.
+
+## 2026.1122.4 (2026-11-22)
+
+- With the Assistant open on an Android phone, Pinky no longer tells the agent that the app behind it is hidden from accessibility. Thanks @pseudoyu.
+
+## 2026.1122.3 (2026-11-22)
+
+- On phones that keep an app's screen from accessibility services, such as WeChat on ColorOS 17, Pinky now names the app and reads its text by OCR, and tells the agent why it gets text only. Screenshots of the app follow its rules, as for any other app. Thanks @ECxiaozong for reporting it.
+
 ## 2026.1122.2 (2026-11-22)
 
 - `pinky <command> -h`, `--help` and `help` now print the usage and exit with status 0 instead of 2 (1 for `pinky helper`), so scripts no longer take asking for help as a failure. `pinky task` with a missing or wrong subcommand still exits with 2. Thanks @6moran.

@@ -382,20 +382,30 @@ func (a *app) restartControls(c *mg.Context, d gateway.DeviceView, center bool) 
 			t.TextAlign(mg.Center)
 		}
 	}
-	if _, ok := a.api.(deviceServiceRestarter); ok && guideOS == "darwin" {
-		mg.Row(c).Gap(8).AlignItems(mg.Center).Children(func() {
-			b := button(c.Key("restart-"+d.Info.ID), locales.LostRestart(), btnOpt{kind: btnPrimary}).Disabled(a.found.restarting)
-			if b.Clicked() {
-				a.found.asking, a.found.askFor = true, d.Info.ID
-			}
-			if a.found.restarting {
-				spinner(c)
-			}
-		})
+	if a.restartButton(c, d) {
 		note(locales.LostRestartNote())
 	}
 	note(locales.LostManual())
 	a.restartDialog(c, d)
+}
+
+// restartButton is the restart button, which asks first (restartDialog),
+// where the gateway can restart the device service; it reports whether it
+// showed.
+func (a *app) restartButton(c *mg.Context, d gateway.DeviceView) bool {
+	if _, ok := a.api.(deviceServiceRestarter); !ok || guideOS != "darwin" {
+		return false
+	}
+	mg.Row(c).Gap(8).AlignItems(mg.Center).Children(func() {
+		b := button(c.Key("restart-"+d.Info.ID), locales.LostRestart(), btnOpt{kind: btnPrimary}).Disabled(a.found.restarting)
+		if b.Clicked() {
+			a.found.asking, a.found.askFor = true, d.Info.ID
+		}
+		if a.found.restarting {
+			spinner(c)
+		}
+	})
+	return true
 }
 
 // restartDialog asks before restarting the device service for a phone.

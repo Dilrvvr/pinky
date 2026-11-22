@@ -319,9 +319,14 @@ func (g *Gateway) gate(l *lease, approvalID string, action bool) *Result {
 // phone may have been unlocked since, by a script or by hand, and the
 // gateway reads the lock state only every few seconds (pollLocks).
 func (g *Gateway) gateOnce(l *lease, approvalID string, action, fresh bool) *Result {
+	// The wait leaves the call time to act within its budget: a phone
+	// moving to another connection for the task may take a minute
+	// (switchWait).
+	wctx, cancel := context.WithTimeout(l.ctx, max(g.opt.CallBudget-switchReserve, g.opt.CallBudget/2))
+	defer cancel()
 	g.mu.Lock()
 	d := l.dev
-	for !l.ended && g.waitMovingLocked(l.ctx, d) {
+	for !l.ended && g.waitMovingLocked(wctx, d) {
 		// It was moving between its cable and Wi-Fi, or Pinky was opening
 		// it again (wifi.go).
 	}
@@ -334,6 +339,10 @@ func (g *Gateway) gateOnce(l *lease, approvalID string, action, fresh bool) *Res
 		return statusResult(StatusStopped, "The lease ended (%s). End the task, or call phone_connect again.", l.endedBy)
 	case waitingLocked(d):
 		res := setupResultLocked(d, fmt.Sprintf("%s is connected but waits for a step before Pinky can use it. Nothing was done.", d.name()))
+		g.mu.Unlock()
+		return res
+	case !d.online && d.switching != "":
+		res := errResult(ErrDeviceOffline, "%s", stillMovingMessage(d.name(), d.switching))
 		g.mu.Unlock()
 		return res
 	case !d.online:
@@ -476,7 +485,7 @@ func (g *Gateway) act(ctx context.Context, l *lease, c Call, a Action) *Result {
 		if ctx.Err() != nil {
 			return errResult(ErrInternal, "The call was cancelled. Nothing was done.")
 		}
-		return errResult(ErrInternal, "Another action on the phone was still running when the call's %s ran out. Nothing was done. Observe, then try again.", human(g.opt.CallBudget))
+		return busyOutOfTime(g.opt.CallBudget)
 	}
 	// Check again under the device's action lock: another call may have
 	// opened an approval, or the person may have taken over, meanwhile.
@@ -1621,9 +1630,18 @@ func (g *Gateway) pendingResult(l *lease, info approval.Info) *Result {
 	if info.Kind == approval.KindHandoff {
 		what = "hand control back"
 	}
-	return &Result{Status: StatusPending, ApprovalID: info.ID, Rule: info.Rule,
-		Message: fmt.Sprintf("Still waiting for the person to %s (%s). Nothing was done yet. Repeat the same call with approval_id %q; the person has %s left.",
-			what, info.Title, info.ID, approval.Human(left))}
+	msg := fmt.Sprintf("Still waiting for the person to %s (%s). Nothing was done yet. Repeat the same call with approval_id %q; the person has %s left.",
+		what, info.Title, info.ID, approval.Human(left))
+	g.mu.Lock()
+	lost := info.Kind == approval.KindHandoff && waitingLocked(l.dev) && l.dev.info.Setup == driver.SetupDeviceService
+	g.mu.Unlock()
+	if lost {
+		// Only a person at the computer can bring the phone back; an agent
+		// nobody watches would wait out the whole handoff.
+		msg += " The phone still waits for the computer's device service to be restarted, which needs a person at the computer and its administrator password. " +
+			"If nobody is at the computer, as in a scheduled or unattended run, stop waiting: release the phone with phone_release and use another one, or end the task."
+	}
+	return &Result{Status: StatusPending, ApprovalID: info.ID, Rule: info.Rule, Message: msg}
 }
 
 func (g *Gateway) withdrawnResult(l *lease, out approval.Outcome) *Result {
@@ -1888,6 +1906,17 @@ func (g *Gateway) executeOn(ctx context.Context, l *lease, c Call, a Action, p *
 	if n, ok := dev.(driver.InputNoter); ok && (a.Tool == "type" || a.Tool == "key") {
 		inputNote = n.TakeInputNote()
 	}
+	if c.unread {
+		// The settle owed since the input went out stays owed: the call
+		// that reads the screen next waits it out first (settleOwed).
+		g.mu.Lock()
+		d.inputAt = time.Now()
+		g.mu.Unlock()
+		res := &Result{Status: StatusUncertain, unread: true,
+			Message: "The swipe was sent; phone_read_list reads the screen it led to when it continues."}
+		g.recordStep(l, step, a, c, p, res, start, before, "", "")
+		return res
+	}
 	limit := g.opt.SettleMax
 	if !p.settleFull {
 		limit = a.settleLimit(limit)
@@ -1923,6 +1952,10 @@ func (g *Gateway) executeOn(ctx context.Context, l *lease, c Call, a Action, p *
 	g.mu.Unlock()
 	res := g.screenResult(l, next, false)
 	res.Status = StatusSettled
+	if next.TreeTooSlow {
+		// Not uncertain: the phone took the input, only its tree is slow.
+		res.Message = strings.TrimSpace("The action was delivered to the phone; the screen after it is read without its elements. " + res.Message)
+	}
 	if unread {
 		// GitHub issue #30: not an empty settled screen, but what it is.
 		res.Status = StatusUncertain
@@ -2554,9 +2587,32 @@ func (g *Gateway) screenResult(l *lease, raw *screen.Screen, full bool) *Result 
 		res.Message = fmt.Sprintf("The foreground app is blocked by the rule %q; Pinky hides its screen. Press home or launch another app.", rule)
 	} else if raw.Unsettled {
 		res.Message = unsettledMessage
+	} else if raw.AppHidden {
+		res.Message = appHiddenMessage
+	} else if raw.TreeTooSlow {
+		res.Message = treeTooSlowMessage
 	}
 	return res
 }
+
+// treeTooSlowMessage goes with a read whose element tree the phone did not
+// give in time (screen.Screen.TreeTooSlow): Pinky on the iPhone on a
+// screen whose tree takes it tens of seconds, such as a long list.
+const treeTooSlowMessage = "Pinky on the iPhone did not give this screen's elements in time (some screens, such as long lists " +
+	"in some apps, take it tens of seconds), so this read has no refs: only the app, the lock state and any text OCR read " +
+	"from a picture of the screen. Tap by x and y, ask for a screenshot (phone_observe screenshot: true) to see the screen, " +
+	"or use phone_key (back, home) to leave the page; keys work as usual. For the next few minutes, reads of this app " +
+	"ask the phone for fewer of its elements, or none, so that they come sooner."
+
+// appHiddenMessage goes with a read where the phone gave Pinky's
+// accessibility service no window of the app in front, so that the
+// driver named the app from the window manager (screen.Screen.AppHidden,
+// GitHub issue #191).
+const appHiddenMessage = "Android did not give this app's window to Pinky's accessibility service (some phones keep certain apps, " +
+	"such as WeChat on ColorOS, from accessibility services), so Pinky gets none of the app's elements: " +
+	"this read has only other windows' elements and any text OCR read from a picture of the screen (phone_observe ocr: true). " +
+	"Tap the app by x and y, or ask for a screenshot where the app's rules allow one. " +
+	"If the app has just started, observe again in a few seconds: it may not have shown its window yet."
 
 // unsettledMessage goes with a read whose screen kept changing, so that the
 // driver could read no element tree (screen.Screen.Unsettled).

@@ -4136,6 +4136,10 @@
   "@flyoutPasscode": {
     "description": "Menu bar flyout: what the Needs you row of an iPhone says after the phone's name when iOS asks on the phone for its passcode before Pinky on the iPhone may control it."
   },
+  "flyoutLost": "Restart the device service",
+  "@flyoutLost": {
+    "description": "Menu bar flyout: what the Needs you row of an iPhone says after the phone's name when the Mac's device service (usbmuxd) lost the phone on Wi-Fi and an agent's task waits for someone at the computer to restart the service."
+  },
   "flyoutReview": "Review",
   "@flyoutReview": {
     "description": "Menu bar flyout: the action at the end of a Needs you row; a click opens the approval."
@@ -6369,6 +6373,30 @@
   "gwSetupPasscodeTitle": "Enter the passcode on {phone}",
   "@gwSetupPasscodeTitle": {
     "description": "The title of the card that asks the person to enter the iPhone's passcode on the phone itself, where iOS asks for it before Pinky on the iPhone may control the phone. Shown only in other languages; in English the gateway's own words show.",
+    "placeholders": {
+      "phone": {
+        "type": "String",
+        "example": "iPhone 13 mini"
+      }
+    }
+  },
+  "gwSetupLostDetail": "This computer's device service lost the phone on Wi-Fi, and only someone at the computer can restart it. {agent} is waiting · {task}",
+  "@gwSetupLostDetail": {
+    "description": "The second line of the card Pinky shows when an agent's task waits for a phone that the Mac's device service (usbmuxd) lost on Wi-Fi: restarting the service needs the computer's administrator password, so only someone at the computer can do it. Shown only in other languages; in English the gateway's own words show.",
+    "placeholders": {
+      "agent": {
+        "type": "String",
+        "example": "Claude Code"
+      },
+      "task": {
+        "type": "String",
+        "example": "Bookkeeping"
+      }
+    }
+  },
+  "gwSetupLostTitle": "Restart the device service for {phone}",
+  "@gwSetupLostTitle": {
+    "description": "The title of the card Pinky shows when an agent's task waits for a phone that the Mac's device service (usbmuxd) lost on Wi-Fi; the card has the Restart device service button. Shown only in other languages; in English the gateway's own words show.",
     "placeholders": {
       "phone": {
         "type": "String",

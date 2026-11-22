@@ -132,6 +132,13 @@ type Result struct {
 	Log        string       // phone_logs: the log lines or crash reports, as text
 	Switches   []SwitchView // phone_device
 	About      *PhoneAbout  // phone_device's read: the phone's model, system, battery and storage
+
+	// outOfTime: the call's budget ran out before the screen could be
+	// read (outOfTimeBeforeAction, outOfTimeAfterAction).
+	outOfTime bool
+	// unread: the action went out and its screen was left unread, as
+	// Call.unread asks.
+	unread bool
 }
 
 // IsError reports whether the result is an error rather than a status.
@@ -160,6 +167,12 @@ type Call struct {
 	// noAsk refuses an action the rules would ask the person about,
 	// instead of asking: phone_read_list never opens an approval.
 	noAsk bool
+	// unread sends the action without waiting for the screen to settle
+	// or reading it afterwards: the settle stays owed, and the caller
+	// reads the screen in a later call. phone_read_list's last swipe on a
+	// phone whose reads take so long that the call has no time left for
+	// the read after it; its continuation reads that screen first.
+	unread bool
 }
 
 // reuseAge is how old the previous step's read may be for the next batch
@@ -286,6 +299,9 @@ type ScanView struct {
 	Continuation string
 	// gap says why a read stopped at a gap (gapNote), for the message.
 	gap string
+	// notes are further sentences for the message: where the read
+	// scrolled when no list was found, or how slow the phone's reads were.
+	notes []string
 }
 
 // Limits from DESIGN.md's tool table.
@@ -755,6 +771,8 @@ func setupResultLocked(d *device, first string) *Result {
 		msg += " Pinky will not use it until the person trusts it on its page in Pinky or plugs the phone in: tell them, and end the task."
 	case driver.SetupMediaInUse:
 		msg += " The person may be on a call: ask them with phone_handoff to end it or close that app when they can, saying why; the handoff ends by itself once the phone is ready."
+	case driver.SetupDeviceService:
+		msg += " " + deviceServiceHelp
 	default:
 		msg += " Ask the person to do it with phone_handoff, saying what to do; the handoff ends by itself once the phone is ready."
 	}
@@ -765,6 +783,16 @@ func setupResultLocked(d *device, first string) *Result {
 	}
 	return res
 }
+
+// deviceServiceHelp is what an agent can do about a phone the computer's
+// device service lost (driver.SetupDeviceService): only a person at the
+// computer can bring it back, with an administrator's password, so an agent
+// nobody watches must not wait for it.
+const deviceServiceHelp = "Only a person at this computer can fix it: they click Restart device service on the phone's page in Pinky " +
+	"and enter the computer's administrator password, which Pinky cannot do for them (Pinky shows them a card in Needs you and a notification). " +
+	"If nobody is at the computer, as in a scheduled or unattended run, do not wait for it: release it with phone_release and use another phone, " +
+	"or end the task saying the phone needs the device service restarted. " +
+	"Otherwise ask them with phone_handoff; it ends by itself once the phone is back."
 
 // connectStep is the history step of phone_connect. own says the task
 // left the background display the person chose for the phone's own

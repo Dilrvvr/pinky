@@ -8,6 +8,7 @@ import (
 	"slices"
 	"strings"
 	"testing"
+	"time"
 
 	mg "github.com/egoist/mygo/ui"
 
@@ -308,6 +309,64 @@ func TestLostOnWiFiPage(t *testing.T) {
 		if strings.Contains(toast, "device service") {
 			t.Errorf("a notice for a declined restart: %q", toast)
 		}
+	}
+}
+
+// TestLostOnWiFiCard: while an agent's task waits for a phone the device
+// service lost, the card Pinky opens by itself (and notifies) is in the
+// person's language, the flyout row says what to do, and the card has the
+// restart, which asks first; not when the page beside shows that phone
+// with its own.
+func TestLostOnWiFiCard(t *testing.T) {
+	defer func(os string) { guideOS = os }(guideOS)
+	guideOS = "darwin"
+	ta, id := foundApp(t, true)
+	ta.api.UseFoundPhone(id)
+	ta.api.LoseOnWiFi(id)
+	ta.waitFor(t, "the iPad lost", func() bool { d := ta.device(id); return d != nil && lostOnWiFi(*d) })
+	card := gateway.NeedView{ID: "setup:" + id, Kind: gateway.NeedSetup, DeviceID: id, DeviceName: "Sam's iPad",
+		Agent: "Claude Code", Title: "Restart the device service for Sam's iPad",
+		Detail:  "This computer's device service lost the phone on Wi-Fi, and only someone at the computer can restart it. Claude Code is waiting · Bookkeeping",
+		Created: time.Now()}
+	ta.setNeeds([]gateway.NeedView{card})
+	if len(ta.approvals()) != 0 {
+		t.Errorf("the floating panel shows the card: %+v", ta.approvals())
+	}
+	ta.sel = allPhones
+	tt := mg.NewTester(ta.rightPanel, 320, 820)
+	for _, lang := range testLanguages() {
+		inLanguage(t, lang, tt)
+		ta.setNeeds([]gateway.NeedView{card})
+		tt.Frame()
+		mustHave(t, tt, locales.GwSetupLostTitle("Sam's iPad"), locales.GwSetupLostDetail("Claude Code", "Bookkeeping"), locales.LostRestart())
+		if got := needShort(card); got != locales.FlyoutLost() {
+			t.Errorf("%s: the flyout row says %q", lang, got)
+		}
+	}
+	inLanguage(t, "en", tt)
+	ta.setNeeds([]gateway.NeedView{card})
+	tt.Frame()
+	if err := tt.Click("Restart device service…"); err != nil {
+		t.Fatal(err)
+	}
+	tt.Frame()
+	mustHave(t, tt, "Restart the device service?")
+	if len(ta.api.Restarts()) != 0 {
+		t.Fatal("restarted before the person confirmed")
+	}
+	if err := tt.Click("Restart"); err != nil {
+		t.Fatal(err)
+	}
+	ta.waitFor(t, "the restart", func() bool { return len(ta.api.Restarts()) == 1 && !ta.found.restarting })
+
+	// The page beside shows the phone, with the restart: the card has none.
+	ta.api.LoseOnWiFi(id)
+	ta.waitFor(t, "lost again", func() bool { d := ta.device(id); return d != nil && lostOnWiFi(*d) })
+	ta.sel = id
+	ta.setNeeds([]gateway.NeedView{card})
+	tt.Frame()
+	if hasText(tt, locales.LostRestart()) {
+		t.Errorf("the card repeats the page's restart: %q", tt.Texts())
 	}
 }
 

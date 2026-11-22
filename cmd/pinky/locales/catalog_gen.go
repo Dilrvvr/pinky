@@ -11899,6 +11899,26 @@ func (msgs Messages) FlyoutPasscode() string {
 	return Catalog.Format(msgs.locale, "flyoutPasscode", nil)
 }
 
+// FlyoutLost says "Restart the device service"
+// in the language the app shows.
+//
+// Menu bar flyout: what the Needs you row of an iPhone says after the
+// phone's name when the Mac's device service (usbmuxd) lost the phone on
+// Wi-Fi and an agent's task waits for someone at the computer to restart
+// the service.
+func FlyoutLost() string { return In(i18n.Locale()).FlyoutLost() }
+
+// FlyoutLost says "Restart the device service"
+// in the language of msgs.
+//
+// Menu bar flyout: what the Needs you row of an iPhone says after the
+// phone's name when the Mac's device service (usbmuxd) lost the phone on
+// Wi-Fi and an agent's task waits for someone at the computer to restart
+// the service.
+func (msgs Messages) FlyoutLost() string {
+	return Catalog.Format(msgs.locale, "flyoutLost", nil)
+}
+
 // FlyoutReview says "Review"
 // in the language the app shows.
 //
@@ -16841,6 +16861,50 @@ func GwSetupPasscodeTitle(phone string) string { return In(i18n.Locale()).GwSetu
 // gateway's own words show.
 func (msgs Messages) GwSetupPasscodeTitle(phone string) string {
 	return Catalog.Format(msgs.locale, "gwSetupPasscodeTitle", map[string]any{"phone": phone})
+}
+
+// GwSetupLostDetail says "This computer's device service lost the phone on Wi-Fi, and only someone at the computer can restart it. {agent} is w…"
+// in the language the app shows.
+//
+// The second line of the card Pinky shows when an agent's task waits for a
+// phone that the Mac's device service (usbmuxd) lost on Wi-Fi: restarting
+// the service needs the computer's administrator password, so only someone
+// at the computer can do it. Shown only in other languages; in English the
+// gateway's own words show.
+func GwSetupLostDetail(agent string, task string) string {
+	return In(i18n.Locale()).GwSetupLostDetail(agent, task)
+}
+
+// GwSetupLostDetail says "This computer's device service lost the phone on Wi-Fi, and only someone at the computer can restart it. {agent} is w…"
+// in the language of msgs.
+//
+// The second line of the card Pinky shows when an agent's task waits for a
+// phone that the Mac's device service (usbmuxd) lost on Wi-Fi: restarting
+// the service needs the computer's administrator password, so only someone
+// at the computer can do it. Shown only in other languages; in English the
+// gateway's own words show.
+func (msgs Messages) GwSetupLostDetail(agent string, task string) string {
+	return Catalog.Format(msgs.locale, "gwSetupLostDetail", map[string]any{"agent": agent, "task": task})
+}
+
+// GwSetupLostTitle says "Restart the device service for {phone}"
+// in the language the app shows.
+//
+// The title of the card Pinky shows when an agent's task waits for a phone
+// that the Mac's device service (usbmuxd) lost on Wi-Fi; the card has the
+// Restart device service button. Shown only in other languages; in English
+// the gateway's own words show.
+func GwSetupLostTitle(phone string) string { return In(i18n.Locale()).GwSetupLostTitle(phone) }
+
+// GwSetupLostTitle says "Restart the device service for {phone}"
+// in the language of msgs.
+//
+// The title of the card Pinky shows when an agent's task waits for a phone
+// that the Mac's device service (usbmuxd) lost on Wi-Fi; the card has the
+// Restart device service button. Shown only in other languages; in English
+// the gateway's own words show.
+func (msgs Messages) GwSetupLostTitle(phone string) string {
+	return Catalog.Format(msgs.locale, "gwSetupLostTitle", map[string]any{"phone": phone})
 }
 
 // GwUnlockDetail says "{agent} is waiting for the phone to unlock · {task}"

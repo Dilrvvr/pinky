@@ -302,8 +302,67 @@ func (g *Gateway) switchTo(ctx context.Context, d *device, cc driver.ConnectionC
 	}()
 	g.mu.Lock()
 	defer g.mu.Unlock()
-	for g.waitMovingLocked(ctx, d) {
+	// A call waits within its budget, leaving switchReserve for what it
+	// came for: an MCP client gives up on a call after about a minute,
+	// and a move with its discovery could take longer.
+	wctx := ctx
+	if dl, ok := budgetDeadline(ctx); ok {
+		var cancel context.CancelFunc
+		wctx, cancel = context.WithDeadline(ctx, dl.Add(-switchReserve))
+		defer cancel()
 	}
+	for g.waitMovingLocked(wctx, d) {
+	}
+	if wctx.Err() != nil && ctx.Err() == nil && d.taskWay == way && g.chosen[d.id] == "" &&
+		!d.online && !waitingLocked(d) && time.Now().Before(backBy(d)) {
+		// Out of the call's time with the phone still on its way: the
+		// move ends in the background, and the next call waits for it
+		// (gateOnce).
+		go g.finishSwitch(d, cc, way, target)
+		return errResult(ErrDeviceOffline, "%s", stillMovingMessage(d.name(), target))
+	}
+	return g.endSwitchLocked(d, way, target)
+}
+
+// switchReserve is what a call leaves of its budget after it waited for
+// its phone to move to another connection: the action it came for and the
+// read after it. Tests shorten it.
+var switchReserve = 15 * time.Second
+
+// stillMovingMessage tells an agent that the phone is still moving to
+// another connection for the task.
+func stillMovingMessage(name, target string) string {
+	return fmt.Sprintf("Pinky is moving %s to %s for this task, and it is not back yet. Nothing was done; try again in a few seconds.", name, wayName(target))
+}
+
+// finishSwitch ends a move to way that a call stopped waiting for: it
+// waits until the phone is back or switchWait passed, as the call would
+// have, and when the phone did not come up on the helper, moves it back to
+// the person's choice, as useConnection would have.
+func (g *Gateway) finishSwitch(d *device, cc driver.ConnectionChooser, way, target string) {
+	g.mu.Lock()
+	for g.waitMovingLocked(g.ctx, d) {
+	}
+	if g.ctx.Err() != nil {
+		g.mu.Unlock()
+		return
+	}
+	res := g.endSwitchLocked(d, way, target)
+	back := res == nil && way == wayHelper && d.taskWay == way && g.chosen[d.id] == "" &&
+		(!d.online || d.info.Backend != wayHelper)
+	g.mu.Unlock()
+	if back {
+		g.log.Warn("task connection: Pinky on the iPhone did not start", "device", d.id)
+		ctx, cancel := context.WithTimeout(g.ctx, switchWait)
+		defer cancel()
+		g.switchTo(ctx, d, cc, "")
+	}
+}
+
+// endSwitchLocked ends a move to way once the phone is back, the wait is
+// over, or it waits for the person, whose result it returns. The caller
+// holds g.mu.
+func (g *Gateway) endSwitchLocked(d *device, way, target string) *Result {
 	if d.taskWay != way || g.chosen[d.id] != "" {
 		// The person chose a connection meanwhile: their move is under
 		// way (forgetTaskWay), and its wait is theirs.
