@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"slices"
+	"strings"
 	"testing"
 
 	"howett.net/plist"
@@ -30,6 +31,21 @@ func TestAppBuildArgs(t *testing.T) {
 	}
 	if args := appBuildArgs("/kit", "/dd", "UDID", "T", "Pinky", true); !slices.Contains(args, "-allowProvisioningUpdates") {
 		t.Errorf("no provisioning updates: %v", args)
+	}
+}
+
+// TestLiteNextStep: after installing the lite build, the command line
+// says what the phone needs: LocalDevVPN from the App Store, with Pinky's
+// addresses, connected.
+func TestLiteNextStep(t *testing.T) {
+	if appSchemes[len(appSchemes)-1] != liteScheme {
+		t.Errorf("the lite build is not the last tried: %v", appSchemes)
+	}
+	s := liteNextStep("Sam's iPhone")
+	for _, want := range []string{"Sam's iPhone", "LocalDevVPN", LocalDevVPNStore, "Tunnel IP to 10.7.0.2/30", "Device IP to 10.7.0.1/32", "Connect"} {
+		if !strings.Contains(s, want) {
+			t.Errorf("%q lacks %q", s, want)
+		}
 	}
 }
 

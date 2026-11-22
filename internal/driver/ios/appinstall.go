@@ -133,7 +133,29 @@ func appBundleID(team string) string { return "pinky." + strings.ToLower(team) }
 // appSchemes are the kit's schemes, in the order InstallHelper tries them:
 // the app with its own packet tunnel, which needs a paid team (a personal
 // team cannot sign the Network Extension capability), then the one without.
-var appSchemes = []string{"Pinky", "PinkyLite"}
+var appSchemes = []string{"Pinky", liteScheme}
+
+// liteScheme is the kit's scheme without a packet tunnel: on the phone it
+// needs LocalDevVPN from the App Store to run tasks there
+// (driver.HelperLite).
+const liteScheme = "PinkyLite"
+
+// LocalDevVPN, the App Store app the lite build needs on the phone, and
+// the addresses to give it there (docs/notes/iphone-app.md): its default
+// Tunnel IP, 10.7.1.1/32, gets no answer from the phone.
+const (
+	LocalDevVPNStore    = "https://apps.apple.com/app/localdevvpn/id6755608044"
+	LocalDevVPNTunnelIP = "10.7.0.2/30"
+	LocalDevVPNDeviceIP = "10.7.0.1/32"
+)
+
+// liteNextStep is what the person does on the phone after Pinky installed
+// the lite build, for the command line; clients say it in their words.
+func liteNextStep(phone string) string {
+	return fmt.Sprintf("This is Pinky's lite build: to run tasks on %s itself, it needs LocalDevVPN. "+
+		"On the phone, install LocalDevVPN from the App Store (%s), set Tunnel IP to %s and Device IP to %s "+
+		"in its Settings › Network Configuration, then tap Connect.\n", phone, LocalDevVPNStore, LocalDevVPNTunnelIP, LocalDevVPNDeviceIP)
+}
 
 // appBuildArgs builds the kit's scheme for the phone, signed for team.
 // updates lets Xcode ask Apple for profiles (and the App IDs with their
@@ -310,6 +332,9 @@ type appInstall struct {
 	local            bool
 	testArgs         func(xctestrun string) []string // also tells the person
 	start            func(args []string) (string, error)
+	// progress hears driver.HelperLite once Xcode built the lite build;
+	// nil for none.
+	progress func(driver.HelperStep)
 }
 
 // installApp builds Pinky's app from the kit, makes it WDA's host, signs
@@ -335,6 +360,9 @@ func installApp(ctx context.Context, a appInstall) (string, provisioningProfile,
 		}
 		if err == nil {
 			app, scheme = pinkyAppIn(dd, s), s
+			if s == liteScheme && a.progress != nil {
+				a.progress(driver.HelperLite)
+			}
 			break
 		}
 		if ctx.Err() != nil {

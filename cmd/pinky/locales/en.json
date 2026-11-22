@@ -6610,6 +6610,56 @@
       }
     }
   },
+  "helperLiteDone": "Done",
+  "@helperLiteDone": {
+    "description": "Button closing the dialog on LocalDevVPN that shows once Pinky installed the lite version of Pinky on the iPhone."
+  },
+  "helperLiteIntro": "Your Apple ID can't sign Pinky's own VPN (that takes a paid Apple Developer account), so Pinky installed the lite version of Pinky on the iPhone. Pinky on this computer can use {phone} as it is. For Pinky on the iPhone to run tasks on the phone by itself, it needs LocalDevVPN, a free app from the App Store:",
+  "@helperLiteIntro": {
+    "description": "Dialog after Pinky installed the lite version of Pinky on the iPhone (built for a free Apple ID, without its own VPN): why, and that Pinky on the iPhone needs the App Store app LocalDevVPN (a name, never translated) to run tasks by itself. Numbered steps follow. phone is the iPhone's name, or \"the iPhone\".",
+    "placeholders": {
+      "phone": {
+        "type": "String",
+        "example": "DIYgod's iPhone"
+      }
+    }
+  },
+  "helperLiteStepAddresses": "In LocalDevVPN, open Settings › Network Configuration, set Tunnel IP to {tunnel} and Device IP to {device}, and save.",
+  "@helperLiteStepAddresses": {
+    "description": "Second step in the LocalDevVPN dialog. Settings, Network Configuration, Tunnel IP and Device IP are LocalDevVPN's own words, which it shows in English on a phone in Simplified Chinese; keep them as LocalDevVPN shows them in the language (Japanese: 設定 › ネットワーク設定, トンネル IP, デバイス IP). tunnel and device are addresses.",
+    "placeholders": {
+      "tunnel": {
+        "type": "String",
+        "example": "10.7.0.2/30"
+      },
+      "device": {
+        "type": "String",
+        "example": "10.7.0.1/32"
+      }
+    }
+  },
+  "helperLiteStepConnect": "Tap Connect in LocalDevVPN, then open Pinky on the iPhone and follow its steps.",
+  "@helperLiteStepConnect": {
+    "description": "Third step in the LocalDevVPN dialog. Connect is LocalDevVPN's button (Japanese: 接続; English in Simplified Chinese)."
+  },
+  "helperLiteStepInstall": "On the iPhone, install LocalDevVPN from the App Store.",
+  "@helperLiteStepInstall": {
+    "description": "First step in the LocalDevVPN dialog after Pinky installed the lite version of Pinky on the iPhone."
+  },
+  "helperLiteStore": "LocalDevVPN in the App Store",
+  "@helperLiteStore": {
+    "description": "Link in the LocalDevVPN dialog: opens LocalDevVPN's App Store page in the browser."
+  },
+  "helperLiteTitle": "One more step on {phone}: LocalDevVPN",
+  "@helperLiteTitle": {
+    "description": "Title of the dialog after Pinky installed the lite version of Pinky on the iPhone, which needs the App Store app LocalDevVPN on the phone. phone is the iPhone's name, or \"the iPhone\".",
+    "placeholders": {
+      "phone": {
+        "type": "String",
+        "example": "DIYgod's iPhone"
+      }
+    }
+  },
   "helperShowLog": "Show the log",
   "@helperShowLog": {
     "description": "Link after installing Pinky on the iPhone failed: shows Xcode's log of the install in Finder."

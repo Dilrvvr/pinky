@@ -632,6 +632,13 @@ const (
 	HelperBuilding   HelperStep = "building"   // Xcode builds and signs it: a minute or two
 	HelperInstalling HelperStep = "installing" // installing it and starting it once; the phone may ask for its passcode
 	HelperUnlock     HelperStep = "unlock"     // Xcode waits for the phone to be unlocked
+	// HelperLite is news rather than a step: the app Pinky installs is its
+	// lite build, without a VPN of its own (the team cannot sign one, as a
+	// free Apple ID's cannot), which needs LocalDevVPN from the App Store to
+	// run tasks on the phone itself. It comes once Xcode has built that
+	// app, and the steps go on; clients tell the person once the install
+	// is done, and keep showing the step before it meanwhile.
+	HelperLite HelperStep = "lite"
 )
 
 // HelperTeam is a developer team the computer can sign the helper for.

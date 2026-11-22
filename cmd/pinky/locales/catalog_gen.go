@@ -17449,6 +17449,134 @@ func (msgs Messages) HelperInstalledToast(phone string) string {
 	return Catalog.Format(msgs.locale, "helperInstalledToast", map[string]any{"phone": phone})
 }
 
+// HelperLiteDone says "Done"
+// in the language the app shows.
+//
+// Button closing the dialog on LocalDevVPN that shows once Pinky installed
+// the lite version of Pinky on the iPhone.
+func HelperLiteDone() string { return In(i18n.Locale()).HelperLiteDone() }
+
+// HelperLiteDone says "Done"
+// in the language of msgs.
+//
+// Button closing the dialog on LocalDevVPN that shows once Pinky installed
+// the lite version of Pinky on the iPhone.
+func (msgs Messages) HelperLiteDone() string {
+	return Catalog.Format(msgs.locale, "helperLiteDone", nil)
+}
+
+// HelperLiteIntro says "Your Apple ID can't sign Pinky's own VPN (that takes a paid Apple Developer account), so Pinky installed the lite ver…"
+// in the language the app shows.
+//
+// Dialog after Pinky installed the lite version of Pinky on the iPhone
+// (built for a free Apple ID, without its own VPN): why, and that Pinky on
+// the iPhone needs the App Store app LocalDevVPN (a name, never translated)
+// to run tasks by itself. Numbered steps follow. phone is the iPhone's
+// name, or "the iPhone".
+func HelperLiteIntro(phone string) string { return In(i18n.Locale()).HelperLiteIntro(phone) }
+
+// HelperLiteIntro says "Your Apple ID can't sign Pinky's own VPN (that takes a paid Apple Developer account), so Pinky installed the lite ver…"
+// in the language of msgs.
+//
+// Dialog after Pinky installed the lite version of Pinky on the iPhone
+// (built for a free Apple ID, without its own VPN): why, and that Pinky on
+// the iPhone needs the App Store app LocalDevVPN (a name, never translated)
+// to run tasks by itself. Numbered steps follow. phone is the iPhone's
+// name, or "the iPhone".
+func (msgs Messages) HelperLiteIntro(phone string) string {
+	return Catalog.Format(msgs.locale, "helperLiteIntro", map[string]any{"phone": phone})
+}
+
+// HelperLiteStepAddresses says "In LocalDevVPN, open Settings › Network Configuration, set Tunnel IP to {tunnel} and Device IP to {device}, and save."
+// in the language the app shows.
+//
+// Second step in the LocalDevVPN dialog. Settings, Network Configuration,
+// Tunnel IP and Device IP are LocalDevVPN's own words, which it shows in
+// English on a phone in Simplified Chinese; keep them as LocalDevVPN shows
+// them in the language (Japanese: 設定 › ネットワーク設定,
+// トンネル IP, デバイス IP). tunnel and device are addresses.
+func HelperLiteStepAddresses(tunnel string, device string) string {
+	return In(i18n.Locale()).HelperLiteStepAddresses(tunnel, device)
+}
+
+// HelperLiteStepAddresses says "In LocalDevVPN, open Settings › Network Configuration, set Tunnel IP to {tunnel} and Device IP to {device}, and save."
+// in the language of msgs.
+//
+// Second step in the LocalDevVPN dialog. Settings, Network Configuration,
+// Tunnel IP and Device IP are LocalDevVPN's own words, which it shows in
+// English on a phone in Simplified Chinese; keep them as LocalDevVPN shows
+// them in the language (Japanese: 設定 › ネットワーク設定,
+// トンネル IP, デバイス IP). tunnel and device are addresses.
+func (msgs Messages) HelperLiteStepAddresses(tunnel string, device string) string {
+	return Catalog.Format(msgs.locale, "helperLiteStepAddresses", map[string]any{"tunnel": tunnel, "device": device})
+}
+
+// HelperLiteStepConnect says "Tap Connect in LocalDevVPN, then open Pinky on the iPhone and follow its steps."
+// in the language the app shows.
+//
+// Third step in the LocalDevVPN dialog. Connect is LocalDevVPN's button
+// (Japanese: 接続; English in Simplified Chinese).
+func HelperLiteStepConnect() string { return In(i18n.Locale()).HelperLiteStepConnect() }
+
+// HelperLiteStepConnect says "Tap Connect in LocalDevVPN, then open Pinky on the iPhone and follow its steps."
+// in the language of msgs.
+//
+// Third step in the LocalDevVPN dialog. Connect is LocalDevVPN's button
+// (Japanese: 接続; English in Simplified Chinese).
+func (msgs Messages) HelperLiteStepConnect() string {
+	return Catalog.Format(msgs.locale, "helperLiteStepConnect", nil)
+}
+
+// HelperLiteStepInstall says "On the iPhone, install LocalDevVPN from the App Store."
+// in the language the app shows.
+//
+// First step in the LocalDevVPN dialog after Pinky installed the lite
+// version of Pinky on the iPhone.
+func HelperLiteStepInstall() string { return In(i18n.Locale()).HelperLiteStepInstall() }
+
+// HelperLiteStepInstall says "On the iPhone, install LocalDevVPN from the App Store."
+// in the language of msgs.
+//
+// First step in the LocalDevVPN dialog after Pinky installed the lite
+// version of Pinky on the iPhone.
+func (msgs Messages) HelperLiteStepInstall() string {
+	return Catalog.Format(msgs.locale, "helperLiteStepInstall", nil)
+}
+
+// HelperLiteStore says "LocalDevVPN in the App Store"
+// in the language the app shows.
+//
+// Link in the LocalDevVPN dialog: opens LocalDevVPN's App Store page in the
+// browser.
+func HelperLiteStore() string { return In(i18n.Locale()).HelperLiteStore() }
+
+// HelperLiteStore says "LocalDevVPN in the App Store"
+// in the language of msgs.
+//
+// Link in the LocalDevVPN dialog: opens LocalDevVPN's App Store page in the
+// browser.
+func (msgs Messages) HelperLiteStore() string {
+	return Catalog.Format(msgs.locale, "helperLiteStore", nil)
+}
+
+// HelperLiteTitle says "One more step on {phone}: LocalDevVPN"
+// in the language the app shows.
+//
+// Title of the dialog after Pinky installed the lite version of Pinky on
+// the iPhone, which needs the App Store app LocalDevVPN on the phone. phone
+// is the iPhone's name, or "the iPhone".
+func HelperLiteTitle(phone string) string { return In(i18n.Locale()).HelperLiteTitle(phone) }
+
+// HelperLiteTitle says "One more step on {phone}: LocalDevVPN"
+// in the language of msgs.
+//
+// Title of the dialog after Pinky installed the lite version of Pinky on
+// the iPhone, which needs the App Store app LocalDevVPN on the phone. phone
+// is the iPhone's name, or "the iPhone".
+func (msgs Messages) HelperLiteTitle(phone string) string {
+	return Catalog.Format(msgs.locale, "helperLiteTitle", map[string]any{"phone": phone})
+}
+
 // HelperShowLog says "Show the log"
 // in the language the app shows.
 //
