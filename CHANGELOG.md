@@ -2,6 +2,24 @@
 
 What changed for people in each release of Pinky, newest first. A version is the release's date in Asia/Shanghai and that day's count: 2026.1107.2 is the second release of 7 November 2026. Notes wait under "Unreleased" until the next release takes them; see [docs/RELEASING.md](docs/RELEASING.md).
 
+## 2026.1123.6 (2026-11-23)
+
+- Reading on with the continuation of a long list on a web page no longer stops right away saying content may have been skipped, when the screen showed many lines. Thanks @pseudoyu.
+
+## 2026.1123.5 (2026-11-23)
+
+- On Android, Pinky can now be your phone's digital assistant app (Settings › Apps › Default apps), so holding the power button or using the assistant gesture asks Pinky about what's on the screen. Thanks @Aoufgo for suggesting it.
+- Asking about the screen from the floating button no longer sometimes reads Pinky's own panel instead of the app behind it.
+
+## 2026.1123.4 (2026-11-23)
+
+- Reading a long list on a web page with bullets no longer returns some rows twice or stops partway saying content may have been skipped. Thanks @pseudoyu.
+- Reading a long list on a web page no longer ends saying content may have been skipped when it reached the bottom, and reading back up no longer repeats rows. Thanks @pseudoyu.
+
+## 2026.1123.3 (2026-11-23)
+
+- On Android, when the app an agent works in on the background display closes (Back from its first screen, or a crash), the task now stays on that display instead of moving to the phone's own screen. Thanks @pseudoyu.
+
 ## 2026.1123.2 (2026-11-23)
 
 - `pinky devices --json` now prints an empty list (`[]`) instead of `null` when there are no phones, whether or not Pinky is running. Thanks @6moran.

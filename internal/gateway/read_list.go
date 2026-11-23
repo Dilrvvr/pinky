@@ -44,8 +44,11 @@ type readCursor struct {
 	direction string
 	page      int
 	previous  []viewportLine
-	pinned    []viewportLine
-	expires   time.Time
+	// raw is the whole screen the call ended on: the next call's first
+	// read of it must lose every line, previous keeps only some.
+	raw     []viewportLine
+	pinned  []viewportLine
+	expires time.Time
 }
 
 // listID is how a read finds its list again on the next screen: its path
@@ -164,7 +167,7 @@ func (g *Gateway) readList(ctx context.Context, l *lease, req ReadListRequest) *
 		cursor = c
 		st.req.Direction = c.direction
 		st.req.Area = c.area
-		st.previous, st.raw, st.pinned = c.previous, c.previous, c.pinned
+		st.previous, st.raw, st.pinned = c.previous, c.raw, c.pinned
 		st.view.StartScreen = c.page
 	}
 	if st.req.Direction == "" {
@@ -672,9 +675,17 @@ func (st *readState) take(s *screen.Screen, first bool) bool {
 		// find the next screen's overlap with. A continuation's first read
 		// of the screen the last call ended on is such a screen; forgetting
 		// it took the whole next screen as new.
+		// The next screen overlaps this one at its bottom when the read
+		// goes forward and at its top when it goes back: keep that end.
 		st.previous = tail(current, readListKeep)
+		if req.Direction == "down" && len(current) > readListKeep {
+			st.previous = current[:readListKeep]
+		}
 	}
-	st.raw, st.full = tail(raw, readListKeep), full
+	// The whole last screen: the next one is filtered against it, and a
+	// screen that did not move (the end of a page that shows more lines
+	// than readListKeep) must lose every line.
+	st.raw, st.full = raw, full
 	return true
 }
 
@@ -1150,6 +1161,7 @@ func (g *Gateway) keepCursor(l *lease, st *readState) string {
 	return g.putCursor(l, &readCursor{app: st.app, list: st.id, area: st.req.Area, direction: st.req.Direction,
 		page:     st.view.StartScreen + st.view.Pages,
 		previous: append([]viewportLine(nil), st.previous...),
+		raw:      append([]viewportLine(nil), st.raw...),
 		pinned:   append([]viewportLine(nil), st.pinned...)})
 }
 
