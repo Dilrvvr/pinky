@@ -2,6 +2,38 @@
 
 What changed for people in each release of Pinky, newest first. A version is the release's date in Asia/Shanghai and that day's count: 2026.1107.2 is the second release of 7 November 2026. Notes wait under "Unreleased" until the next release takes them; see [docs/RELEASING.md](docs/RELEASING.md).
 
+## 2026.1124.8 (2026-11-24)
+
+- An Android phone connected over Wi-Fi that has only a software H.265 encoder now sends its picture in H.264. Before, its picture came out small and blurry, and an Android 13 emulator could run out of memory. Thanks @YuHoYe.
+
+## 2026.1124.7 (2026-11-24)
+
+- When the phone's picture in Pinky freezes because the video decoder on the computer stops responding (seen on Windows after tapping an iPhone's recent apps button in the mirror), Pinky now notices within a few seconds and opens the picture again, decoding in software. Thanks @longzhonguo for reporting it.
+
+## 2026.1124.6 (2026-11-24)
+
+- Connecting or removing Codex in Settings › Agents no longer deletes a comment written right above the next table in Codex's `config.toml`. Thanks @pseudoyu.
+
+## 2026.1124.5 (2026-11-24)
+
+- Connecting or removing Codex in Settings › Agents now works when Codex's `config.toml` has prompts with triple quotes or table names with `#` or brackets. Thanks @yuearc.
+
+## 2026.1124.4 (2026-11-24)
+
+- When an iPhone's mirror stops showing new pictures while the phone keeps working, for example after a permission alert, Pinky now notices within a few seconds and restarts the picture by itself, without restarting Pinky. Thanks @longzhonguo for reporting it.
+
+## 2026.1124.3 (2026-11-24)
+
+- When the live picture of an iPhone stops moving while the phone keeps changing, Pinky now notices and brings the picture back by itself, and notes it in its log for feedback. Thanks @longzhonguo for reporting it.
+
+## 2026.1124.2 (2026-11-24)
+
+- An iPhone's tile in All phones now says **Not live** when it shows the phone's last picture instead of its live screen, so it no longer looks like the mirror froze. Open the phone's page to watch it live.
+
+## 2026.1124.1 (2026-11-24)
+
+- On some Android phones, such as the Honor 9X, a touch on the phone's window in Pinky now lands where you made it, not off toward the top left. Thanks @longzhonguo for reporting it.
+
 ## 2026.1123.6 (2026-11-23)
 
 - Reading on with the continuation of a long list on a web page no longer stops right away saying content may have been skipped, when the screen showed many lines. Thanks @pseudoyu.
