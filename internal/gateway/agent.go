@@ -53,6 +53,10 @@ type AgentInfo struct {
 	// server sets it; it lets the session continue a task (Continue) and
 	// take the person's messages (PersonSaid), and changes nothing else.
 	Pilot bool
+	// Unattended marks a run nobody started: a scheduled task of Pinky's
+	// own agent that ran by itself. An unlock window never unlocks the
+	// phone for it (unlockwindow.go). Only Pinky's MCP server sets it.
+	Unattended bool
 }
 
 // Status is the outcome of a call, from DESIGN.md's Results table.
@@ -140,6 +144,10 @@ type Result struct {
 	// unread: the action went out and its screen was left unread, as
 	// Call.unread asks.
 	unread bool
+	// unchanged: the step settled, but by the action's own check it did
+	// not take: a tap left its switch or checkbox as it was (unflipped).
+	// phone_batch stops there.
+	unchanged bool
 }
 
 // IsError reports whether the result is an error rather than a status.
@@ -1093,6 +1101,14 @@ func (g *Gateway) firstScreen(ctx context.Context, l *lease) *Result {
 	g.startVideoLocked(l)
 	g.mu.Unlock()
 	cur, err := g.observe(ctx, l.dev, true)
+	var r windowResult
+	if err == nil {
+		// A locked phone: an unlock window unlocks it, when one may.
+		cur, r, err = g.windowRead(l, "", false, cur, func() (*screen.Screen, error) {
+			g.settleOwed(ctx, l.dev)
+			return g.observe(ctx, l.dev, true)
+		})
+	}
 	if err != nil {
 		return g.finish(l, g.readError(l, err))
 	}
@@ -1115,7 +1131,7 @@ func (g *Gateway) firstScreen(ctx context.Context, l *lease) *Result {
 		res.Message += " The person is in control of the phone; call phone_handoff to wait until they hand it back."
 	case cur.Locked:
 		res.Status = StatusLocked
-		res.Message += " The phone is locked; call phone_handoff so the person can unlock it."
+		res.Message += " " + lockedNote(r, "The phone is locked; call phone_handoff so the person can unlock it.")
 	}
 	return g.finish(l, res)
 }
@@ -1287,6 +1303,11 @@ func (g *Gateway) approveAgentWith(a AgentInfo, pick func(*agentState) Scope) {
 func (g *Gateway) scopeOf(s *Session) Scope {
 	g.mu.Lock()
 	defer g.mu.Unlock()
+	return g.scopeOfLocked(s)
+}
+
+// scopeOfLocked is scopeOf with g.mu held.
+func (g *Gateway) scopeOfLocked(s *Session) Scope {
 	if st, ok := g.agents[s.agent.Name]; ok {
 		return st.scope
 	}
@@ -1459,6 +1480,16 @@ func (s *Session) Observe(ctx context.Context, req ObserveRequest) *Result {
 		}
 		cur, err = g.observeOCR(ctx, l.dev, mode)
 	}
+	var r windowResult
+	if err == nil {
+		// A locked phone: an unlock window unlocks it, when one may, and
+		// the agent gets the screen after the unlock.
+		cur, r, err = g.windowRead(l, "", false, cur, func() (*screen.Screen, error) {
+			g.settleOwed(ctx, l.dev)
+			readAt = time.Now()
+			return g.observeOCR(ctx, l.dev, mode)
+		})
+	}
 	if err != nil {
 		return g.finish(l, g.readError(l, err))
 	}
@@ -1470,7 +1501,7 @@ func (s *Session) Observe(ctx context.Context, req ObserveRequest) *Result {
 	}
 	if cur.Locked {
 		res.Status = StatusLocked
-		res.Message = "The phone is locked; call phone_handoff so the person can unlock it."
+		res.Message = lockedNote(r, "The phone is locked; call phone_handoff so the person can unlock it.")
 	}
 	if _, onBG := g.screenOf(l.dev); onBG && noApp(cur) {
 		res.Message = strings.TrimSpace(res.Message + " " + emptyBackgroundMessage)
@@ -2009,6 +2040,13 @@ func (s *Session) Handoff(ctx context.Context, req HandoffRequest) *Result {
 		g.mu.Lock()
 		endsOnUnlock := l.dev.locked && unlockOnly(reason)
 		g.mu.Unlock()
+		if endsOnUnlock && !waiting {
+			// An unlock window unlocks the phone now, when one may: nobody
+			// is asked.
+			if r := g.windowUnlock(l, "", false); r.unlocked() {
+				return g.unlockedHandoffResult(ctx, l, r)
+			}
+		}
 		info = g.approvals.Open(approval.Request{Kind: approval.KindHandoff, Binding: b, Rule: "Handoff",
 			Title: reason, Detail: fmt.Sprintf("%s · %s", s.agent.Name, l.task.title), Agent: s.agent.Name,
 			TaskID: l.task.id, DeviceName: l.dev.name(), App: g.appName(l.dev), Timeout: g.opt.HandoffTimeout})
@@ -2081,17 +2119,14 @@ func (g *Gateway) handedBackResult(ctx context.Context, l *lease, note string) *
 		return g.finish(l, res)
 	}
 	g.mu.Unlock()
-	g.readyScreen(ctx, l)
-	cur, err := g.observe(ctx, l.dev, true)
-	if errors.Is(err, driver.ErrOffline) {
-		// A phone on Wi-Fi may drop for a moment as it is unlocked: the
-		// unlock that ended an unlock handoff, or the person's own. Wait
-		// for it to come back, then read it.
-		g.setOffline(l.dev, "")
-		if g.waitBack(ctx, l) {
-			g.readyScreen(ctx, l)
-			cur, err = g.observe(ctx, l.dev, true)
-		}
+	cur, err := g.readBack(ctx, l)
+	var r windowResult
+	if err == nil {
+		// Handed back locked: an unlock window unlocks it, when one may.
+		cur, r, err = g.windowRead(l, "", false, cur, func() (*screen.Screen, error) {
+			g.settleOwed(ctx, l.dev)
+			return g.readBack(ctx, l)
+		})
 	}
 	if err != nil {
 		return g.finish(l, g.readError(l, err))
@@ -2103,13 +2138,55 @@ func (g *Gateway) handedBackResult(ctx context.Context, l *lease, note string) *
 	res.Message = "The person handed control back."
 	if cur.Locked {
 		res.Status = StatusLocked
-		res.Message = "The person handed control back, but the phone is locked."
+		res.Message = lockedNote(r, "The person handed control back, but the phone is locked.")
 	}
 	return g.finish(l, res)
 }
 
+// unlockedHandoffResult answers at once a phone_handoff that asked for
+// nothing but the unlock, which an unlock window did (r), with the screen.
+func (g *Gateway) unlockedHandoffResult(ctx context.Context, l *lease, r windowResult) *Result {
+	g.settleOwed(ctx, l.dev)
+	cur, err := g.readBack(ctx, l)
+	if err != nil {
+		return g.finish(l, g.readError(l, err))
+	}
+	res := g.screenResult(l, cur, true)
+	g.startShot(l.dev, cur)
+	res.Status = StatusSettled
+	res.Message = "Pinky unlocked the phone with its saved PIN, as the person allows for now. Nobody was asked; go on with the task."
+	if r == windowNoNeed {
+		res.Message = "The phone is no longer locked. Nobody was asked; go on with the task."
+	}
+	if cur.Locked {
+		res.Status = StatusLocked
+		res.Message = "Pinky unlocked the phone with its saved PIN, but it is locked again. Call phone_handoff so the person can unlock it."
+	}
+	return g.finish(l, res)
+}
+
+// readBack reads the phone's screen once it is back from the person or an
+// unlock. A phone on Wi-Fi may drop for a moment as it is unlocked: the
+// unlock that ended an unlock handoff, or the person's own. It waits for
+// the phone to come back, then reads it.
+func (g *Gateway) readBack(ctx context.Context, l *lease) (*screen.Screen, error) {
+	g.readyScreen(ctx, l)
+	cur, err := g.observe(ctx, l.dev, true)
+	if errors.Is(err, driver.ErrOffline) {
+		g.setOffline(l.dev, "")
+		if g.waitBack(ctx, l) {
+			g.readyScreen(ctx, l)
+			cur, err = g.observe(ctx, l.dev, true)
+		}
+	}
+	return cur, err
+}
+
 // Batch implements phone_batch: steps run in order and stop at the first
-// one that does not settle.
+// one that does not settle, or that settled but by its own check did not
+// take (Result.unchanged): the steps after it may count on it, and running
+// them would bury the step's note under their results, as a launch of
+// another app did in the field report of 2026-11-26.
 func (s *Session) Batch(ctx context.Context, req BatchRequest) *Result {
 	if len(req.Steps) == 0 {
 		return errResult(ErrInvalidArgument, "steps is empty.")
@@ -2133,6 +2210,10 @@ func (s *Session) Batch(ctx context.Context, req BatchRequest) *Result {
 	defer cancel()
 	out := &Result{Status: StatusSettled}
 	secrets := batchSecrets(g, l, req.Steps)
+	// The screen the agent took the steps' refs from (Action.seen).
+	g.mu.Lock()
+	seen := l.baseline
+	g.mu.Unlock()
 	// The longest step so far: the next step starts only while the call's
 	// budget has room for one like it (budget.go).
 	var longest time.Duration
@@ -2142,6 +2223,7 @@ func (s *Session) Batch(ctx context.Context, req BatchRequest) *Result {
 			outOfTime = true
 			break
 		}
+		a.seen = seen
 		c := Call{Device: req.Device, Intent: req.Intent, ApprovalID: a.ApprovalID, Progress: req.Progress, reuse: i > 0}
 		if a.Intent != "" {
 			c.Intent = a.Intent
@@ -2151,7 +2233,7 @@ func (s *Session) Batch(ctx context.Context, req BatchRequest) *Result {
 		r := g.finish(l, g.act(ctx, l, c, a))
 		longest = max(longest, time.Since(start))
 		out.Steps = append(out.Steps, r)
-		if r.IsError() || r.Status != StatusSettled {
+		if r.IsError() || r.Status != StatusSettled || r.unchanged {
 			break
 		}
 	}
@@ -2163,6 +2245,9 @@ func (s *Session) Batch(ctx context.Context, req BatchRequest) *Result {
 	case outOfTime:
 		out.Message = fmt.Sprintf("Ran %s of %d, then stopped: the phone is answering slowly and the call's %s were running out. Not done: %s; continue with it in a new call.",
 			stepSpan(1, n), total, human(g.opt.CallBudget), stepSpan(n+1, total))
+	case n < total && last.unchanged:
+		out.Message = fmt.Sprintf("Stopped at step %d of %d: the switch it tapped is as it was. Not done: %s.",
+			n, total, stepSpan(n+1, total))
 	case n < total:
 		out.Message = fmt.Sprintf("Stopped at step %d of %d.", n, total)
 	}

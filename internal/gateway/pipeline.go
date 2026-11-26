@@ -65,6 +65,11 @@ type Action struct {
 	// list shapes a swipe by direction that phone_read_list sends
 	// (read_list.go); nil for every other swipe.
 	list *listSwipe
+	// seen, for a phone_batch step, is the screen the agent had received
+	// when the batch began: the screen the step's refs come from. The
+	// steps before it end on screens the agent sees only once the batch
+	// returns (prepare's relocate).
+	seen *screen.Screen
 }
 
 // listSwipe shapes a phone_read_list swipe: area, when set, takes the
@@ -309,16 +314,24 @@ func (s *Session) Act(ctx context.Context, c Call, a Action) *Result {
 }
 
 // gate refuses a call the device cannot take now. Reads (action false) pass
-// while the person is in control or an approval is open.
+// while the person is in control or an approval is open. An action on a
+// locked phone unlocks it through an unlock window, when one may
+// (unlockwindow.go), and goes on; the caller does not hold d.act.
 func (g *Gateway) gate(l *lease, approvalID string, action bool) *Result {
-	return g.gateOnce(l, approvalID, action, true)
+	return g.gateOnce(l, approvalID, action, true, windowTake)
+}
+
+// gateHeld is gate for a caller that holds d.act.
+func (g *Gateway) gateHeld(l *lease, approvalID string, action bool) *Result {
+	return g.gateOnce(l, approvalID, action, true, windowHeld)
 }
 
 // gateOnce is gate. With fresh, an action on a phone the gateway last saw
 // locked asks the phone once more before it is refused (unlockedNow): the
 // phone may have been unlocked since, by a script or by hand, and the
-// gateway reads the lock state only every few seconds (pollLocks).
-func (g *Gateway) gateOnce(l *lease, approvalID string, action, fresh bool) *Result {
+// gateway reads the lock state only every few seconds (pollLocks). use says
+// how an unlock window may unlock it then.
+func (g *Gateway) gateOnce(l *lease, approvalID string, action, fresh bool, use windowUse) *Result {
 	// The wait leaves the call time to act within its budget: a phone
 	// moving to another connection for the task may take a minute
 	// (switchWait).
@@ -381,10 +394,22 @@ func (g *Gateway) gateOnce(l *lease, approvalID string, action, fresh bool) *Res
 		g.mu.Unlock()
 		if fresh && g.unlockedNow(l, seq) {
 			// Everything above may have changed while the phone answered.
-			return g.gateOnce(l, approvalID, action, false)
+			return g.gateOnce(l, approvalID, action, false, use)
 		}
-		return g.withCurrentScreen(l, statusResult(StatusLocked,
-			"The phone is locked. Nothing was done. Call phone_handoff so the person can unlock it."))
+		const locked = "The phone is locked. Nothing was done. Call phone_handoff so the person can unlock it."
+		if use == windowNone {
+			return g.withCurrentScreen(l, statusResult(StatusLocked, locked))
+		}
+		switch r := g.windowUnlock(l, approvalID, use != windowTake); {
+		case r.unlocked() && use == windowStale:
+			// The action was aimed at a screen read before the lock.
+			return g.withCurrentScreen(l, statusResult(StatusStale, "%s", windowStaleMessage))
+		case r.unlocked():
+			// Everything above may have changed meanwhile.
+			return g.gateOnce(l, approvalID, action, false, windowNone)
+		default:
+			return g.withCurrentScreen(l, statusResult(StatusLocked, "%s", lockedNote(r, locked)))
+		}
 	}
 	l.handedBack, l.handBackNote = false, ""
 	g.mu.Unlock()
@@ -496,7 +521,7 @@ func (g *Gateway) act(ctx context.Context, l *lease, c Call, a Action) *Result {
 	}
 	// Check again under the device's action lock: another call may have
 	// opened an approval, or the person may have taken over, meanwhile.
-	if res := g.gate(l, "", true); res != nil {
+	if res := g.gateHeld(l, "", true); res != nil {
 		d.act.Unlock()
 		return res
 	}
@@ -524,9 +549,24 @@ func (g *Gateway) act(ctx context.Context, l *lease, c Call, a Action) *Result {
 		return g.readError(l, err)
 	}
 	if cur.Locked {
-		d.act.Unlock()
-		return g.attachScreen(l, statusResult(StatusLocked,
-			"The phone is locked. Nothing was done. Call phone_handoff so the person can unlock it."), cur)
+		// It locked since the gateway last looked: an unlock window
+		// unlocks it, when one may, and the action starts from the screen
+		// after the unlock.
+		var r windowResult
+		cur, r, err = g.windowRead(l, "", true, cur, func() (*screen.Screen, error) {
+			g.settleOwed(ctx, d)
+			readAt = time.Now()
+			return g.observe(ctx, d, false)
+		})
+		if err != nil {
+			d.act.Unlock()
+			return g.readError(l, err)
+		}
+		if cur.Locked {
+			d.act.Unlock()
+			return g.attachScreen(l, statusResult(StatusLocked, "%s",
+				lockedNote(r, "The phone is locked. Nothing was done. Call phone_handoff so the person can unlock it.")), cur)
+		}
 	}
 	if aimed(a) {
 		if from, to, ok := g.switchedApp(l, cur, readAt, true); ok {
@@ -884,6 +924,14 @@ func (g *Gateway) prepare(ctx context.Context, l *lease, a Action, cur *screen.S
 		e, ok := cur.Find(ref)
 		if !ok {
 			e, ok = relocate(seen, cur, ref)
+		}
+		if !ok && a.seen != nil && a.seen != seen {
+			// A phone_batch step whose ref the screen the step before it
+			// ended on lacks: its refs come from the screen the agent had
+			// when the batch began (field report, an iPad on iPadOS 26,
+			// 2026-11-26: refs that changed between the two made a step
+			// "not on the screen anymore" with its element in place).
+			e, ok = relocate(a.seen, cur, ref)
 		}
 		if !ok {
 			return nil, g.attachScreen(l, errResult(ErrNotFound, "[%d] is not on the screen anymore. Nothing was done.", ref), cur)
@@ -1771,12 +1819,22 @@ func (g *Gateway) runApproved(ctx context.Context, l *lease, c Call, a Action, i
 	g.readyScreen(ctx, l)
 	d.act.Lock()
 	defer d.act.Unlock()
-	if res := g.gate(l, info.ID, true); res != nil {
+	if res := g.gateHeld(l, info.ID, true); res != nil {
 		g.closeStep(info.ID, notRunStatus(res), out.Waited)
 		return res
 	}
 	g.settleOwed(ctx, d)
 	cur, err := g.observe(ctx, d, false)
+	var r windowResult
+	if err == nil {
+		// An unlock window unlocks a phone that locked while the approval
+		// waited, when one may; the screen is then checked as for any
+		// approved action.
+		cur, r, err = g.windowRead(l, info.ID, true, cur, func() (*screen.Screen, error) {
+			g.settleOwed(ctx, d)
+			return g.observe(ctx, d, false)
+		})
+	}
 	if err != nil {
 		res := g.readError(l, err)
 		g.closeStep(info.ID, notRunStatus(res), out.Waited)
@@ -1784,8 +1842,8 @@ func (g *Gateway) runApproved(ctx context.Context, l *lease, c Call, a Action, i
 	}
 	if cur.Locked {
 		g.closeStep(info.ID, string(StatusLocked), out.Waited)
-		return g.attachScreen(l, statusResult(StatusLocked,
-			"The phone locked while the approval waited, so nothing was done. Call phone_handoff so the person can unlock it."), cur)
+		return g.attachScreen(l, statusResult(StatusLocked, "%s", lockedNote(r,
+			"The phone locked while the approval waited, so nothing was done. Call phone_handoff so the person can unlock it.")), cur)
 	}
 	snap, _ := info.Data.(*snapshot)
 	p, res := g.prepare(ctx, l, a, cur)
@@ -1840,9 +1898,12 @@ func notRunStatus(res *Result) string {
 
 // preflight checks, right before the driver acts, that nothing changed
 // since the gate: the lease is still there, the person did not take over,
-// no approval opened and the call was not cancelled.
-func (g *Gateway) preflight(ctx context.Context, l *lease) *Result {
-	if res := g.gate(l, "", true); res != nil {
+// no approval opened and the call was not cancelled. The caller holds
+// d.act; use says what an unlock window does for a phone that locked
+// meanwhile: it unlocks it, and the action runs only where it is aimed at
+// no screen (windowHeld, a launch).
+func (g *Gateway) preflight(ctx context.Context, l *lease, use windowUse) *Result {
+	if res := g.gateOnce(l, "", true, true, use); res != nil {
 		return res
 	}
 	if ctx.Err() != nil {
@@ -1866,7 +1927,7 @@ func (g *Gateway) execute(ctx context.Context, l *lease, c Call, a Action, p *pr
 	// (taskconn.go). Only here, once the gate and the rules let the
 	// launch run: a launch that is refused, or waits for the person,
 	// leaves the phone's connection alone.
-	if g.preflight(ctx, l) != nil {
+	if g.preflight(ctx, l, windowHeld) != nil {
 		return g.executeOn(ctx, l, c, a, p, cur, step) // it records the refusal
 	}
 	start := time.Now()
@@ -1885,7 +1946,11 @@ func (g *Gateway) executeOn(ctx context.Context, l *lease, c Call, a Action, p *
 	bshot := g.beforeShot(d, cur)
 	before := g.shotID(bshot)
 	from := g.leftFrom(d, cur)
-	if res := g.preflight(ctx, l); res != nil {
+	use := windowStale
+	if a.Tool == "launch" {
+		use = windowHeld
+	}
+	if res := g.preflight(ctx, l, use); res != nil {
 		g.recordStep(l, step, a, c, p, res, start, before, "", "")
 		return res
 	}
@@ -2039,6 +2104,7 @@ func (g *Gateway) executeOn(ctx context.Context, l *lease, c Call, a Action, p *
 	}
 	if n := unflipped(a, p, next); n != "" {
 		res.Message = strings.TrimSpace(res.Message + " " + n)
+		res.unchanged = true
 	}
 	if f := p.follow; f != nil && f.note != "" {
 		res.Message = strings.TrimSpace(res.Message + " " + f.note)

@@ -70,6 +70,11 @@ type Options struct {
 	// it through driver.Unlocker and forgets it. Nil means unlocking from
 	// the computer is not available.
 	PIN func(ctx context.Context, deviceID string) (string, error)
+	// UnlockWindowPIN returns a phone's saved PIN when the person opens an
+	// unlock window of length for it, after they confirm once (Touch ID),
+	// for the gateway to keep in memory while the window is open
+	// (unlockwindow.go). Nil means no unlock windows.
+	UnlockWindowPIN func(ctx context.Context, deviceID string, length time.Duration) (string, error)
 
 	// Pinky's traffic capture (capture.go). TrafficPort is the proxy's
 	// port, default TrafficPort; TrafficSetupPort the port of its setup
@@ -179,6 +184,14 @@ type Gateway struct {
 	// restarted through Pinky, by the person's click or by itself
 	// (servicerestart.go).
 	serviceRestarts map[driver.Platform]time.Time
+	// windows are the open unlock windows by phone (unlockwindow.go);
+	// pinRefused the phones that did not accept the PIN one entered, until
+	// the person unlocks them, saves the PIN again or opens a window.
+	// windowEpoch counts the ends of windows, so a window the person
+	// confirms while it is ended does not open.
+	windows     map[string]*unlockWindow
+	pinRefused  map[string]bool
+	windowEpoch uint64
 
 	cap captureState // Pinky's traffic proxy (capture.go)
 
@@ -220,6 +233,8 @@ func New(o Options) (*Gateway, error) {
 		prune:            make(chan struct{}, 1),
 		trafficOn:        map[string]bool{},
 		trafficRoute:     map[string]bool{},
+		windows:          map[string]*unlockWindow{},
+		pinRefused:       map[string]bool{},
 	}
 	if g.policy == nil {
 		g.policy = policy.Default()
@@ -306,6 +321,7 @@ func (g *Gateway) Close() error {
 	}
 	g.mu.Lock()
 	g.endKeptLocked(outcomeGatewayStopped, false)
+	g.endWindowsLocked("Pinky stopped")
 	g.mu.Unlock()
 	// The proxy stops and the phones' proxy settings go back, while the
 	// providers still reach the phones.
@@ -454,6 +470,7 @@ func (g *Gateway) discover(ctx context.Context) {
 			case foundLocked(d) && !g.known[id] && d.lease == nil:
 				// Found on Wi-Fi and never used: nothing to keep once it
 				// is gone (wifi.go).
+				g.dropWindowLocked(id)
 				delete(g.devices, id)
 				left = append(left, id)
 			case !d.opened && !d.opening && d.lease == nil && !g.known[id] && now.Sub(d.unlistedAt) >= unopenedGrace:
@@ -463,6 +480,7 @@ func (g *Gateway) discover(ctx context.Context) {
 				// without a USB driver once the driver is installed). One
 				// that is the person's (wifi.go), such as an iPhone that
 				// stayed locked on Wi-Fi, stays.
+				g.dropWindowLocked(id)
 				delete(g.devices, id)
 				left = append(left, id)
 				g.log.Info("device forgotten", "device", id, "why", "never opened, and no longer listed")
@@ -654,7 +672,7 @@ func (g *Gateway) updateDevice(p driver.Provider, info driver.Info) *device {
 	}
 	open := info.State == driver.StateOnline && d.dev == nil && !d.opening && !d.removed && !g.paused[d.id]
 	if open {
-		d.opening, d.openingAt = true, time.Now()
+		d.opening, d.openingAt, d.openGen = true, time.Now(), d.switchGen
 		if time.Now().Before(d.moving) {
 			// Back on its other connection: calls wait while it opens.
 			d.moving = time.Now().Add(moveWait)
@@ -712,10 +730,15 @@ func (g *Gateway) open(ctx context.Context, d *device, p driver.Provider) {
 				step = true
 			}
 		}
-		if err != nil && d.switching != "" {
+		if err != nil && d.switching != "" && d.openGen == d.switchGen {
 			// It did not open over the connection a task moved it to:
 			// the task goes back at once (taskconn.go), or waits with
-			// the phone for the person.
+			// the phone for the person. An open that began before the
+			// move, over the way it left, says nothing about the new
+			// one: a pass that listed the phone between a failed move to
+			// Pinky on the iPhone and the move back opened it over the
+			// helper again, and its failure ended the move back before
+			// the phone opened over CoreDevice.
 			d.moving = time.Time{}
 		}
 		g.wakeLocked(d) // calls waiting for the open (connectWait) go on
@@ -906,6 +929,8 @@ func (g *Gateway) pollLocks(ctx context.Context) {
 	g.mu.Lock()
 	var report, read, screens, unwatched []*device
 	now := time.Now()
+	// Their timers miss the time a sleeping computer spent asleep.
+	g.expireWindowsLocked(now)
 	for _, d := range g.devices {
 		if d.dev == nil || !d.online {
 			continue
@@ -982,6 +1007,11 @@ func (g *Gateway) setLocked(d *device, locked bool) {
 // setLockedLocked is setLocked with g.mu held, which it releases.
 func (g *Gateway) setLockedLocked(d *device, locked bool) {
 	d.lockSeq++
+	if !locked {
+		// Whoever unlocked it, the unlock card no longer says the phone
+		// did not take the PIN (unlockwindow.go).
+		delete(g.pinRefused, d.id)
+	}
 	if d.locked == locked {
 		g.mu.Unlock()
 		return
