@@ -2,6 +2,14 @@
 
 What changed for people in each release of Pinky, newest first. A version is the release's date in Asia/Shanghai and that day's count: 2026.1107.2 is the second release of 7 November 2026. Notes wait under "Unreleased" until the next release takes them; see [docs/RELEASING.md](docs/RELEASING.md).
 
+## 2026.1127.5 (2026-11-27)
+
+- Preparing iOS Simulators now works with Xcode 26.2 and 26.3: building WebDriverAgent for them used to fail over a file those versions of Xcode don't have. Thanks @lxxself for reporting it.
+
+## 2026.1127.4 (2026-11-27)
+
+- Pinky no longer restarts an iPhone's live picture while the phone's screen stays still. These restarts also slowed down the agent's next screen read. Thanks @SamuelZ12 for reporting it.
+
 ## 2026.1127.3 (2026-11-27)
 
 - iPhones on iOS 16 to 17.3 now work with Pinky over a USB cable. On iOS 16, open Add phone › iPhone on a Mac with Xcode and click Install Pinky on the iPhone; when the Mac has no developer disk image for the phone, choose Download there to get one from a third-party mirror. On iOS 17.0 to 17.3, which hasn't been tried on a phone yet, start WebDriverAgent from Xcode yourself as the README describes. Thanks @jiangdada6.
