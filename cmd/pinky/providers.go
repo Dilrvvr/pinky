@@ -140,7 +140,9 @@ func newIOSProvider(log *slog.Logger) (driver.Provider, error) {
 	p.Only = onlyDevices()
 	// On Linux and Windows, Pinky finds iPhones on Wi-Fi itself: the
 	// system's usbmuxd lists them there not at all, or only while they are
-	// on a cable too.
+	// on a cable too. On macOS it does so only for an iPhone whose own
+	// Personal Hotspot the Mac is on, where Apple's usbmuxd does not reach
+	// it.
 	p.WiFiMux = true
 	if dirs, err := api.DefaultDirs(); err == nil {
 		// Where Pinky looks for Apple's developer disk image before Xcode's.
@@ -296,6 +298,32 @@ func (p *onlyProvider) Open(ctx context.Context, id string) (driver.Device, erro
 		return nil, fmt.Errorf("%s is not in PINKY_DEVICES: %w", id, driver.ErrNotFound)
 	}
 	return p.Provider.Open(ctx, id)
+}
+
+func (p *onlyProvider) CanInstallHelper() bool {
+	h, ok := p.Provider.(driver.HelperInstaller)
+	return ok && h.CanInstallHelper()
+}
+
+func (p *onlyProvider) InstallHelper(ctx context.Context, id, team string, progress func(driver.HelperStep)) error {
+	h, ok := p.Provider.(driver.HelperInstaller)
+	if !ok {
+		return driver.ErrUnsupported
+	}
+	if id == "" {
+		phones, err := p.List(ctx)
+		if err != nil {
+			return err
+		}
+		if len(phones) != 1 {
+			return &driver.HelperInstallError{Fix: driver.HelperFixPhone, Err: errors.New("connect one allowed iPhone or select it in Pinky")}
+		}
+		id = phones[0].ID
+	}
+	if !p.allowed(id) {
+		return driver.ErrNotFound
+	}
+	return h.InstallHelper(ctx, id, team, progress)
 }
 
 // onlyPairer is an onlyProvider whose provider pairs phones over Wi-Fi: it

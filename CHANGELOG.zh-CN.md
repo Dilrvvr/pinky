@@ -2,6 +2,18 @@
 
 Pinky 每个版本给用户带来了哪些变化，最新的在最前面。版本号是发布当天的日期（Asia/Shanghai 时区）加上当天的序号：2026.1107.2 是 2026 年 11 月 7 日的第二个版本。还没发布的说明先放在“Unreleased”下面，由下一个版本带走。英文版见 [CHANGELOG.md](CHANGELOG.md)；发布流程见 [docs/RELEASING.md](docs/RELEASING.md)。
 
+## 2026.1127.3 (2026-11-27)
+
+- 通过 USB 数据线连接的 iOS 16 到 17.3 的 iPhone 现在也能用 Pinky 了。iOS 16 上，在装有 Xcode 的 Mac 上打开「添加手机 › iPhone」，点击「安装 iPhone 上的 Pinky」；Mac 上没有这台手机需要的开发者磁盘映像时，在同一页点击「下载」即可从第三方镜像获取。iOS 17.0 到 17.3 还没在真机上试过，需要你按 README 的说明自己在 Xcode 中启动 WebDriverAgent。感谢 @jiangdada6。
+
+## 2026.1127.2 (2026-11-27)
+
+- Mac 连着 iPhone 自己的「个人热点」、设备服务连不上这台 iPhone 时，Pinky 现在会自己通过热点连上它；只有 iPhone 在热点上也没有应答，才会显示为「个人热点上找不到」。感谢 @SamuelZ12 反馈。
+
+## 2026.1127.1 (2026-11-27)
+
+- `pinky token -h`、`pinky quit -h` 和 `pinky companion -h` 现在会说明命令的用途，并以状态码 0 退出（`pinky companion -h` 原来会报错）。这几个命令收到不接受的词或选项，或者 `pinky companion` 后面没有 `install` 时，现在会说明原因并以状态码 2 退出，和 `pinky devices` 一样；`pinky token` 和 `pinky quit` 原来会忽略多余的词。感谢 @6moran。
+
 ## 2026.1126.8 (2026-11-26)
 
 - 现在可以让 Pinky 在 1、4 或 8 小时内为智能体的任务解锁手机，不用每次都问你：在「设置 › 手机」或手机画面下方的 ⋯ 菜单里为这台手机打开「免确认解锁」，确认一次即可。需要先保存手机的 PIN 码，并打开「设置 › 安全」里的「从这台电脑解锁」。感谢 @ayu2210 的建议。

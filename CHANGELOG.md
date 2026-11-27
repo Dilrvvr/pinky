@@ -2,6 +2,18 @@
 
 What changed for people in each release of Pinky, newest first. A version is the release's date in Asia/Shanghai and that day's count: 2026.1107.2 is the second release of 7 November 2026. Notes wait under "Unreleased" until the next release takes them; see [docs/RELEASING.md](docs/RELEASING.md).
 
+## 2026.1127.3 (2026-11-27)
+
+- iPhones on iOS 16 to 17.3 now work with Pinky over a USB cable. On iOS 16, open Add phone › iPhone on a Mac with Xcode and click Install Pinky on the iPhone; when the Mac has no developer disk image for the phone, choose Download there to get one from a third-party mirror. On iOS 17.0 to 17.3, which hasn't been tried on a phone yet, start WebDriverAgent from Xcode yourself as the README describes. Thanks @jiangdada6.
+
+## 2026.1127.2 (2026-11-27)
+
+- When your Mac is on the iPhone's own Personal Hotspot, where the Mac's device service can't reach the iPhone, Pinky now connects to the iPhone over the hotspot by itself, and shows it as Lost on its hotspot only when the iPhone doesn't answer there either. Thanks @SamuelZ12 for reporting it.
+
+## 2026.1127.1 (2026-11-27)
+
+- `pinky token -h`, `pinky quit -h` and `pinky companion -h` now say what the command does and exit with status 0 (`pinky companion -h` used to fail). A word or flag these commands don't take, or `pinky companion` without `install`, now gets the reason and exit status 2, as in `pinky devices`; `pinky token` and `pinky quit` used to ignore extra words. Thanks @6moran.
+
 ## 2026.1126.8 (2026-11-26)
 
 - You can now let Pinky unlock a phone for agents' tasks without asking each time, for 1, 4 or 8 hours: turn on Unlock without asking for the phone in Settings › Phones or in the ⋯ menu under its picture, and confirm once. It needs the phone's PIN saved and Unlock from this computer on in Settings › Safety. Thanks @ayu2210 for the idea.

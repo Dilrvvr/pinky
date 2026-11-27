@@ -33,11 +33,13 @@ type Provider struct {
 	// (an iOS_DDI folder in it), looked in before Xcode's; "" for none.
 	DiskImageDir string
 
-	// WiFiMux lets the provider run a usbmuxd of its own on Linux and
-	// Windows, whose usbmuxd lists phones on Wi-Fi not at all or only while
-	// they are on a cable too, to find phones on Wi-Fi (netmux.go). Only the
-	// app's provider sets it: it points go-ios, for the whole process, at
-	// that usbmuxd, which then carries every connection to an iPhone.
+	// WiFiMux lets the provider run a usbmuxd of its own to find phones on
+	// Wi-Fi (netmux.go): on Linux and Windows, whose usbmuxd lists them there
+	// not at all or only while they are on a cable too, and on macOS for a
+	// phone whose own Personal Hotspot the Mac is on, where Apple's does not
+	// reach it. Only the app's provider sets it: it points go-ios, for the
+	// whole process, at that usbmuxd, which then carries every connection to
+	// an iPhone.
 	WiFiMux bool
 
 	// RunDir is where Pinky remembers the helper runners it started (see
@@ -70,6 +72,12 @@ type Provider struct {
 	helpers  map[string]helperRead
 	helperFn func(ctx context.Context, e goios.DeviceEntry, r wdaRunner) (time.Time, error)
 
+	// For tests: probes for USB-only WebDriverAgent and its lockdown service.
+	usbWDAStatus        func(context.Context, goios.DeviceEntry) bool
+	lockdownXCTestReady func(context.Context, goios.DeviceEntry) error
+	legacyImageFind     func(string) string
+	legacyImagePrepare  func(context.Context, goios.DeviceEntry, string, string) error
+
 	// For tests: how a phone is inspected, and the clock.
 	inspectFn func(ctx context.Context, e goios.DeviceEntry) driver.Info
 	now       func() time.Time
@@ -79,7 +87,7 @@ type Provider struct {
 
 	wifi       wifiState                                               // phones over Wi-Fi (wifi.go)
 	lost       lostState                                               // phones usbmuxd lost on Wi-Fi (lost.go)
-	nmux       muxState                                                // a usbmuxd of its own on Linux (netmux.go)
+	nmux       muxState                                                // a usbmuxd of its own (netmux.go)
 	restartFn  func(ctx context.Context, command, reason string) error // for tests: runAsAdmin
 	quiet      quietRestart                                            // restarting usbmuxd without a password (quietrestart.go)
 	prep       preparer                                                // Developer Mode and the developer disk image (prepare.go)
@@ -160,6 +168,9 @@ func (p *Provider) Platform() driver.Platform { return driver.IOS }
 // Detail how to fix what is missing. A gateway calls it every few seconds,
 // so it asks each phone again only when needed (see recheckOffline).
 func (p *Provider) List(ctx context.Context) ([]driver.Info, error) {
+	// The search for phones on their own Personal Hotspot ends once this
+	// Mac has left it (netmux.go).
+	p.leaveHotspot()
 	list, ok, err := p.listUsbmuxd()
 	if !ok {
 		return nil, err // nil without usbmuxd: CheckHost says what to install
@@ -422,7 +433,7 @@ func (p *Provider) openWDA(ctx context.Context, info driver.Info) (driver.Device
 	p.mu.Unlock()
 	if s == nil {
 		var err error
-		if s, err = startWDAFor(ctx, info); err != nil {
+		if s, err = startWDAFor(ctx, info, p.DiskImageDir); err != nil {
 			return nil, err
 		}
 		if s.run != nil {
@@ -550,9 +561,18 @@ func (p *Provider) inspect(ctx context.Context, e goios.DeviceEntry) driver.Info
 		}
 		return info
 	}
+	if kind.usbWDAOnly() && info.Connection != "usb" {
+		return wdaUSBSetup(info)
+	}
 	dev, err := bounded(ctx, lockdownTimeout, func() (bool, error) { return imagemounter.IsDevModeEnabled(e) })
 	if err == nil && !dev {
 		return p.devModeOff(e, info)
+	}
+	if kind.usbWDAOnly() {
+		if p.way(info.ID) == backendCoreDevice {
+			return coreDeviceTooOldState(info)
+		}
+		return p.inspectUSBWDA(ctx, e, info, kind)
 	}
 	switch p.way(info.ID) {
 	case backendWDA:
@@ -616,6 +636,19 @@ func (p *Provider) servicesStill(ctx context.Context, e goios.DeviceEntry, k kno
 	check, setup := "display", p.setup
 	if k.info.Backend == backendWDA {
 		check, setup = "developer", p.legacySetup
+		kind, _ := pathFor(parseVersion(k.info.OSVersion))
+		if kind.usbWDAOnly() {
+			if _, ready := p.usbWDAAvailable(ctx, e, kind); !ready {
+				return false
+			}
+			p.mu.Lock()
+			if now, still := p.known[k.info.ID]; still && now.key == k.key {
+				now.at = p.clock()
+				p.known[k.info.ID] = now
+			}
+			p.mu.Unlock()
+			return true
+		}
 	}
 	ok, err := setup(ctx, e)
 	id := e.Properties.SerialNumber
@@ -795,6 +828,13 @@ func (p *Provider) Connections(ctx context.Context, id string) driver.Connection
 	switch {
 	case kind == pathUnsupported:
 		wda.Reason, wda.Detail = "os_version", why
+	case kind.usbWDAOnly():
+		if e.Properties.ConnectionType != "USB" {
+			auto.Available, auto.Reason, auto.Detail = false, driver.SetupWDAUSB, wdaUSBDetail
+			wda.Reason, wda.Detail = auto.Reason, auto.Detail
+		} else {
+			wda.Available = true
+		}
 	default:
 		if rid, err := p.runner(e); err != nil {
 			offline(&wda, err)
